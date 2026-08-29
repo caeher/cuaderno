@@ -20,7 +20,7 @@ export function PostContent({ content }: PostContentProps) {
   if (/^<([a-z0-9-]+)[\s>]/i.test(trimmed)) {
     return (
       <div
-        className="tiptap post-content flex flex-col gap-6 text-foreground"
+        className="tiptap post-content flex flex-col gap-6"
         dangerouslySetInnerHTML={{ __html: trimmed }}
       />
     )
@@ -30,7 +30,7 @@ export function PostContent({ content }: PostContentProps) {
   const blocks = trimmed.split(/\n\n+/)
 
   return (
-    <div className="post-content flex flex-col gap-6 text-foreground">
+    <div className="post-content flex flex-col gap-6">
       {blocks.map((block, index) => {
         if (block.startsWith("```")) {
           const lines = block.split("\n")
@@ -41,7 +41,7 @@ export function PostContent({ content }: PostContentProps) {
 
         if (block.startsWith("## ")) {
           return (
-            <h2 key={index} className="text-xl font-semibold leading-snug tracking-tight text-balance text-foreground">
+            <h2 key={index} className="font-serif text-2xl font-medium leading-snug text-balance">
               {block.replace("## ", "")}
             </h2>
           )
@@ -51,8 +51,8 @@ export function PostContent({ content }: PostContentProps) {
           return (
             <ul key={index} className="flex flex-col gap-2 pl-1">
               {block.split("\n").map((line, lineIndex) => (
-                <li key={lineIndex} className="flex gap-2 text-base text-foreground">
-                  <span className="mt-2.5 size-1.5 flex-none rounded-full bg-text-tertiary" />
+                <li key={lineIndex} className="flex gap-2 text-base leading-relaxed text-foreground/90">
+                  <span className="mt-2.5 size-1.5 flex-none rounded-full bg-primary" />
                   <span>{line.replace("- ", "")}</span>
                 </li>
               ))}
@@ -61,7 +61,7 @@ export function PostContent({ content }: PostContentProps) {
         }
 
         return (
-          <p key={index} className="text-base text-foreground">
+          <p key={index} className="text-base leading-relaxed text-foreground/90">
             {block}
           </p>
         )

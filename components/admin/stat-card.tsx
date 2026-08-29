@@ -1,4 +1,5 @@
-import { ArrowDown, ArrowUp, type LucideIcon } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface StatCardProps {
@@ -10,43 +11,27 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, delta, deltaTone = "neutral", icon: Icon }: StatCardProps) {
-  const DeltaArrow =
-    deltaTone === "positive" ? ArrowUp : deltaTone === "negative" ? ArrowDown : null
-
   return (
-    <article className="flex min-h-[116px] flex-col gap-4 rounded-xl border border-border bg-card p-5">
-      {/* fila 1 — cuadro de icono tintado + etiqueta */}
-      <div className="flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="grid size-9 shrink-0 place-items-center rounded-lg bg-ia-tint text-ia"
-        >
-          <Icon className="size-[18px]" strokeWidth={1.75} />
-        </span>
-        <span className="truncate text-sm font-medium text-muted-foreground">{label}</span>
-      </div>
-
-      {/* fila 2 — valor · fila 3 — delta / comparación */}
-      <div className="flex flex-col gap-2">
-        <span className="text-3xl font-bold leading-[1.15] tracking-[-0.02em] tabular-nums text-foreground">
-          {value}
-        </span>
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 pb-2">
+        <span className="text-sm text-muted-foreground">{label}</span>
+        <Icon className="size-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-semibold tracking-tight text-foreground">{value}</div>
         {delta && (
           <p
             className={cn(
-              "flex min-w-0 items-center gap-1 text-[13px] leading-5",
-              deltaTone === "positive" && "font-semibold text-perf-strong tabular-nums",
-              deltaTone === "negative" && "font-semibold text-destructive tabular-nums",
-              deltaTone === "neutral" && "text-text-tertiary",
+              "mt-1 text-xs",
+              deltaTone === "positive" && "text-emerald-600 dark:text-emerald-400",
+              deltaTone === "negative" && "text-destructive",
+              deltaTone === "neutral" && "text-muted-foreground",
             )}
           >
-            {DeltaArrow && (
-              <DeltaArrow className="size-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />
-            )}
-            <span className="truncate">{delta}</span>
+            {delta}
           </p>
         )}
-      </div>
-    </article>
+      </CardContent>
+    </Card>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, Copy, ExternalLink, Globe, Info, Network, Server } from "lucide-react"
+import { Check, Copy, ExternalLink, Globe, Info, Network, Server, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -46,31 +46,26 @@ export function DomainSettingsSection({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <Globe className="size-4 text-text-tertiary" />
+        <h3 className="text-base font-medium text-foreground flex items-center gap-2">
+          <Globe className="size-4 text-primary" />
           Dominio y Enlace Público
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-xs text-muted-foreground mt-0.5">
           Configura cómo acceden tus lectores a tu blog: mediante subdominio propio o mediante URL amigable en ruta.
         </p>
       </div>
 
       {/* Active URL Card Preview */}
-      <Card className="overflow-hidden border border-border bg-card ring-0">
+      <Card className="border-primary/30 bg-primary/5 shadow-xs overflow-hidden">
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ia">
-                  <Globe className="size-3.5" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <Sparkles className="size-3.5" />
                   URL Pública Activa
                 </span>
-                <Badge
-                  variant="secondary"
-                  className={`px-2 py-0.5 text-[10px] ${
-                    subdomainEnabled ? "bg-ia-tint text-ia" : "bg-neutral-tint text-neutral"
-                  }`}
-                >
+                <Badge variant={subdomainEnabled ? "default" : "secondary"} className="text-[10px] px-2 py-0.5">
                   {subdomainEnabled ? "Modo Subdominio" : "Modo Ruta Amigable"}
                 </Badge>
               </div>
@@ -85,16 +80,16 @@ export function DomainSettingsSection({
                 variant="outline"
                 size="sm"
                 onClick={handleCopy}
-                className="cursor-pointer gap-1.5 bg-card text-xs"
+                className="text-xs gap-1.5 bg-background cursor-pointer"
               >
-                {copied ? <Check className="size-3.5 text-perf-strong" /> : <Copy className="size-3.5" />}
+                {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
                 <span>{copied ? "Copiado" : "Copiar"}</span>
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 size="sm"
-                className="cursor-pointer gap-1.5 bg-card text-xs"
+                className="text-xs gap-1.5 cursor-pointer"
                 render={
                   <a href={publicUrl} target="_blank" rel="noreferrer">
                     <ExternalLink className="size-3.5" />
@@ -114,19 +109,19 @@ export function DomainSettingsSection({
           onClick={() => onSubdomainEnabledChange(true)}
           className={`relative flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition-all ${
             subdomainEnabled
-              ? "border-ia bg-ia-tint ring-1 ring-ia"
-              : "border-border bg-card hover:bg-surface-sunken"
+              ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+              : "border-border/80 bg-card hover:border-border hover:bg-muted/30"
           }`}
         >
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                <Network className="size-4 text-muted-foreground" />
+                <Network className="size-4 text-primary" />
                 Subdominio SaaS
               </span>
               <div
                 className={`size-4 rounded-full border flex items-center justify-center ${
-                  subdomainEnabled ? "border-ia bg-ia text-primary-foreground" : "border-border"
+                  subdomainEnabled ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
                 }`}
               >
                 {subdomainEnabled && <Check className="size-2.5 stroke-[3]" />}
@@ -136,7 +131,7 @@ export function DomainSettingsSection({
               Tu blog se mostrará directamente en la raíz de tu propio subdominio.
             </p>
           </div>
-          <div className="mt-4 break-all rounded-lg bg-surface-sunken px-2.5 py-1.5 font-mono text-xs text-muted-foreground">
+          <div className="mt-4 rounded-md bg-muted/60 px-2.5 py-1.5 font-mono text-xs text-foreground/90 break-all">
             https://{slug}.{rootDomain}/
           </div>
         </div>
@@ -146,19 +141,19 @@ export function DomainSettingsSection({
           onClick={() => onSubdomainEnabledChange(false)}
           className={`relative flex flex-col justify-between rounded-xl border p-4 cursor-pointer transition-all ${
             !subdomainEnabled
-              ? "border-ia bg-ia-tint ring-1 ring-ia"
-              : "border-border bg-card hover:bg-surface-sunken"
+              ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
+              : "border-border/80 bg-card hover:border-border hover:bg-muted/30"
           }`}
         >
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                <Server className="size-4 text-muted-foreground" />
+                <Server className="size-4 text-primary" />
                 URL Amigable en Ruta
               </span>
               <div
                 className={`size-4 rounded-full border flex items-center justify-center ${
-                  !subdomainEnabled ? "border-ia bg-ia text-primary-foreground" : "border-border"
+                  !subdomainEnabled ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40"
                 }`}
               >
                 {!subdomainEnabled && <Check className="size-2.5 stroke-[3]" />}
@@ -168,32 +163,32 @@ export function DomainSettingsSection({
               Tu blog se publicará bajo el dominio principal con tu identificador en la ruta.
             </p>
           </div>
-          <div className="mt-4 break-all rounded-lg bg-surface-sunken px-2.5 py-1.5 font-mono text-xs text-muted-foreground">
+          <div className="mt-4 rounded-md bg-muted/60 px-2.5 py-1.5 font-mono text-xs text-foreground/90 break-all">
             https://{rootDomain}/{slug}/
           </div>
         </div>
       </div>
 
       {/* Custom Domain Option (Future Scaling) */}
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4">
-        <Label htmlFor="customDomain" className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+      <div className="flex flex-col gap-2 rounded-xl border border-border/70 p-4 bg-card">
+        <Label htmlFor="customDomain" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
           Dominio Personalizado (Opcional)
         </Label>
         <p className="text-xs text-muted-foreground">
-          Si dispones de tu propio dominio o subdominio (ej: <code className="text-ia">blog.miempresa.com</code>), indícalo aquí.
+          Si dispones de tu propio dominio o subdominio (ej: <code className="text-primary">blog.miempresa.com</code>), indícalo aquí.
         </p>
         <Input
           id="customDomain"
           placeholder="ej: blog.miempresa.com"
           value={customDomain}
           onChange={(e) => onCustomDomainChange(e.target.value)}
-          className="mt-1 max-w-md font-mono text-sm"
+          className="text-xs font-mono max-w-md mt-1"
         />
       </div>
 
       {/* Informative Note */}
-      <div className="flex items-start gap-3 rounded-xl border border-border bg-surface-sunken p-3.5 text-xs text-muted-foreground">
-        <Info className="mt-0.5 size-4 shrink-0 text-ia" />
+      <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3.5 text-xs text-muted-foreground">
+        <Info className="size-4 shrink-0 text-primary mt-0.5" />
         <div className="flex flex-col gap-1">
           <span className="font-medium text-foreground">Información técnica sobre subdominios:</span>
           <span>

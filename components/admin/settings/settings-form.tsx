@@ -101,60 +101,36 @@ export function SettingsForm({ user }: SettingsFormProps) {
     <div className="flex flex-col gap-6">
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={(val) => val && setActiveTab(val as string)} className="w-full">
-        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto border border-border bg-surface-sunken p-1">
-          <TabsTrigger
-            value="perfil"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
+        <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/60 border border-border/60">
+          <TabsTrigger value="perfil" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
             <UserIcon className="size-3.5" />
             <span>Perfil</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="seo"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
-            <Search className="size-3.5" />
+          <TabsTrigger value="seo" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <Search className="size-3.5 text-amber-500" />
             <span>SEO & GEO</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="dominio"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
-            <Network className="size-3.5" />
+          <TabsTrigger value="dominio" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <Network className="size-3.5 text-primary" />
             <span>Dominio & URLs</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="legal"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
-            <Scale className="size-3.5" />
+          <TabsTrigger value="legal" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <Scale className="size-3.5 text-emerald-500" />
             <span>Páginas Legales</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="organizacion"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
-            <Building2 className="size-3.5" />
+          <TabsTrigger value="organizacion" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <Building2 className="size-3.5 text-indigo-500" />
             <span>Organización / Blog</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="region"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
-            <Globe className="size-3.5" />
+          <TabsTrigger value="region" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <Globe className="size-3.5 text-blue-500" />
             <span>Zona Horaria</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="social"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
+          <TabsTrigger value="social" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
             <Share2 className="size-3.5" />
             <span>Redes</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="cuenta"
-            className="cursor-pointer gap-1.5 px-3 py-2 text-xs data-active:bg-card data-active:text-ia"
-          >
+          <TabsTrigger value="cuenta" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
             <Shield className="size-3.5" />
             <span>Cuenta</span>
           </TabsTrigger>
@@ -164,11 +140,11 @@ export function SettingsForm({ user }: SettingsFormProps) {
           {/* TAB 1: PERFIL */}
           <TabsContent value="perfil" className="flex flex-col gap-6">
             {/* Live Preview Card */}
-            <Card className="overflow-hidden border border-dashed border-border bg-surface-sunken ring-0">
+            <Card className="overflow-hidden border-dashed bg-muted/20">
               <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
                 <div>
                   <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <Sparkles className="size-3.5 text-text-tertiary" />
+                    <Sparkles className="size-3.5 text-amber-500" />
                     Vista previa del perfil
                   </CardTitle>
                   <CardDescription className="text-xs">Así se verá tu perfil de autor para los lectores</CardDescription>
@@ -176,7 +152,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
                 <Button
                   variant="ghost"
                   size="xs"
-                  className="text-xs cursor-pointer text-ia hover:text-ia-hover"
+                  className="text-xs cursor-pointer"
                   render={<Link href={`/autor/${username || user.username}`} target="_blank" rel="noreferrer" />}
                 >
                   <ExternalLink className="size-3" />
@@ -184,30 +160,30 @@ export function SettingsForm({ user }: SettingsFormProps) {
                 </Button>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="rounded-lg border border-border bg-card overflow-hidden shadow-xs">
                   {coverUrl ? (
-                    <div className="h-20 w-full overflow-hidden bg-surface-sunken">
+                    <div className="h-20 w-full overflow-hidden bg-muted">
                       <img src={coverUrl} alt="Portada" className="size-full object-cover" />
                     </div>
                   ) : (
-                    <div className="h-14 w-full bg-surface-sunken" />
+                    <div className="h-14 w-full bg-gradient-to-r from-primary/10 via-secondary to-muted" />
                   )}
                   <div className="p-4 pt-0">
                     <div className="flex items-end justify-between -mt-7 mb-3">
-                      <Avatar className="size-14 border-2 border-card">
+                      <Avatar className="size-14 border-2 border-background shadow-xs">
                         <AvatarImage src={avatarUrl || "/placeholder.svg"} alt={name} />
                         <AvatarFallback>{getInitials(name)}</AvatarFallback>
                       </Avatar>
                       {location && (
-                        <span className="text-[11px] text-muted-foreground bg-surface-sunken px-2 py-0.5 rounded-full">
-                          {location}
+                        <span className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                          📍 {location}
                         </span>
                       )}
                     </div>
                     <h4 className="font-serif text-lg font-semibold text-foreground">{name || "Tu Nombre"}</h4>
-                    <p className="text-xs text-muted-foreground font-medium mt-0.5">@{username || user.username}</p>
+                    <p className="text-xs text-primary font-medium mt-0.5">@{username || user.username}</p>
                     {tagline && <p className="text-xs text-muted-foreground font-medium mt-1">{tagline}</p>}
-                    {bio && <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{bio}</p>}
+                    {bio && <p className="text-xs text-foreground/80 mt-2 line-clamp-2">{bio}</p>}
                   </div>
                 </div>
               </CardContent>
@@ -304,13 +280,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
 
           {/* Floating Save Button Bar (not strictly necessary on organization tab since Clerk handles its own save, but available globally) */}
           {activeTab !== "organizacion" && (
-            <div className="sticky bottom-4 z-10 flex justify-end rounded-xl border border-border bg-card/90 p-3 backdrop-blur-md">
-              <LoadingSubmitButton
-                isLoading={isSaving}
-                loadingText="Guardando cambios..."
-                size="lg"
-                className="min-w-[11rem] bg-primary text-primary-foreground"
-              >
+            <div className="flex justify-end sticky bottom-4 z-10 bg-background/90 backdrop-blur-md p-3 rounded-lg border border-border/80 shadow-md">
+              <LoadingSubmitButton isLoading={isSaving} loadingText="Guardando cambios...">
                 Guardar cambios
               </LoadingSubmitButton>
             </div>

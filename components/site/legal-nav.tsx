@@ -66,7 +66,7 @@ export function LegalNav() {
     <aside className="w-full lg:w-72 shrink-0">
       <div className="sticky top-24 space-y-6">
         <div>
-          <h2 className="px-3 text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+          <h2 className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Documentación Legal
           </h2>
           <nav className="mt-3 flex flex-col gap-1">
@@ -80,21 +80,21 @@ export function LegalNav() {
                   className={cn(
                     "group flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
                     isActive
-                      ? "bg-ia-tint font-semibold text-ia"
-                      : "text-muted-foreground hover:bg-surface-sunken hover:text-foreground"
+                      ? "bg-secondary font-medium text-foreground shadow-xs"
+                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   )}
                 >
                   <Icon
                     className={cn(
                       "mt-0.5 size-4 shrink-0 transition-colors",
                       isActive
-                        ? "text-ia"
-                        : "text-text-tertiary group-hover:text-foreground"
+                        ? "text-foreground"
+                        : "text-muted-foreground group-hover:text-foreground"
                     )}
                   />
                   <div className="min-w-0">
                     <div className="leading-tight">{item.title}</div>
-                    <div className="mt-0.5 truncate text-xs font-normal text-text-tertiary">
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground/80">
                       {item.description}
                     </div>
                   </div>
@@ -105,9 +105,9 @@ export function LegalNav() {
         </div>
 
         {/* Acceso rápido a preferencias de cookies */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Sliders className="size-4 text-text-tertiary" />
+        <div className="rounded-lg border border-border/70 bg-card p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+            <Sliders className="size-3.5 text-primary" />
             <span>Tus preferencias</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -116,16 +116,16 @@ export function LegalNav() {
           <button
             type="button"
             onClick={openCookiePreferences}
-            className="mt-3 inline-flex items-center text-xs font-medium text-ia hover:text-ia-hover hover:underline cursor-pointer"
+            className="mt-3 inline-flex items-center text-xs font-medium text-primary hover:underline cursor-pointer"
           >
             Configurar cookies &rarr;
           </button>
         </div>
 
         {/* Bloque de contacto legal */}
-        <div className="rounded-xl border border-border bg-surface-sunken p-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-            <Mail className="size-4 text-text-tertiary" />
+        <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
+          <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+            <Mail className="size-3.5" />
             <span>Contacto Legal</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
@@ -134,13 +134,13 @@ export function LegalNav() {
           <div className="mt-2.5 space-y-1 text-xs">
             <a
               href="mailto:privacidad@cuaderno.app"
-              className="block text-foreground hover:text-ia transition-colors"
+              className="block font-mono text-xs text-foreground/90 hover:text-primary transition-colors"
             >
               privacidad@cuaderno.app
             </a>
             <a
               href="mailto:legal@cuaderno.app"
-              className="block text-foreground hover:text-ia transition-colors"
+              className="block font-mono text-xs text-foreground/90 hover:text-primary transition-colors"
             >
               legal@cuaderno.app
             </a>

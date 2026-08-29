@@ -31,7 +31,7 @@ export function AuthorProfileHeader({
     <header className="flex flex-col">
       <div className="-mt-12 flex flex-col items-start gap-4 sm:-mt-16 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-end gap-4">
-          <Avatar className="size-24 border-4 border-background sm:size-28">
+          <Avatar className="size-24 border-4 border-background sm:size-28 shadow-sm">
             <AvatarImage src={author.avatarUrl || "/placeholder.svg"} alt={author.name} />
             <AvatarFallback className="text-2xl">{getInitials(author.name)}</AvatarFallback>
           </Avatar>
@@ -42,19 +42,17 @@ export function AuthorProfileHeader({
       </div>
 
       <div className="mt-5">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance text-foreground">
-          {author.name}
-        </h1>
-        <p className="text-sm text-muted-foreground">@{author.username}</p>
+        <h1 className="font-serif text-3xl font-medium tracking-tight">{author.name}</h1>
+        <p className="text-muted-foreground font-mono text-sm">@{author.username}</p>
 
         {author.bio && (
-          <p className="mt-3 max-w-xl text-base leading-relaxed text-foreground">{author.bio}</p>
+          <p className="mt-3 max-w-xl text-base leading-relaxed text-foreground/90">{author.bio}</p>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-4">
           {author.location && (
             <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-              <MapPin className="size-3.5 text-text-tertiary" />
+              <MapPin className="size-3.5" />
               {author.location}
             </span>
           )}

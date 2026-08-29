@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Calendar } from "lucide-react"
+import { Sparkles, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export interface WelcomeHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -39,29 +39,20 @@ export function WelcomeHeader({
 
   const defaultSubtitle =
     totalPosts !== undefined
-      ? `${publishedPosts ?? 0} de ${totalPosts} entradas publicadas. Aquí tienes el rendimiento de tu blog.`
-      : "Aquí tienes el rendimiento de tu blog."
+      ? `Tienes ${publishedPosts ?? 0} posts publicados de ${totalPosts} totales. Aquí tienes el estado de tu blog.`
+      : "Aquí tienes un resumen en tiempo real de tu blog."
 
   return (
-    <div
-      className={cn(
-        "flex flex-col gap-3 md:flex-row md:items-start md:justify-between",
-        className
-      )}
-      {...props}
-    >
+    <div className={cn("flex flex-col gap-2 md:flex-row md:items-center md:justify-between", className)} {...props}>
       <div className="flex flex-col gap-1">
-        {/* h2, no h1: el título de la página ya lo renderiza AdminTopbar como h1.
-            Dos h1 con títulos distintos en la misma página es un defecto de
-            accesibilidad, no una decisión de diseño. */}
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          {greeting}, {firstName}
+        <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl flex items-center gap-2">
+          <span>{greeting}, {firstName}</span>
+          <Sparkles className="size-5 text-amber-500 shrink-0 hidden sm:inline" />
         </h2>
         <p className="text-sm text-muted-foreground">{subtitle || defaultSubtitle}</p>
       </div>
-
-      <div className="flex items-center gap-1.5 self-start rounded-lg border border-border bg-card px-3 py-1.5 text-xs capitalize text-muted-foreground md:self-auto">
-        <Calendar className="size-3.5 text-text-tertiary" />
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 px-3 py-1.5 rounded-md self-start md:self-auto capitalize border border-border/50">
+        <Calendar className="size-3.5" />
         <span>{formattedDate}</span>
       </div>
     </div>

@@ -63,24 +63,21 @@ export function LegalPage({
   return (
     <article className="min-w-0 max-w-3xl flex-1 pb-16">
       {/* Header */}
-      <header className="border-b border-border pb-8">
+      <header className="border-b border-border/70 pb-8">
         <div className="flex flex-wrap items-center gap-2.5">
-          <Badge
-            variant="secondary"
-            className="border-border bg-surface-sunken text-xs text-muted-foreground"
-          >
+          <Badge variant="secondary" className="font-mono text-xs">
             {badge}
           </Badge>
-          <span className="text-xs tabular-nums text-text-tertiary">
+          <span className="font-mono text-xs text-muted-foreground">
             Versión {version}
           </span>
-          <span className="text-xs text-text-tertiary">·</span>
-          <span className="text-xs tabular-nums text-text-tertiary">
+          <span className="text-muted-foreground/40">•</span>
+          <span className="font-mono text-xs text-muted-foreground">
             Actualizado el {updatedAt}
           </span>
         </div>
 
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-balance text-foreground">
+        <h1 className="mt-4 font-serif text-3xl font-medium tracking-tight sm:text-4xl text-balance">
           {title}
         </h1>
 
@@ -90,15 +87,15 @@ export function LegalPage({
 
         {/* Puntos clave / Resumen ejecutivo */}
         {keyPoints && keyPoints.length > 0 && (
-          <div className="mt-8 rounded-xl border border-border bg-surface-sunken p-5">
+          <div className="mt-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <ShieldCheck className="size-4 text-text-tertiary" />
+              <ShieldCheck className="size-4 text-primary" />
               <span>Puntos clave en lenguaje claro</span>
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {keyPoints.map((point, idx) => (
-                <div key={idx} className="rounded-lg border border-border bg-card p-3">
-                  <div className="text-sm font-semibold text-foreground">
+                <div key={idx} className="rounded-lg bg-background/80 p-3 shadow-xs border border-border/50">
+                  <div className="text-xs font-semibold text-foreground">
                     {point.title}
                   </div>
                   <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -113,8 +110,8 @@ export function LegalPage({
 
       {/* Tabla de contenido rápida */}
       {sections.length > 3 && (
-        <nav aria-label="Índice del documento" className="my-8 rounded-xl border border-border bg-surface-sunken p-4">
-          <h2 className="text-sm font-semibold text-foreground">
+        <nav aria-label="Índice del documento" className="my-8 rounded-lg border border-border/60 bg-muted/30 p-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Contenido de esta página
           </h2>
           <ol className="mt-3 grid gap-1.5 sm:grid-cols-2 text-xs">
@@ -122,10 +119,10 @@ export function LegalPage({
               const anchorId = section.id || slugify(section.heading)
               return (
                 <li key={anchorId} className="flex items-center gap-2">
-                  <span className="tabular-nums text-text-tertiary">{index + 1}.</span>
+                  <span className="font-mono text-muted-foreground/70">{index + 1}.</span>
                   <a
                     href={`#${anchorId}`}
-                    className="truncate text-muted-foreground transition-colors hover:text-ia hover:underline"
+                    className="truncate text-foreground/80 hover:text-primary hover:underline transition-colors"
                   >
                     {section.heading.replace(/^\d+\.\s*/, "")}
                   </a>
@@ -142,12 +139,12 @@ export function LegalPage({
           const anchorId = section.id || slugify(section.heading)
           return (
             <section key={anchorId} id={anchorId} className="scroll-mt-24">
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              <h2 className="font-serif text-xl font-medium tracking-tight text-foreground sm:text-2xl">
                 {section.heading}
               </h2>
 
               {section.subheading && (
-                <p className="mt-1 text-xs font-medium text-text-tertiary">
+                <p className="mt-1 text-xs font-medium text-muted-foreground">
                   {section.subheading}
                 </p>
               )}
@@ -156,7 +153,7 @@ export function LegalPage({
               {section.body && section.body.length > 0 && (
                 <div className="mt-3.5 flex flex-col gap-3.5">
                   {section.body.map((paragraph, index) => (
-                    <p key={index} className="text-base leading-relaxed text-muted-foreground text-pretty">
+                    <p key={index} className="text-sm leading-relaxed text-muted-foreground text-pretty">
                       {paragraph}
                     </p>
                   ))}
@@ -165,7 +162,7 @@ export function LegalPage({
 
               {/* Lista con viñetas */}
               {section.list && section.list.length > 0 && (
-                <ul className="mt-4 flex flex-col gap-2 pl-5 text-base leading-relaxed text-muted-foreground list-disc marker:text-text-tertiary">
+                <ul className="mt-4 flex flex-col gap-2 pl-5 text-sm leading-relaxed text-muted-foreground list-disc marker:text-primary">
                   {section.list.map((item, index) => (
                     <li key={index} className="text-pretty">
                       {item}
@@ -178,21 +175,21 @@ export function LegalPage({
               {section.callout && (
                 <div
                   className={cn(
-                    "mt-5 rounded-xl border p-4 text-sm leading-relaxed",
+                    "mt-5 rounded-lg border p-4 text-xs leading-relaxed",
                     section.callout.type === "warning"
-                      ? "border-border bg-warn-tint text-foreground"
+                      ? "border-amber-500/30 bg-amber-500/10 text-foreground"
                       : section.callout.type === "success"
-                      ? "border-border bg-perf-tint text-foreground"
-                      : "border-ia-border bg-ia-tint text-foreground"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-foreground"
+                      : "border-primary/20 bg-primary/5 text-foreground"
                   )}
                 >
                   <div className="flex items-center gap-2 font-medium">
                     {section.callout.type === "warning" ? (
-                      <AlertCircle className="size-4 text-warn-ink" />
+                      <AlertCircle className="size-4 text-amber-600 dark:text-amber-400" />
                     ) : section.callout.type === "success" ? (
-                      <CheckCircle2 className="size-4 text-perf-strong" />
+                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
                     ) : (
-                      <Info className="size-4 text-ia" />
+                      <Info className="size-4 text-primary" />
                     )}
                     <span>{section.callout.title || "Nota importante"}</span>
                   </div>
@@ -202,20 +199,20 @@ export function LegalPage({
 
               {/* Tabla estructurada */}
               {section.table && (
-                <div className="mt-5 overflow-x-auto rounded-xl border border-border">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-surface-sunken text-muted-foreground">
+                <div className="mt-5 overflow-x-auto rounded-lg border border-border">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/70 text-foreground">
                       <tr>
                         {section.table.headers.map((head, i) => (
-                          <th key={i} className="border-b border-border p-3 font-medium">
+                          <th key={i} className="p-3 font-semibold border-b border-border">
                             {head}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border/60">
                       {section.table.rows.map((row, rIdx) => (
-                        <tr key={rIdx} className="transition-colors hover:bg-surface-sunken">
+                        <tr key={rIdx} className="hover:bg-muted/30 transition-colors">
                           {row.map((cell, cIdx) => (
                             <td key={cIdx} className="p-3 align-top text-muted-foreground">
                               {cell}
@@ -234,8 +231,8 @@ export function LegalPage({
 
       {/* Documentos relacionados */}
       {relatedDocs && relatedDocs.length > 0 && (
-        <footer className="mt-16 border-t border-border pt-8">
-          <h3 className="text-base font-semibold text-foreground">
+        <footer className="mt-16 border-t border-border/70 pt-8">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Documentos relacionados
           </h3>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -243,12 +240,12 @@ export function LegalPage({
               <Link
                 key={doc.href}
                 href={doc.href}
-                className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:bg-surface-sunken"
+                className="group flex items-center justify-between rounded-lg border border-border/70 bg-card p-4 transition-colors hover:border-primary/50 hover:bg-muted/40"
               >
-                <span className="text-sm font-medium text-foreground transition-colors group-hover:text-ia">
+                <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
                   {doc.title}
                 </span>
-                <ArrowRight className="size-4 text-text-tertiary transition-all group-hover:translate-x-1 group-hover:text-ia" />
+                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
               </Link>
             ))}
           </div>

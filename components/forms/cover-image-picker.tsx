@@ -49,7 +49,7 @@ export function CoverImagePicker({
     return (
       <div
         className={cn(
-          "group relative w-full overflow-hidden rounded-xl border border-border bg-surface-sunken",
+          "group relative w-full overflow-hidden rounded-xl border border-border bg-muted",
           aspectClasses[aspectRatio],
           className
         )}
@@ -64,7 +64,7 @@ export function CoverImagePicker({
         <button
           type="button"
           onClick={handleClear}
-          className="absolute right-3 top-3 flex size-8 cursor-pointer items-center justify-center rounded-full border border-border bg-card/90 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-card hover:text-foreground"
+          className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-opacity hover:bg-background cursor-pointer"
           title="Quitar portada"
         >
           <X className="size-4" />
@@ -75,8 +75,8 @@ export function CoverImagePicker({
 
   if (showInput) {
     return (
-      <div className={cn("flex flex-col gap-2 rounded-xl border border-dashed border-border bg-surface-sunken p-4", className)}>
-        <div className="flex items-center justify-between text-[13px] font-medium text-foreground">
+      <div className={cn("flex flex-col gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-4", className)}>
+        <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <ImageIcon className="size-4" />
             URL de la imagen de portada
@@ -84,7 +84,7 @@ export function CoverImagePicker({
           <button
             type="button"
             onClick={() => setShowInput(false)}
-            className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground cursor-pointer"
           >
             Cancelar
           </button>
@@ -93,8 +93,8 @@ export function CoverImagePicker({
           <Input
             value={tempUrl}
             onChange={(e) => setTempUrl(e.target.value)}
-            placeholder="https://images.unsplash.com/…"
-            className="h-10 rounded-lg text-sm"
+            placeholder="https://images.unsplash.com/..."
+            className="text-xs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -103,7 +103,7 @@ export function CoverImagePicker({
               }
             }}
           />
-          <Button size="sm" onClick={handleApply} className="h-10 rounded-lg px-4 font-medium">
+          <Button size="sm" onClick={handleApply}>
             Listo
           </Button>
         </div>
@@ -116,7 +116,7 @@ export function CoverImagePicker({
       type="button"
       onClick={() => setShowInput(true)}
       className={cn(
-        "flex cursor-pointer items-center gap-2 self-start rounded-lg border border-dashed border-border px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-surface-sunken hover:text-foreground",
+        "flex items-center gap-2 self-start rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer",
         className
       )}
     >

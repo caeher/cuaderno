@@ -35,15 +35,15 @@ export function CodeBlockComponent({ node, updateAttributes, extension }: NodeVi
   }
 
   return (
-    <NodeViewWrapper className="notion-code-block my-4 overflow-hidden rounded-xl border border-border bg-surface-sunken">
-      <div className="flex items-center justify-between border-b border-border bg-muted px-3.5 py-2 text-sm text-muted-foreground">
+    <NodeViewWrapper className="notion-code-block my-4 overflow-hidden rounded-xl border border-border/80 bg-muted/60 shadow-sm">
+      <div className="flex items-center justify-between border-b border-border/60 bg-muted/90 px-3.5 py-1.5 text-xs text-muted-foreground">
         <div className="flex items-center gap-2">
-          <Terminal className="size-4 text-text-tertiary" />
+          <Terminal className="size-3.5 opacity-70" />
           <select
             contentEditable={false}
             value={currentLanguage}
             onChange={(e) => updateAttributes({ language: e.target.value })}
-            className="cursor-pointer rounded-lg bg-transparent font-medium text-muted-foreground outline-none hover:text-foreground focus:bg-card"
+            className="cursor-pointer rounded bg-transparent font-medium text-foreground/80 outline-none hover:text-foreground focus:bg-background/80"
           >
             {LANGUAGES.map((lang) => (
               <option key={lang.value} value={lang.value} className="bg-popover text-popover-foreground">
@@ -57,17 +57,17 @@ export function CodeBlockComponent({ node, updateAttributes, extension }: NodeVi
           type="button"
           contentEditable={false}
           onClick={handleCopy}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+          className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
           aria-label="Copiar código"
         >
           {copied ? (
             <>
-              <Check className="size-3.5 text-perf" />
-              <span className="font-medium text-perf-strong">Copiado</span>
+              <Check className="size-3 text-green-500" />
+              <span className="text-green-500 font-medium">Copiado</span>
             </>
           ) : (
             <>
-              <Copy className="size-3.5" />
+              <Copy className="size-3" />
               <span>Copiar</span>
             </>
           )}

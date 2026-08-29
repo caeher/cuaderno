@@ -49,14 +49,14 @@ export function OrganizationSettingsSection() {
   }
 
   return (
-    <FieldSet className="rounded-xl border border-border bg-card p-5">
+    <FieldSet>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <FieldLegend className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Building2 className="size-4 text-text-tertiary" />
+          <FieldLegend className="flex items-center gap-2">
+            <Building2 className="size-4 text-primary" />
             Organización del Blog
           </FieldLegend>
-          <FieldDescription className="text-sm text-muted-foreground">
+          <FieldDescription>
             Gestiona la organización de Clerk asociada a este blog, administra colaboradores y roles de equipo.
           </FieldDescription>
         </div>
@@ -76,7 +76,7 @@ export function OrganizationSettingsSection() {
       <FieldGroup className="gap-6">
         {/* Active Organization Info Banner */}
         {organization ? (
-          <Card className="rounded-xl border border-border bg-surface-sunken ring-0">
+          <Card className="border-primary/20 bg-primary/5">
             <CardHeader className="pb-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
@@ -84,28 +84,28 @@ export function OrganizationSettingsSection() {
                     <img
                       src={organization.imageUrl}
                       alt={organization.name}
-                      className="size-10 rounded-lg border border-border object-cover"
+                      className="size-10 rounded-lg object-cover border border-border"
                     />
                   ) : (
-                    <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-card font-semibold text-foreground">
+                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
                       {organization.name.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
+                    <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
                       {organization.name}
-                      <Badge variant="outline" className="rounded-full border-border text-xs font-normal capitalize text-muted-foreground">
+                      <Badge variant="outline" className="text-xs capitalize font-normal">
                         {membership?.role?.replace("org:", "") || "Miembro"}
                       </Badge>
                     </CardTitle>
-                    <CardDescription className="font-mono text-xs text-text-tertiary">
+                    <CardDescription className="text-xs font-mono">
                       Slug: {organization.slug || "sin-slug"} · ID: {organization.id}
                     </CardDescription>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 rounded-full bg-perf-tint px-2.5 py-1 text-xs font-medium text-perf-strong">
-                  <CheckCircle2 className="size-3.5" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 className="size-4 text-emerald-500" />
                   <span>Organización activa</span>
                 </div>
               </div>
@@ -118,13 +118,13 @@ export function OrganizationSettingsSection() {
           </Card>
         ) : (
           /* Personal Workspace Info / Prompt to create Org */
-          <Card className="rounded-xl border border-dashed border-border bg-surface-sunken ring-0">
+          <Card className="border-dashed bg-muted/30">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <Info className="size-4 text-text-tertiary" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Info className="size-4 text-blue-500" />
                 Espacio de Trabajo Personal Activo
               </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
+              <CardDescription className="text-xs">
                 Actualmente estás en tu espacio personal. Para gestionar un blog con múltiples autores, editores o colaboradores, crea o selecciona una Organización en Clerk.
               </CardDescription>
             </CardHeader>
@@ -139,30 +139,30 @@ export function OrganizationSettingsSection() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3 pt-2">
-                <div className="rounded-lg border border-border bg-card p-3">
+                <div className="rounded-md border border-border/60 bg-card p-3">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Building2 className="size-3.5 text-text-tertiary" />
+                    <Building2 className="size-3.5 text-primary" />
                     Un blog, una organización
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     Cada organización en Clerk puede actuar como un blog o publicación independiente.
                   </p>
                 </div>
-                <div className="rounded-lg border border-border bg-card p-3">
+                <div className="rounded-md border border-border/60 bg-card p-3">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Users className="size-3.5 text-text-tertiary" />
+                    <Users className="size-3.5 text-primary" />
                     Equipo y Redactores
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     Invita a redactores, editores y administradores con control de acceso granular.
                   </p>
                 </div>
-                <div className="rounded-lg border border-border bg-card p-3">
+                <div className="rounded-md border border-border/60 bg-card p-3">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                    <Shield className="size-3.5 text-text-tertiary" />
+                    <Shield className="size-3.5 text-primary" />
                     Roles y Permisos
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     Configura quién puede publicar, editar borradores o administrar el blog.
                   </p>
                 </div>
@@ -172,12 +172,12 @@ export function OrganizationSettingsSection() {
         )}
 
         {/* Embedded Clerk Organization Profile Component */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card p-5">
+        <div className="rounded-lg border border-border bg-card p-4 overflow-hidden shadow-xs">
           <div className="mb-4">
             <h4 className="text-sm font-semibold text-foreground">
               {organization ? "Configuración y Miembros de la Organización" : "Crear o Unirse a una Organización"}
             </h4>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {organization
                 ? "Actualiza el nombre, logo, miembros y permisos de la organización según el blog."
                 : "Crea una nueva organización para este blog o selecciona una existente."}

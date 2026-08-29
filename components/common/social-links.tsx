@@ -94,7 +94,7 @@ export function SocialLinks({
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "flex items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-ia-border hover:bg-ia-tint hover:text-ia",
+                "flex items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground",
                 size === "sm" ? "size-8" : "size-9"
               )}
               title={link.label}
@@ -120,7 +120,7 @@ export function SocialLinks({
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 transition-colors hover:text-ia"
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
           >
             <Icon className="size-3.5" />
             {showLabels && <span>{link.label}</span>}

@@ -80,15 +80,15 @@ export function TagMultiSelect({
     <Field className={cn("gap-2.5", className)}>
       <div className="flex items-center justify-between">
         <div>
-          {label && <FieldLabel className="text-[13px] font-medium text-foreground">{label}</FieldLabel>}
-          {description && <FieldDescription className="text-xs text-muted-foreground">{description}</FieldDescription>}
+          {label && <FieldLabel className="text-xs font-semibold">{label}</FieldLabel>}
+          {description && <FieldDescription className="text-[11px]">{description}</FieldDescription>}
         </div>
       </div>
 
       {/* Selected Tags Pills */}
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-surface-sunken p-2">
-          <span className="mr-1 self-center text-xs font-medium text-text-tertiary">
+        <div className="flex flex-wrap gap-1.5 p-2 rounded-md bg-muted/30 border border-border/60">
+          <span className="text-[11px] font-medium text-muted-foreground self-center mr-1">
             Seleccionadas ({selectedTags.length}):
           </span>
           {selectedTags.map((slug) => {
@@ -98,13 +98,13 @@ export function TagMultiSelect({
               <Badge
                 key={slug}
                 variant="secondary"
-                className="h-7 gap-1.5 rounded-full border border-border bg-card py-0 pl-2.5 pr-1 text-xs font-medium text-foreground"
+                className="gap-1.5 pl-2.5 pr-1 py-0.5 text-xs font-normal bg-background hover:bg-muted text-foreground border border-border/80 shadow-xs"
               >
                 <span>#{tagName}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveTag(slug)}
-                  className="cursor-pointer rounded-full p-0.5 text-text-tertiary transition-colors hover:text-foreground"
+                  className="rounded-full p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
                 >
                   <X className="size-3" />
                 </button>
@@ -124,10 +124,10 @@ export function TagMultiSelect({
               type="button"
               onClick={() => handleToggleTag(tag.slug)}
               className={cn(
-                "inline-flex h-7 cursor-pointer items-center gap-1 rounded-full border px-2.5 text-xs transition-colors",
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors cursor-pointer border",
                 isSelected
-                  ? "border-ia-border bg-ia-tint font-medium text-ia"
-                  : "border-border bg-card text-muted-foreground hover:bg-surface-sunken hover:text-foreground"
+                  ? "bg-primary text-primary-foreground border-primary font-medium shadow-xs"
+                  : "bg-background text-muted-foreground border-border/70 hover:border-foreground/30 hover:text-foreground hover:bg-muted/40"
               )}
             >
               {isSelected ? <Check className="size-3 shrink-0" /> : <Hash className="size-3 opacity-50 shrink-0" />}
@@ -143,7 +143,7 @@ export function TagMultiSelect({
             variant="ghost"
             size="xs"
             onClick={() => setIsCreating(true)}
-            className="h-7 gap-1 rounded-full px-2.5 text-xs font-medium text-ia hover:bg-ia-tint hover:text-ia-hover"
+            className="rounded-full text-xs text-primary hover:bg-primary/10 h-6 px-2 gap-1"
           >
             <Plus className="size-3" />
             <span>Nueva etiqueta</span>
@@ -153,15 +153,15 @@ export function TagMultiSelect({
             <Input
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
-              placeholder="Nueva etiqueta…"
-              className="h-7 w-32 rounded-lg px-2 py-0 text-xs"
+              placeholder="Nueva etiqueta..."
+              className="h-6 text-xs w-32 px-2 py-0"
               autoFocus
             />
             <Button
               type="submit"
               size="xs"
               disabled={!newTagName.trim() || isSubmitting}
-              className="h-7 rounded-lg px-3 text-xs font-medium"
+              className="h-6 px-2 text-[11px]"
             >
               {isSubmitting ? "..." : "Añadir"}
             </Button>
@@ -173,7 +173,7 @@ export function TagMultiSelect({
                 setNewTagName("")
                 setIsCreating(false)
               }}
-              className="h-7 px-1.5 text-xs text-text-tertiary hover:text-foreground"
+              className="h-6 px-1.5 text-xs text-muted-foreground"
             >
               <X className="size-3" />
             </Button>

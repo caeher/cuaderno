@@ -81,18 +81,16 @@ export function PostCommentsSection({
 
   return (
     <section className={cn("mt-10", className)} {...props}>
-      <h2 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-foreground">
+      <h2 className="font-serif text-xl font-medium tracking-tight flex items-center gap-2">
         <span>Comentarios</span>
-        <span className="text-sm font-normal tabular-nums text-text-tertiary">
-          ({comments.length})
-        </span>
+        <span className="text-sm font-normal text-muted-foreground">({comments.length})</span>
       </h2>
 
       {/* Add Comment Form */}
       {postId && (
-        <form onSubmit={handleSubmit} className="mt-5 rounded-xl border border-border bg-card p-5">
-          <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <MessageSquarePlus className="size-4 text-text-tertiary" />
+        <form onSubmit={handleSubmit} className="mt-5 rounded-lg border border-border/80 bg-card p-4 shadow-xs">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <MessageSquarePlus className="size-3.5 text-primary" />
             Deja una respuesta
           </h4>
           <div className="flex flex-col gap-3">
@@ -106,7 +104,7 @@ export function PostCommentsSection({
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Escribe tu opinión o reflexión…"
+              placeholder="Escribe tu opinión o reflexión..."
               rows={3}
               required
               className="text-sm"
@@ -114,7 +112,7 @@ export function PostCommentsSection({
             <div className="flex justify-end">
               <Button size="sm" type="submit" disabled={isSubmitting} className="cursor-pointer gap-1.5">
                 <Send className="size-3.5" />
-                {isSubmitting ? "Publicando…" : "Comentar"}
+                {isSubmitting ? "Publicando..." : "Comentar"}
               </Button>
             </div>
           </div>
@@ -122,15 +120,13 @@ export function PostCommentsSection({
       )}
 
       {comments.length > 0 ? (
-        <div className="mt-6 flex flex-col divide-y divide-border">
+        <div className="mt-6 flex flex-col gap-6">
           {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} className="py-5 first:pt-0 last:pb-0" />
+            <CommentItem key={comment.id} comment={comment} />
           ))}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-muted-foreground">
-          Sé el primero en dejar un comentario.
-        </p>
+        <p className="mt-4 text-xs text-muted-foreground italic">Sé el primero en dejar un comentario.</p>
       )}
     </section>
   )

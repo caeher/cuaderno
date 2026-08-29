@@ -92,8 +92,8 @@ export function CategorySelect({
 
   return (
     <Field className={cn("gap-2", className)}>
-      {label && <FieldLabel className="text-[13px] font-medium text-foreground">{label}</FieldLabel>}
-      {description && <FieldDescription className="text-xs text-muted-foreground">{description}</FieldDescription>}
+      {label && <FieldLabel className="text-xs font-semibold">{label}</FieldLabel>}
+      {description && <FieldDescription className="text-[11px]">{description}</FieldDescription>}
 
       <DropdownMenu>
         <DropdownMenuTrigger
@@ -101,7 +101,7 @@ export function CategorySelect({
             <Button
               variant="outline"
               type="button"
-              className="h-10 w-full cursor-pointer justify-between rounded-lg border-border bg-card px-3 text-sm font-normal hover:bg-surface-sunken"
+              className="w-full justify-between font-normal text-xs h-9 px-3 bg-background border-border/80 hover:bg-muted/50 cursor-pointer"
             />
           }
         >
@@ -109,7 +109,7 @@ export function CategorySelect({
             <div className="flex items-center gap-2 truncate">
               <span
                 className="size-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: selectedCategory.color || "var(--cat-2)" }}
+                style={{ backgroundColor: selectedCategory.color || "#3b82f6" }}
               />
               <span className="font-medium text-foreground truncate">{selectedCategory.name}</span>
             </div>
@@ -119,7 +119,7 @@ export function CategorySelect({
               <span>Sin categoría asignada</span>
             </div>
           )}
-          <ChevronDown className="ml-2 size-4 shrink-0 text-text-tertiary" />
+          <ChevronDown className="size-3.5 text-muted-foreground opacity-70 shrink-0 ml-2" />
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="start" className="w-72 p-2">
@@ -129,8 +129,8 @@ export function CategorySelect({
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar categoría…"
-                  className="h-8 rounded-lg text-xs"
+                  placeholder="Buscar categoría..."
+                  className="h-7 text-xs"
                   autoFocus
                 />
               </div>
@@ -140,8 +140,8 @@ export function CategorySelect({
                   onClick={() => onChange(null)}
                   className="flex items-center justify-between text-xs cursor-pointer py-1.5"
                 >
-                  <span className="italic text-muted-foreground">Ninguna (sin categoría)</span>
-                  {!selectedCategoryId && <Check className="size-3.5 text-ia" />}
+                  <span className="text-muted-foreground italic">Ninguna (Sin categoría)</span>
+                  {!selectedCategoryId && <Check className="size-3.5 text-primary" />}
                 </DropdownMenuItem>
 
                 {filteredCategories.map((cat) => {
@@ -155,11 +155,11 @@ export function CategorySelect({
                       <div className="flex items-center gap-2 truncate">
                         <span
                           className="size-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: cat.color || "var(--cat-2)" }}
+                          style={{ backgroundColor: cat.color || "#3b82f6" }}
                         />
                         <span className="truncate">{cat.name}</span>
                       </div>
-                      {isSelected && <Check className="size-3.5 shrink-0 text-ia" />}
+                      {isSelected && <Check className="size-3.5 text-primary shrink-0" />}
                     </DropdownMenuItem>
                   )
                 })}
@@ -178,34 +178,33 @@ export function CategorySelect({
                   setNewCatName(search.trim())
                   setIsCreating(true)
                 }}
-                className="flex cursor-pointer items-center gap-2 py-1.5 text-xs font-medium text-ia"
+                className="flex items-center gap-2 text-xs font-medium text-primary cursor-pointer py-1.5"
               >
                 <Plus className="size-3.5" />
-                <span>Crear nueva categoría…</span>
+                <span>Crear nueva categoría...</span>
               </DropdownMenuItem>
             </>
           ) : (
             <form onSubmit={handleQuickCreate} className="flex flex-col gap-2 p-1">
-              <span className="text-[13px] font-medium text-foreground">Nueva categoría</span>
+              <span className="text-xs font-semibold text-foreground">Nueva categoría</span>
               <Input
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Nombre de categoría…"
-                className="h-8 rounded-lg text-xs"
+                placeholder="Nombre de categoría..."
+                className="h-7 text-xs"
                 autoFocus
               />
 
               <div className="flex items-center gap-1.5 py-1">
-                <span className="mr-1 text-xs text-muted-foreground">Color:</span>
+                <span className="text-[11px] text-muted-foreground mr-1">Color:</span>
                 {COLOR_PALETTE.map((color) => (
                   <button
                     key={color}
                     type="button"
                     onClick={() => setSelectedColor(color)}
                     className={cn(
-                      "size-4 cursor-pointer rounded-full border border-border transition-transform",
-                      selectedColor === color &&
-                        "scale-110 ring-2 ring-ia ring-offset-2 ring-offset-card"
+                      "size-4 rounded-full transition-transform cursor-pointer border border-background",
+                      selectedColor === color && "ring-2 ring-primary ring-offset-1 scale-110"
                     )}
                     style={{ backgroundColor: color }}
                   />
@@ -218,7 +217,7 @@ export function CategorySelect({
                   variant="ghost"
                   size="xs"
                   onClick={() => setIsCreating(false)}
-                  className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs h-6 px-2"
                 >
                   Cancelar
                 </Button>
@@ -226,7 +225,7 @@ export function CategorySelect({
                   type="submit"
                   size="xs"
                   disabled={!newCatName.trim() || isSubmitting}
-                  className="h-8 rounded-lg px-3 text-xs font-medium"
+                  className="text-xs h-6 px-2"
                 >
                   {isSubmitting ? "Creando..." : "Guardar"}
                 </Button>

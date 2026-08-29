@@ -18,37 +18,30 @@ export function PageHeader({
   className,
   ...props
 }: PageHeaderProps) {
-  const centrado = align === "center"
-
   return (
     <header
       className={cn(
-        "flex flex-col gap-4",
-        centrado
-          ? "mx-auto max-w-2xl items-center text-center"
-          : "md:flex-row md:items-start md:justify-between md:gap-6",
+        "flex flex-col gap-3",
+        align === "center" ? "mx-auto max-w-2xl text-center items-center" : "max-w-2xl",
         className
       )}
       {...props}
     >
-      <div className={cn("min-w-0", centrado && "flex flex-col items-center")}>
-        {eyebrow && (
-          <span className="mb-2 block font-mono text-xs font-medium uppercase tracking-widest text-ia">
-            {eyebrow}
-          </span>
-        )}
-        <h1 className="text-2xl font-semibold leading-[1.15] tracking-[-0.02em] text-balance text-foreground md:text-3xl">
+      {eyebrow && (
+        <span className="font-mono text-xs font-medium uppercase tracking-widest text-primary">
+          {eyebrow}
+        </span>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="font-serif text-3xl font-medium tracking-tight text-balance sm:text-4xl">
           {title}
         </h1>
-        {description && (
-          <p className="mt-2 max-w-[60ch] text-sm leading-[1.55] text-muted-foreground text-pretty">
-            {description}
-          </p>
-        )}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-
-      {actions && (
-        <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>
+      {description && (
+        <p className="text-base leading-relaxed text-muted-foreground text-pretty">
+          {description}
+        </p>
       )}
     </header>
   )

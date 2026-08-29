@@ -20,7 +20,7 @@ export function PostCoverImage({
   return (
     <div
       className={cn(
-        "relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border bg-surface-sunken",
+        "relative mt-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-border/70 bg-muted shadow-xs",
         className
       )}
     >
