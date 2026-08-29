@@ -1,8 +1,9 @@
-import { getAllCategories, getAllTags } from "@/lib/application/blog-use-cases"
-import { DesignerStudio } from "@/components/designer/designer-studio"
+import { redirect } from "next/navigation"
 
-export default async function NewPostDesignerPage() {
-  const [tags, categories] = await Promise.all([getAllTags(), getAllCategories()])
-  return <DesignerStudio post={null} allTags={tags} allCategories={categories} />
+/**
+ * @deprecated Post-level designer is deprecated.
+ * Blog design is now managed globally per tenant at /panel/disenador.
+ */
+export default function NewPostDesignerPage() {
+  redirect("/panel/posts/nuevo")
 }
-

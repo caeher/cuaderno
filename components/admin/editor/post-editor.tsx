@@ -91,7 +91,7 @@ export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: P
 
   return (
     <div className="flex flex-1 flex-col pb-16">
-      <AdminTopbar title={mode === "create" ? "Nuevo post (Notion)" : "Editar post"}>
+      <AdminTopbar title={mode === "create" ? "Nuevo post" : "Editar post"}>
         <EditorActionBar
           mode={mode}
           postId={initialPost?.id}

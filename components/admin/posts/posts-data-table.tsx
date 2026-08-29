@@ -10,7 +10,6 @@ import {
   Eye,
   MoreHorizontal,
   Pencil,
-  Palette,
   Copy,
   Trash2,
   Star,
@@ -586,11 +585,6 @@ export function PostsDataTable({
                           <Link href={`/panel/posts/${post.id}`} className="hover:underline font-medium truncate">
                             {post.title}
                           </Link>
-                          {post.editorMode === "elementor" && (
-                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 shrink-0 text-violet-600 dark:text-violet-400 border-violet-300 dark:border-violet-800">
-                              Diseñador
-                            </Badge>
-                          )}
                         </div>
                         {post.excerpt && (
                           <span className="text-xs text-muted-foreground truncate">{post.excerpt}</span>
@@ -674,9 +668,6 @@ export function PostsDataTable({
                             <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}`} />}>
                               <Pencil data-icon="inline-start" /> Editar post
                             </DropdownMenuItem>
-                            <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}/designer`} />}>
-                              <Palette data-icon="inline-start" /> Diseñador visual
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDuplicate(post.id)}>
                               <Copy data-icon="inline-start" /> Duplicar
                             </DropdownMenuItem>
@@ -734,11 +725,6 @@ export function PostsDataTable({
                           <span className="truncate max-w-[90px]">{category.name}</span>
                         </div>
                       )}
-                      {post.editorMode === "elementor" && (
-                        <Badge variant="outline" className="text-[10px] text-violet-600 dark:text-violet-400 border-violet-300">
-                          Diseñador
-                        </Badge>
-                      )}
                     </div>
                     <button
                       onClick={() => handleToggleFeatured(post.id)}
@@ -770,9 +756,6 @@ export function PostsDataTable({
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}`} />}>
                           <Pencil data-icon="inline-start" /> Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}/designer`} />}>
-                          <Palette data-icon="inline-start" /> Diseñador
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDuplicate(post.id)}>
                           <Copy data-icon="inline-start" /> Duplicar

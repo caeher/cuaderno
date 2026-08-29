@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ArrowRight, Eye, MoreHorizontal, Palette, Pencil, Star } from "lucide-react"
+import { ArrowRight, Eye, MoreHorizontal, Pencil, Star } from "lucide-react"
 import type { Post } from "@/lib/domain/entities"
 import { formatCompactNumber, formatShortDate } from "@/lib/format"
 import { Button } from "@/components/ui/button"
@@ -35,7 +35,7 @@ export function RecentPostsCard({ posts }: RecentPostsCardProps) {
       <CardHeader className="flex-row items-center justify-between space-y-0">
         <div>
           <CardTitle>Posts recientes</CardTitle>
-          <CardDescription>Tus últimas publicaciones, borradores y diseños.</CardDescription>
+          <CardDescription>Tus últimas publicaciones y borradores.</CardDescription>
         </div>
         <Button variant="ghost" size="sm" render={<Link href="/panel/posts" />}>
           Ver todos ({posts.length})
@@ -73,11 +73,6 @@ export function RecentPostsCard({ posts }: RecentPostsCardProps) {
                       <Link href={`/panel/posts/${post.id}`} className="hover:underline truncate">
                         {post.title}
                       </Link>
-                      {post.editorMode === "elementor" && (
-                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 shrink-0 text-violet-600 dark:text-violet-400 border-violet-300 dark:border-violet-800">
-                          Diseñador
-                        </Badge>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -100,11 +95,7 @@ export function RecentPostsCard({ posts }: RecentPostsCardProps) {
                         <DropdownMenuGroup>
                           <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}`} />} className="cursor-pointer">
                             <Pencil data-icon="inline-start" />
-                            Editar (Tiptap)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}/designer`} />} className="cursor-pointer">
-                            <Palette data-icon="inline-start" />
-                            Diseñador Visual
+                            Editar
                           </DropdownMenuItem>
                           {post.status === "published" && (
                             <DropdownMenuItem
