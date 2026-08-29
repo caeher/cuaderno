@@ -136,6 +136,8 @@ export interface WidgetMeta {
   description: string
   category: BlockCategory
   icon: string
+  allowedSlots?: ("home" | "post" | "header" | "footer")[]
+  isDynamic?: boolean
   defaultProps: Record<string, any>
   defaultStyle: BlockStyle
   defaultChildren?: () => BlockNode[]

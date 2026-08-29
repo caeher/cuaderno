@@ -9,6 +9,10 @@ import type { BlockNode } from "./block-schema"
 import type { Category, Post, User, Comment } from "./entities"
 
 export type TemplateSlotType = "home" | "post" | "header" | "footer"
+export type TemplateStatus = "draft" | "published"
+
+export const CURRENT_TEMPLATE_SCHEMA_VERSION = "1.0" as const
+export type TemplateSchemaVersion = typeof CURRENT_TEMPLATE_SCHEMA_VERSION
 
 export interface TenantTemplateSettings {
   primaryColor?: string
@@ -25,7 +29,7 @@ export interface TenantTemplate {
   id: string
   tenantId: string // Organization ID (org_xxx) or User ID (user_xxx)
   tenantType: "organization" | "user"
-  schemaVersion: "1.0"
+  schemaVersion: TemplateSchemaVersion
   version: number // Monotonically increasing revision counter
   name: string
   draftSlots: SlotBlocksMap
@@ -36,6 +40,11 @@ export interface TenantTemplate {
   updatedAt: string
   createdAt: string
 }
+
+/**
+ * Domain alias for TenantTemplate
+ */
+export type BlogTemplate = TenantTemplate
 
 export interface TemplateRevision {
   id: string
