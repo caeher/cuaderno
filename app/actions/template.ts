@@ -10,7 +10,7 @@ import {
   rollbackTenantTemplate,
   saveTenantTemplateDraft,
 } from "@/lib/application/tenant/template-use-cases"
-import { getCurrentUser } from "@/lib/application/users"
+import { resolveAndAuthorizeTenant } from "@/lib/application/tenant/tenant-auth"
 
 function revalidateTenantPages(tenantSlug?: string) {
   revalidatePath("/")
@@ -22,13 +22,20 @@ function revalidateTenantPages(tenantSlug?: string) {
   }
 }
 
-export async function getTenantTemplateAction(tenantId: string, tenantType: "organization" | "user" = "user") {
+export async function getTenantTemplateAction(
+  tenantId?: string,
+  tenantType?: "organization" | "user"
+) {
   try {
-    const template = await getOrCreateTenantTemplate(tenantId, tenantType)
+    const authContext = await resolveAndAuthorizeTenant(tenantId)
+    const effectiveTenantId = tenantId || authContext.tenantId
+    const effectiveTenantType = tenantType || authContext.tenantType
+
+    const template = await getOrCreateTenantTemplate(effectiveTenantId, effectiveTenantType)
     return { success: true, template }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error loading tenant template:", error)
-    return { success: false, error: "No se pudo cargar la plantilla del tenant" }
+    return { success: false, error: error?.message || "No se pudo cargar la plantilla del tenant" }
   }
 }
 
@@ -37,11 +44,13 @@ export async function saveTenantTemplateDraftAction(
   input: UpdateTemplateDraftInput
 ) {
   try {
-    const updated = await saveTenantTemplateDraft(tenantId, input)
+    const authContext = await resolveAndAuthorizeTenant(tenantId)
+    const updated = await saveTenantTemplateDraft(authContext.tenantId, input)
+    revalidatePath("/panel/disenador")
     return { success: true, template: updated }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error saving tenant template draft:", error)
-    return { success: false, error: "Error al guardar el borrador de la plantilla" }
+    return { success: false, error: error?.message || "Error al guardar el borrador de la plantilla" }
   }
 }
 
@@ -51,25 +60,26 @@ export async function publishTenantTemplateAction(
   tenantSlug?: string
 ) {
   try {
-    const currentUser = await getCurrentUser().catch(() => null)
-    const publishedBy = currentUser?.name || currentUser?.username || "Administrador"
+    const authContext = await resolveAndAuthorizeTenant(tenantId)
+    const publishedBy = authContext.userName || "Administrador"
 
-    const updated = await publishTenantTemplate(tenantId, publishedBy, changeSummary)
+    const updated = await publishTenantTemplate(authContext.tenantId, publishedBy, changeSummary)
     revalidateTenantPages(tenantSlug)
     return { success: true, template: updated }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error publishing tenant template:", error)
-    return { success: false, error: "Error al publicar la plantilla" }
+    return { success: false, error: error?.message || "Error al publicar la plantilla" }
   }
 }
 
 export async function getTenantTemplateRevisionsAction(tenantId: string) {
   try {
-    const revisions = await getTenantTemplateRevisions(tenantId)
+    const authContext = await resolveAndAuthorizeTenant(tenantId)
+    const revisions = await getTenantTemplateRevisions(authContext.tenantId)
     return { success: true, revisions }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching template revisions:", error)
-    return { success: false, error: "Error al obtener el historial de revisiones" }
+    return { success: false, error: error?.message || "Error al obtener el historial de revisiones" }
   }
 }
 
@@ -79,14 +89,15 @@ export async function rollbackTenantTemplateAction(
   tenantSlug?: string
 ) {
   try {
-    const updated = await rollbackTenantTemplate(tenantId, revisionId)
+    const authContext = await resolveAndAuthorizeTenant(tenantId)
+    const updated = await rollbackTenantTemplate(authContext.tenantId, revisionId)
     if (!updated) {
       return { success: false, error: "Revisión no encontrada" }
     }
     revalidateTenantPages(tenantSlug)
     return { success: true, template: updated }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error rolling back template revision:", error)
-    return { success: false, error: "Error al restaurar la versión anterior" }
+    return { success: false, error: error?.message || "Error al restaurar la versión anterior" }
   }
 }
