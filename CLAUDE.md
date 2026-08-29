@@ -1,5 +1,15 @@
 @AGENTS.md
 
+Este archivo es el punto de entrada de **Claude Code**. La guía del producto, capas, auth, Convex y Composer vive en `AGENTS.md`. No dupliques convenciones aquí: actualiza `AGENTS.md` y deja este archivo para tooling de Claude.
+
+## Arranque de una tarea
+
+1. Lee `AGENTS.md` y, si el cambio toca un área documentada, el doc de `docs/` que corresponda (tabla al final de `AGENTS.md`).
+2. Localiza el símbolo o el flujo con graphify / ebrain (abajo) antes de un `grep` exploratorio.
+3. Respeta las capas: dominio → application → infrastructure → `convex/` / Server Action delgada.
+4. Next.js 16: confirma APIs en `node_modules/next/dist/docs/` si no estás seguro. El middleware del repo es `proxy.ts`.
+5. Convex en local: `pnpm dev` o `pnpm convex:dev`. Nunca `convex deploy` salvo producción explícita.
+
 ## ebrain Search + Code Guidance
 <!-- ebrain-guidance:start -->
 

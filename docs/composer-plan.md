@@ -190,13 +190,8 @@ Estas no las puede resolver quien implemente; son de producto o de cuenta.
 
 ## 11. Estado
 
-**#15 está implementado** (`convex/schema.ts`, `convex/lib/composerState.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y el registro de uso.
+- **#14 está implementado**: SDK de OpenAI en servidor, resolución de modelos por entorno (`convex/lib/ai/config.ts`), cliente Responses API e imágenes (`convex/lib/ai/client.ts`), moderación y registro de uso (`aiUsageEvents`).
+- **#15 está implementado** (`convex/schema.ts`, `convex/lib/composerState.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y retención.
+- **#16 está implementado**: Investigación web trazable y económica vía OpenAI Responses API con herramienta `web_search` (`search_context_size: low`), presupuesto de consultas (`OPENAI_MAX_RESEARCH_QUERIES`), extracción y normalización de dominios y URLs canónicas, clasificación epistémica (hechos confirmados, inferencias y lagunas de información), blindaje contra prompt injection, exclusión/revisión de fuentes y action orquestadora `executeResearchJob`.
 
-El resto de la épica NO está implementado. Prerrequisitos que hoy no se cumplen:
-
-- No hay SDK de OpenAI en `package.json`.
-- No existen las tablas de Composer en `convex/schema.ts`.
-- No hay proveedor de búsqueda.
-- El repo recién clonado no tiene `node_modules`.
-
-El siguiente paso concreto es **#14**: agregar el SDK, escribir `convex/lib/ai/` con el cliente server-only y la resolución de modelos por entorno, y dejar el registro de uso funcionando. Es la pieza que desbloquea a las otras seis y no depende de ninguna decisión de producto pendiente salvo la clave.
+El siguiente paso concreto es **#17: Borrador**: estructuración del post, generación de título, outline detallado, artículo completo, extracto y taxonomías a partir de las fuentes verificadas.

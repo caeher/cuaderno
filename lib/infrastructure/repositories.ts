@@ -9,6 +9,7 @@
 import type {
   CategoryRepository,
   CommentRepository,
+  ComposerRepository,
   NarrationRepository,
   PostRepository,
   TagRepository,
@@ -18,6 +19,7 @@ import type {
 import {
   ConvexCategoryRepository,
   ConvexCommentRepository,
+  ConvexComposerRepository,
   ConvexNarrationRepository,
   ConvexPostRepository,
   ConvexTagRepository,
@@ -33,6 +35,7 @@ export interface Repositories {
   commentRepository: CommentRepository
   templateRepository: TemplateRepository
   narrationRepository: NarrationRepository
+  composerRepository: ComposerRepository
 }
 
 export function createRepositories(): Repositories {
@@ -44,6 +47,7 @@ export function createRepositories(): Repositories {
     commentRepository: new ConvexCommentRepository(),
     templateRepository: new ConvexTemplateRepository(),
     narrationRepository: new ConvexNarrationRepository(),
+    composerRepository: new ConvexComposerRepository(),
   }
 }
 
@@ -56,4 +60,5 @@ export const tagRepository: TagRepository = instances.tagRepository
 export const commentRepository: CommentRepository = instances.commentRepository
 export const templateRepository: TemplateRepository = instances.templateRepository
 export const narrationRepository: NarrationRepository = instances.narrationRepository
+export const composerRepository: ComposerRepository = instances.composerRepository
 

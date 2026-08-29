@@ -22,7 +22,8 @@
 
 import { v } from "convex/values"
 
-import { internalMutation, mutation, query } from "./_generated/server"
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server"
+import { internal } from "./_generated/api"
 import type { Doc, Id } from "./_generated/dataModel"
 import { requireTenantAuth } from "./lib/auth"
 import {
@@ -31,6 +32,7 @@ import {
   type ComposerSessionStatus,
 } from "./lib/composerState"
 import { calculateReadingTime, getCurrentIsoTimestamp } from "./lib/helpers"
+import { isComposerEnabledForTenant } from "./lib/ai/config"
 import { composerBriefValidator, composerSessionStatusValidator } from "./schema"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,6 +94,61 @@ export const getSession = query({
   },
 })
 
+export const getSessionInternal = internalQuery({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.sessionId)
+  },
+})
+
+export const getJobInternal = internalQuery({
+  args: { jobId: v.id("composerJobs") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.jobId)
+  },
+})
+
+export const getSessionSourcesInternal = internalQuery({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("composerSources")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect()
+  },
+})
+
+export const getSessionArtifactsInternal = internalQuery({
+  args: {
+    sessionId: v.id("composerSessions"),
+    kind: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const artifacts = await ctx.db
+      .query("composerArtifacts")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect()
+
+    const vigentes = artifacts.filter((a: Doc<"composerArtifacts">) => !a.supersededBy)
+    return args.kind
+      ? vigentes.filter((a: Doc<"composerArtifacts">) => a.kind === args.kind)
+      : vigentes
+  },
+})
+
+export const updateSessionTitleInternal = internalMutation({
+  args: {
+    sessionId: v.id("composerSessions"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.sessionId, {
+      title: args.title,
+      updatedAt: getCurrentIsoTimestamp(),
+    })
+  },
+})
+
 export const getSessionMessages = query({
   args: { sessionId: v.id("composerSessions") },
   handler: async (ctx, args) => {
@@ -145,6 +202,42 @@ export const getSessionArtifacts = query({
   },
 })
 
+export const getSessionCoverImage = query({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    const { session } = await requireOwnedSession(ctx, args.sessionId)
+
+    const artifacts = await ctx.db
+      .query("composerArtifacts")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect()
+
+    const vigentes = artifacts.filter((a: Doc<"composerArtifacts">) => !a.supersededBy)
+    const cover = vigentes.find((a: Doc<"composerArtifacts">) => a.kind === "cover")
+    const altTextArtifact = vigentes.find((a: Doc<"composerArtifacts">) => a.kind === "altText")
+
+    if (!cover || !cover.storageId) {
+      return {
+        hasCover: false,
+        wantsCover: session.brief.wantsCoverImage !== false,
+      }
+    }
+
+    const url = await ctx.storage.getUrl(cover.storageId)
+
+    return {
+      hasCover: true,
+      storageId: cover.storageId,
+      url,
+      altText: altTextArtifact?.content || "",
+      version: cover.version,
+      wantsCover: session.brief.wantsCoverImage !== false,
+      createdAt: cover.createdAt,
+      aiGenerated: true,
+    }
+  },
+})
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sesión
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,6 +246,11 @@ export const createSession = mutation({
   args: { brief: v.optional(composerBriefValidator) },
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
+    if (!isComposerEnabledForTenant(identity.tenantId)) {
+      throw new Error(
+        "Composer no está disponible para este tenant en este momento."
+      )
+    }
     const now = getCurrentIsoTimestamp()
 
     return await ctx.db.insert("composerSessions", {
@@ -201,6 +299,30 @@ export const appendMessage = mutation({
     const messageId = await ctx.db.insert("composerMessages", {
       sessionId: args.sessionId,
       tenantId,
+      role: args.role,
+      content: args.content,
+      createdAt: now,
+    })
+
+    await ctx.db.patch(session._id, { updatedAt: now })
+    return messageId
+  },
+})
+
+export const appendMessageInternal = internalMutation({
+  args: {
+    sessionId: v.id("composerSessions"),
+    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId)
+    if (!session) throw new Error("Sesión de Composer no encontrada.")
+    const now = getCurrentIsoTimestamp()
+
+    const messageId = await ctx.db.insert("composerMessages", {
+      sessionId: args.sessionId,
+      tenantId: session.tenantId,
       role: args.role,
       content: args.content,
       createdAt: now,
@@ -292,6 +414,12 @@ export const enqueueJob = mutation({
   handler: async (ctx, args) => {
     const { session, tenantId } = await requireOwnedSession(ctx, args.sessionId)
 
+    if (!isComposerEnabledForTenant(tenantId)) {
+      throw new Error(
+        "Composer no está disponible para este tenant en este momento."
+      )
+    }
+
     if (isTerminalStatus(session.status as ComposerSessionStatus)) {
       throw new Error(
         `La sesión está en estado "${session.status}" y no admite nuevos trabajos.`
@@ -307,7 +435,7 @@ export const enqueueJob = mutation({
 
     if (existing) return existing._id
 
-    return await ctx.db.insert("composerJobs", {
+    const jobId = await ctx.db.insert("composerJobs", {
       sessionId: args.sessionId,
       tenantId,
       kind: args.kind,
@@ -316,6 +444,31 @@ export const enqueueJob = mutation({
       attempt: 0,
       createdAt: getCurrentIsoTimestamp(),
     })
+
+    // Despacho asíncrono seguro vía scheduler de Convex
+    if (args.kind === "research") {
+      await ctx.scheduler.runAfter(0, internal.aiNode.executeResearchJob, {
+        sessionId: args.sessionId,
+        jobId,
+      })
+    } else if (args.kind === "outline") {
+      await ctx.scheduler.runAfter(0, internal.aiNode.executeOutlineJob, {
+        sessionId: args.sessionId,
+        jobId,
+      })
+    } else if (args.kind === "article") {
+      await ctx.scheduler.runAfter(0, internal.aiNode.executeDraftingJob, {
+        sessionId: args.sessionId,
+        jobId,
+      })
+    } else if (args.kind === "image") {
+      await ctx.scheduler.runAfter(0, internal.aiNode.executeImageJob, {
+        sessionId: args.sessionId,
+        jobId,
+      })
+    }
+
+    return jobId
   },
 })
 
@@ -377,10 +530,24 @@ export const recordSources = internalMutation({
       v.object({
         url: v.string(),
         title: v.optional(v.string()),
+        domain: v.optional(v.string()),
         publisher: v.optional(v.string()),
         publishedAt: v.optional(v.string()),
         snippet: v.optional(v.string()),
-        claims: v.array(v.object({ text: v.string(), offset: v.optional(v.number()) })),
+        isExcluded: v.optional(v.boolean()),
+        claims: v.array(
+          v.object({
+            text: v.string(),
+            offset: v.optional(v.number()),
+            status: v.optional(
+              v.union(
+                v.literal("confirmed"),
+                v.literal("inferred"),
+                v.literal("unverified")
+              )
+            ),
+          })
+        ),
       })
     ),
   },
@@ -401,7 +568,14 @@ export const recordSources = internalMutation({
         .first()
 
       if (existing) {
-        await ctx.db.patch(existing._id, { claims: source.claims, fetchedAt: now })
+        await ctx.db.patch(existing._id, {
+          title: source.title ?? existing.title,
+          domain: source.domain ?? existing.domain,
+          publisher: source.publisher ?? existing.publisher,
+          snippet: source.snippet ?? existing.snippet,
+          claims: source.claims,
+          fetchedAt: now,
+        })
         continue
       }
 
@@ -412,6 +586,33 @@ export const recordSources = internalMutation({
         ...source,
       })
     }
+  },
+})
+
+/**
+ * Permite al usuario revisar y descartar/re-incluir una fuente antes de confirmar el brief.
+ */
+export const toggleSourceExclusion = mutation({
+  args: {
+    sessionId: v.id("composerSessions"),
+    sourceId: v.id("composerSources"),
+    isExcluded: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const { session } = await requireOwnedSession(ctx, args.sessionId)
+
+    const source = await ctx.db.get(args.sourceId)
+    if (
+      !source ||
+      source.sessionId !== args.sessionId ||
+      source.tenantId !== session.tenantId
+    ) {
+      throw new Error("Fuente no encontrada para esta sesión.")
+    }
+
+    await ctx.db.patch(args.sourceId, {
+      isExcluded: args.isExcluded,
+    })
   },
 })
 
@@ -470,6 +671,79 @@ export const recordArtifact = internalMutation({
   },
 })
 
+/**
+ * Permite al usuario editar el texto alternativo (alt text) de la portada de la sesión.
+ */
+export const updateCoverAltText = mutation({
+  args: {
+    sessionId: v.id("composerSessions"),
+    altText: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { session, tenantId } = await requireOwnedSession(ctx, args.sessionId)
+
+    const cleanAltText = args.altText.trim()
+    const now = getCurrentIsoTimestamp()
+
+    const previos = await ctx.db
+      .query("composerArtifacts")
+      .withIndex("by_session_and_kind", (q) =>
+        q.eq("sessionId", args.sessionId).eq("kind", "altText")
+      )
+      .collect()
+
+    const vigente = previos.find((a: Doc<"composerArtifacts">) => !a.supersededBy)
+    const version = previos.reduce(
+      (max: number, a: Doc<"composerArtifacts">) => Math.max(max, a.version),
+      0
+    )
+
+    const nuevoId = await ctx.db.insert("composerArtifacts", {
+      sessionId: args.sessionId,
+      tenantId,
+      kind: "altText",
+      content: cleanAltText,
+      version: version + 1,
+      createdAt: now,
+    })
+
+    if (vigente) {
+      await ctx.db.patch(vigente._id, { supersededBy: nuevoId })
+    }
+
+    await ctx.db.patch(session._id, { updatedAt: now })
+    return nuevoId
+  },
+})
+
+/**
+ * Descarta la imagen de portada para que no se incluya en el borrador final.
+ */
+export const dismissCoverImage = mutation({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    const { session } = await requireOwnedSession(ctx, args.sessionId)
+    await ctx.db.patch(session._id, {
+      brief: { ...session.brief, wantsCoverImage: false },
+      updatedAt: getCurrentIsoTimestamp(),
+    })
+  },
+})
+
+/**
+ * Restaura o aprueba la inclusión de la portada en el borrador final.
+ */
+export const restoreCoverImage = mutation({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    const { session } = await requireOwnedSession(ctx, args.sessionId)
+    await ctx.db.patch(session._id, {
+      brief: { ...session.brief, wantsCoverImage: true },
+      updatedAt: getCurrentIsoTimestamp(),
+    })
+  },
+})
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Observabilidad
 // ─────────────────────────────────────────────────────────────────────────────
@@ -502,6 +776,56 @@ export const recordUsage = internalMutation({
       createdAt: getCurrentIsoTimestamp(),
     })
     return null
+  },
+})
+
+/**
+ * Consulta la telemetría y coste acumulado de una sesión de Composer.
+ *
+ * Devuelve el total estimado en USD, tokens de entrada/salida y llamadas realizadas
+ * validando siempre la pertenencia al tenant.
+ */
+export const getSessionUsage = query({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    const { tenantId } = await requireOwnedSession(ctx, args.sessionId)
+
+    const events = await ctx.db
+      .query("aiUsageEvents")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect()
+
+    const tenantEvents = events.filter((e: Doc<"aiUsageEvents">) => e.tenantId === tenantId)
+
+    const totalEstimatedCostUsd = tenantEvents.reduce(
+      (sum: number, e: Doc<"aiUsageEvents">) => sum + (e.estimatedCostUsd || 0),
+      0
+    )
+    const totalInputTokens = tenantEvents.reduce(
+      (sum: number, e: Doc<"aiUsageEvents">) => sum + (e.inputTokens || 0),
+      0
+    )
+    const totalOutputTokens = tenantEvents.reduce(
+      (sum: number, e: Doc<"aiUsageEvents">) => sum + (e.outputTokens || 0),
+      0
+    )
+    const totalImageCount = tenantEvents.reduce(
+      (sum: number, e: Doc<"aiUsageEvents">) => sum + (e.imageCount || 0),
+      0
+    )
+    const totalToolCalls = tenantEvents.reduce(
+      (sum: number, e: Doc<"aiUsageEvents">) => sum + (e.toolCalls || 0),
+      0
+    )
+
+    return {
+      events: tenantEvents,
+      totalEstimatedCostUsd: Math.round(totalEstimatedCostUsd * 1_000_000) / 1_000_000,
+      totalInputTokens,
+      totalOutputTokens,
+      totalImageCount,
+      totalToolCalls,
+    }
   },
 })
 
@@ -568,22 +892,31 @@ export const createDraftFromSession = mutation({
     // Las etiquetas llegan como JSON del modelo: si viene mal formado se ignora en vez
     // de tumbar el handoff. Perder etiquetas es recuperable; perder el artículo no.
     let tags: string[] = []
+    let suggestedSlugFromTaxonomy: string | undefined
     const taxonomy = porTipo("taxonomy")
     if (taxonomy?.content) {
       try {
         const parsed = JSON.parse(taxonomy.content)
         if (Array.isArray(parsed)) {
           tags = parsed.filter((x: unknown): x is string => typeof x === "string")
-        } else if (parsed && Array.isArray(parsed.tags)) {
-          tags = parsed.tags.filter((x: unknown): x is string => typeof x === "string")
+        } else if (parsed && typeof parsed === "object") {
+          if (Array.isArray(parsed.tags)) {
+            tags = parsed.tags.filter((x: unknown): x is string => typeof x === "string")
+          } else if (Array.isArray(parsed.suggestedTags)) {
+            tags = parsed.suggestedTags.filter((x: unknown): x is string => typeof x === "string")
+          }
+          if (typeof parsed.suggestedSlug === "string" && parsed.suggestedSlug.trim()) {
+            suggestedSlugFromTaxonomy = parsed.suggestedSlug.trim()
+          }
         }
       } catch {
         tags = []
       }
     }
 
+    const wantsCover = session.brief.wantsCoverImage !== false
     const cover = porTipo("cover")
-    const coverUrl = cover?.storageId ? await ctx.storage.getUrl(cover.storageId) : undefined
+    const coverUrl = wantsCover && cover?.storageId ? await ctx.storage.getUrl(cover.storageId) : undefined
 
     const title =
       session.title?.trim() ||
@@ -591,7 +924,7 @@ export const createDraftFromSession = mutation({
       "Borrador sin título"
 
     // Slug único dentro del tenant: se sufija hasta encontrar uno libre.
-    const base = slugify(title) || "borrador"
+    const base = (suggestedSlugFromTaxonomy ? slugify(suggestedSlugFromTaxonomy) : "") || slugify(title) || "borrador"
     let slug = base
     let intento = 1
     while (

@@ -43,9 +43,20 @@ export interface TextGenerationInput {
   maxOutputTokens?: number
 }
 
+export interface ResearchClaim {
+  text: string
+  offset?: number
+  status?: "confirmed" | "inferred" | "unverified"
+}
+
 export interface ResearchSource {
   url: string
   title?: string
+  domain?: string
+  publisher?: string
+  publishedAt?: string
+  snippet?: string
+  claims?: ResearchClaim[]
 }
 
 export interface TextGenerationResult {
@@ -60,6 +71,39 @@ export interface ImageGenerationResult {
   imageCount: number
   b64Json?: string
   usage: UsageSnapshot
+}
+
+export function extractDomainFromUrl(rawUrl: string): string | undefined {
+  try {
+    const parsed = new URL(rawUrl)
+    return parsed.hostname.replace(/^www\./, "").toLowerCase()
+  } catch {
+    return undefined
+  }
+}
+
+export function canonicalizeUrl(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl)
+    const trackingParams = [
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "utm_term",
+      "utm_content",
+      "fbclid",
+      "gclid",
+      "_ga",
+      "ref",
+    ]
+    for (const param of trackingParams) {
+      parsed.searchParams.delete(param)
+    }
+    parsed.hash = ""
+    return parsed.toString().replace(/\/+$/, "")
+  } catch {
+    return rawUrl.trim()
+  }
 }
 
 function isTransient(error: unknown): boolean {
@@ -108,14 +152,37 @@ function extractRefusal(response: Response): string | undefined {
   return undefined
 }
 
-function extractSources(response: Response): ResearchSource[] {
-  const seen = new Set<string>()
-  const sources: ResearchSource[] = []
+export function extractSources(response: Response): ResearchSource[] {
+  const sourcesMap = new Map<string, ResearchSource>()
 
-  const add = (url: string, title?: string) => {
-    if (!url || seen.has(url)) return
-    seen.add(url)
-    sources.push({ url, title })
+  const addOrUpdate = (
+    rawUrl: string,
+    title?: string,
+    snippet?: string,
+    publisher?: string
+  ) => {
+    if (!rawUrl) return
+    const canonical = canonicalizeUrl(rawUrl)
+    if (!canonical || canonical.length < 4) return
+
+    const domain = extractDomainFromUrl(canonical)
+    const existing = sourcesMap.get(canonical)
+
+    if (existing) {
+      if (!existing.title && title) existing.title = title
+      if (!existing.snippet && snippet) existing.snippet = snippet
+      if (!existing.publisher && publisher) existing.publisher = publisher
+      if (!existing.domain && domain) existing.domain = domain
+    } else {
+      sourcesMap.set(canonical, {
+        url: canonical,
+        title: title?.trim() || undefined,
+        domain,
+        publisher: publisher?.trim() || undefined,
+        snippet: snippet?.trim() || undefined,
+        claims: [],
+      })
+    }
   }
 
   for (const item of response.output) {
@@ -123,10 +190,12 @@ function extractSources(response: Response): ResearchSource[] {
       const action = "action" in item ? item.action : undefined
       const actionSources =
         action && typeof action === "object" && "sources" in action
-          ? (action.sources as Array<{ url?: string; title?: string }> | undefined)
+          ? (action.sources as Array<{ url?: string; title?: string; snippet?: string; publisher?: string }> | undefined)
           : undefined
       for (const source of actionSources ?? []) {
-        if (source.url) add(source.url, source.title)
+        if (source.url) {
+          addOrUpdate(source.url, source.title, source.snippet, source.publisher)
+        }
       }
     }
 
@@ -135,14 +204,41 @@ function extractSources(response: Response): ResearchSource[] {
         if (part.type !== "output_text") continue
         for (const annotation of part.annotations ?? []) {
           if (annotation.type === "url_citation" && annotation.url) {
-            add(annotation.url, annotation.title)
+            addOrUpdate(annotation.url, annotation.title)
           }
         }
       }
     }
   }
 
-  return sources
+  // Parsear hechos estructurados del output_text si viene en JSON
+  try {
+    const rawText = response.output_text?.trim() || ""
+    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || [null, rawText]
+    const jsonStr = jsonMatch[1] || rawText
+    const parsed = JSON.parse(jsonStr)
+
+    if (parsed && Array.isArray(parsed.confirmed_facts)) {
+      for (const fact of parsed.confirmed_facts) {
+        if (fact.source_url) {
+          const canonical = canonicalizeUrl(fact.source_url)
+          addOrUpdate(fact.source_url, fact.source_title, fact.snippet, fact.publisher)
+          const source = sourcesMap.get(canonical)
+          if (source && fact.claim) {
+            source.claims = source.claims || []
+            source.claims.push({
+              text: fact.claim,
+              status: "confirmed",
+            })
+          }
+        }
+      }
+    }
+  } catch {
+    // Si no es JSON puro, no rompemos: las fuentes extraídas de annotations y tool calls ya están capturadas.
+  }
+
+  return Array.from(sourcesMap.values())
 }
 
 function countToolCalls(response: Response): number {
@@ -199,7 +295,16 @@ async function runTextPhase(
           ? { idempotency_key: input.idempotencyKey.slice(0, 512) }
           : undefined,
         moderation: { model: "omni-moderation-latest" },
-        tools: config.webSearch ? [{ type: "web_search" }] : undefined,
+        tools: config.webSearch
+          ? [
+              {
+                type: "web_search" as const,
+                ...(config.searchContextSize
+                  ? { search_context_size: config.searchContextSize }
+                  : {}),
+              },
+            ]
+          : undefined,
         include: config.webSearch ? ["web_search_call.action.sources"] : undefined,
       },
       { timeout: TEXT_TIMEOUT_MS, signal: AbortSignal.timeout(TEXT_TIMEOUT_MS) }
@@ -244,11 +349,15 @@ export async function runWritingResponse(
   return await runTextPhase("writing", input)
 }
 
-export async function generateImage(prompt: string): Promise<ImageGenerationResult> {
+export async function generateImage(
+  prompt: string,
+  options?: { quality?: ImageQuality }
+): Promise<ImageGenerationResult> {
   requireUsableAiConfig()
   await assertTextAllowed(prompt)
 
   const config = getImagePhaseConfig()
+  const effectiveQuality = options?.quality ?? config.quality
   const client = getOpenAiClient()
 
   const response = await withRetry(() =>
@@ -257,7 +366,7 @@ export async function generateImage(prompt: string): Promise<ImageGenerationResu
         model: config.model,
         prompt,
         n: 1,
-        quality: config.quality,
+        quality: effectiveQuality,
         moderation: "auto",
       },
       { timeout: IMAGE_TIMEOUT_MS, signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) }
@@ -273,7 +382,7 @@ export async function generateImage(prompt: string): Promise<ImageGenerationResu
     phase: "image",
     model: config.model,
     status: "succeeded",
-    quality: config.quality,
+    quality: effectiveQuality,
     usage: {
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,
@@ -283,7 +392,7 @@ export async function generateImage(prompt: string): Promise<ImageGenerationResu
 
   return {
     model: config.model,
-    quality: config.quality,
+    quality: effectiveQuality,
     imageCount: response.data?.length ?? 1,
     b64Json: first.b64_json,
     usage,

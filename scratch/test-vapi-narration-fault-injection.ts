@@ -195,7 +195,7 @@ async function runFaultInjectionSuite() {
       const creation = await createVapiWebSocketCall("Este es un texto editorial completo para la prueba.", baseConfig)
       assert(creation.id === mockCallId && creation.status === "queued", "createVapiWebSocketCall retorna ID de sesión simulada")
       assert(
-        creation.websocketCallUrl?.includes("/transport"),
+        Boolean(creation.websocketCallUrl?.includes("/transport")),
         "createVapiWebSocketCall retorna websocketCallUrl"
       )
 

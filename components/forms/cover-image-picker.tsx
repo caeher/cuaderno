@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { ImageIcon, X } from "lucide-react"
+import { ImageIcon, Sparkles, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils"
 export interface CoverImagePickerProps {
   value?: string | null
   onChange: (url: string) => void
+  altText?: string
+  onAltTextChange?: (alt: string) => void
+  isAiGenerated?: boolean
   aspectRatio?: "16/9" | "3/1" | "16/10" | "21/9"
   className?: string
 }
@@ -24,6 +27,9 @@ const aspectClasses = {
 export function CoverImagePicker({
   value,
   onChange,
+  altText,
+  onAltTextChange,
+  isAiGenerated,
   aspectRatio = "3/1",
   className,
 }: CoverImagePickerProps) {
@@ -56,11 +62,17 @@ export function CoverImagePicker({
       >
         <Image
           src={value}
-          alt="Imagen de portada"
+          alt={altText || "Imagen de portada"}
           fill
           className="object-cover"
           unoptimized={value.startsWith("http")}
         />
+        {isAiGenerated && (
+          <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-background/85 px-2.5 py-1 text-[11px] font-medium text-foreground shadow-sm backdrop-blur-sm">
+            <Sparkles className="size-3 text-primary" />
+            <span>Generada con IA</span>
+          </div>
+        )}
         <button
           type="button"
           onClick={handleClear}

@@ -14,6 +14,8 @@ const aiConfigReportValidator = v.object({
   ok: v.boolean(),
   hasApiKey: v.boolean(),
   composerEnabled: v.boolean(),
+  killSwitchActive: v.boolean(),
+  allowedTenants: v.array(v.string()),
   researchModel: v.string(),
   writingModel: v.string(),
   imageModel: v.string(),
@@ -29,6 +31,12 @@ const aiConfigReportValidator = v.object({
     v.literal("high"),
     v.literal("auto")
   ),
+  searchContextSize: v.union(
+    v.literal("low"),
+    v.literal("medium"),
+    v.literal("high")
+  ),
+  maxResearchQueries: v.number(),
   problems: v.array(v.string()),
 })
 

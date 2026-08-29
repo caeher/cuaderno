@@ -8,7 +8,7 @@
 export class AiRefusalError extends Error {
   readonly code = "ai_refusal"
 
-  constructor(message = "El modelo rechazó generar este contenido.") {
+  constructor(message = "El modelo rechazó la solicitud debido a directivas de seguridad.") {
     super(message)
     this.name = "AiRefusalError"
   }
@@ -18,7 +18,7 @@ export class AiModerationError extends Error {
   readonly code = "ai_moderated"
   readonly categories: string[]
 
-  constructor(message = "El contenido no superó la moderación.", categories: string[] = []) {
+  constructor(message = "El contenido no superó las políticas de uso y moderación.", categories: string[] = []) {
     super(message)
     this.name = "AiModerationError"
     this.categories = categories
@@ -65,11 +65,14 @@ export function sanitizeOpenAiError(error: unknown): string {
     sanitized = sanitized.replace(pattern, "[REDACTED]")
   }
 
+  if (/insufficient_quota|exceeded your current quota|quota/i.test(sanitized)) {
+    return "Se ha agotado el saldo o la cuota de OpenAI configurada en el proveedor."
+  }
   if (sanitized.includes("401") || /unauthorized/i.test(sanitized)) {
     return "Error de autenticación con el proveedor de IA. Revisa OPENAI_API_KEY en Convex."
   }
   if (sanitized.includes("429") || /rate limit/i.test(sanitized)) {
-    return "El proveedor de IA está limitando peticiones. Espera un momento e inténtalo de nuevo."
+    return "El proveedor de IA ha alcanzado su límite de peticiones temporalmente. Espera un momento e inténtalo de nuevo."
   }
   if (/timeout|timed out|aborted/i.test(sanitized)) {
     return "La petición al proveedor de IA superó el tiempo máximo de espera."

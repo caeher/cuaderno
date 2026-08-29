@@ -37,6 +37,8 @@ const ENV_KEYS = [
   "OPENAI_IMAGE_MODEL",
   "OPENAI_REASONING_EFFORT",
   "OPENAI_IMAGE_QUALITY",
+  "OPENAI_SEARCH_CONTEXT_SIZE",
+  "OPENAI_MAX_RESEARCH_QUERIES",
 ] as const
 
 const snapshot: Record<string, string | undefined> = {}
@@ -81,8 +83,10 @@ async function runTests() {
     assert(image.model === "gpt-image-1-mini", "image usa gpt-image-1-mini por defecto")
     assert(research.webSearch === true, "research habilita Web Search")
     assert(writing.webSearch === false, "writing no habilita Web Search")
+    assert(research.searchContextSize === "low", "tamaño de contexto de búsqueda por defecto: low")
+    assert(research.maxResearchQueries === 5, "límite de consultas de investigación por defecto: 5")
     assert(research.reasoningEffort === "medium", "esfuerzo de razonamiento por defecto: medium")
-    assert(image.quality === "auto", "calidad de imagen por defecto: auto")
+    assert(image.quality === "low", "calidad de imagen por defecto: low")
     assert(hasApiKey() === false, "hasApiKey es false sin OPENAI_API_KEY")
     assert(isComposerEnabled() === false, "Composer apagado por defecto")
 
@@ -92,6 +96,8 @@ async function runTests() {
     process.env.OPENAI_IMAGE_MODEL = "gpt-test-image"
     process.env.OPENAI_REASONING_EFFORT = "low"
     process.env.OPENAI_IMAGE_QUALITY = "high"
+    process.env.OPENAI_SEARCH_CONTEXT_SIZE = "high"
+    process.env.OPENAI_MAX_RESEARCH_QUERIES = "10"
 
     assert(
       getTextPhaseConfig("research").model === "gpt-test-research",
@@ -104,15 +110,25 @@ async function runTests() {
     assert(getImagePhaseConfig().model === "gpt-test-image", "OPENAI_IMAGE_MODEL cambia el modelo de imagen")
     assert(getTextPhaseConfig("writing").reasoningEffort === "low", "OPENAI_REASONING_EFFORT se aplica a texto")
     assert(getImagePhaseConfig().quality === "high", "OPENAI_IMAGE_QUALITY se aplica a imagen")
+    assert(
+      getTextPhaseConfig("research").searchContextSize === "high",
+      "OPENAI_SEARCH_CONTEXT_SIZE se aplica a research"
+    )
+    assert(
+      getTextPhaseConfig("research").maxResearchQueries === 10,
+      "OPENAI_MAX_RESEARCH_QUERIES se aplica a research"
+    )
 
     console.log("\n▶ Validación de enums inválidos")
     process.env.OPENAI_REASONING_EFFORT = "ludicrous"
     process.env.OPENAI_IMAGE_QUALITY = "ultra"
+    process.env.OPENAI_SEARCH_CONTEXT_SIZE = "infinite"
+    process.env.OPENAI_MAX_RESEARCH_QUERIES = "-3"
     delete process.env.OPENAI_API_KEY
 
     const report = validateAiConfig()
     assert(report.ok === false, "validateAiConfig.ok es false con enums inválidos y sin clave")
-    assert(report.problems.length >= 3, "acumula todos los problemas, no solo el primero", String(report.problems.length))
+    assert(report.problems.length >= 5, "acumula todos los problemas, no solo el primero", String(report.problems.length))
     assert(
       report.problems.some((problem) => problem.includes("OPENAI_REASONING_EFFORT")),
       "reporta OPENAI_REASONING_EFFORT inválido"
@@ -131,6 +147,8 @@ async function runTests() {
     process.env.OPENAI_API_KEY = secret
     process.env.OPENAI_REASONING_EFFORT = "medium"
     process.env.OPENAI_IMAGE_QUALITY = "auto"
+    process.env.OPENAI_SEARCH_CONTEXT_SIZE = "low"
+    process.env.OPENAI_MAX_RESEARCH_QUERIES = "5"
 
     const healthy = validateAiConfig()
     assert(hasApiKey() === true, "hasApiKey es true cuando hay clave")

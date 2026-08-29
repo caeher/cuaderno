@@ -1,7 +1,19 @@
 import type {
+  AiUsageEvent,
   AudioFormat,
   Category,
   Comment,
+  ComposerArtifact,
+  ComposerArtifactKind,
+  ComposerBrief,
+  ComposerJob,
+  ComposerJobKind,
+  ComposerJobStatus,
+  ComposerMessage,
+  ComposerMessageRole,
+  ComposerSession,
+  ComposerSessionStatus,
+  ComposerSource,
   NarrationStatus,
   Post,
   PostNarration,
@@ -163,6 +175,101 @@ export function convexDocToNarration(doc: any, audioUrl?: string | null): PostNa
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     approvedAt: doc.approvedAt || null,
+  }
+}
+
+export function convexDocToComposerSession(doc: any): ComposerSession {
+  return {
+    id: doc._id || doc.id,
+    tenantId: doc.tenantId,
+    authorId: doc.authorId,
+    title: doc.title || undefined,
+    brief: (doc.brief as ComposerBrief) || {},
+    status: (doc.status as ComposerSessionStatus) || "collecting",
+    failureReason: doc.failureReason || undefined,
+    postId: doc.postId ? (doc.postId as string) : undefined,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    expiresAt: doc.expiresAt || undefined,
+  }
+}
+
+export function convexDocToComposerMessage(doc: any): ComposerMessage {
+  return {
+    id: doc._id || doc.id,
+    sessionId: doc.sessionId ? (doc.sessionId as string) : doc.sessionId,
+    tenantId: doc.tenantId,
+    role: (doc.role as ComposerMessageRole) || "user",
+    content: doc.content || "",
+    createdAt: doc.createdAt,
+  }
+}
+
+export function convexDocToComposerJob(doc: any): ComposerJob {
+  return {
+    id: doc._id || doc.id,
+    sessionId: doc.sessionId ? (doc.sessionId as string) : doc.sessionId,
+    tenantId: doc.tenantId,
+    kind: (doc.kind as ComposerJobKind) || "research",
+    status: (doc.status as ComposerJobStatus) || "queued",
+    idempotencyKey: doc.idempotencyKey || "",
+    progress: doc.progress !== undefined ? Number(doc.progress) : undefined,
+    attempt: Number(doc.attempt || 0),
+    error: doc.error || undefined,
+    startedAt: doc.startedAt || undefined,
+    finishedAt: doc.finishedAt || undefined,
+    createdAt: doc.createdAt,
+  }
+}
+
+export function convexDocToComposerSource(doc: any): ComposerSource {
+  return {
+    id: doc._id || doc.id,
+    sessionId: doc.sessionId ? (doc.sessionId as string) : doc.sessionId,
+    tenantId: doc.tenantId,
+    url: doc.url || "",
+    title: doc.title || undefined,
+    domain: doc.domain || undefined,
+    publisher: doc.publisher || undefined,
+    publishedAt: doc.publishedAt || undefined,
+    fetchedAt: doc.fetchedAt || "",
+    snippet: doc.snippet || undefined,
+    isExcluded: doc.isExcluded !== undefined ? Boolean(doc.isExcluded) : undefined,
+    claims: Array.isArray(doc.claims) ? doc.claims : [],
+  }
+}
+
+export function convexDocToComposerArtifact(doc: any): ComposerArtifact {
+  return {
+    id: doc._id || doc.id,
+    sessionId: doc.sessionId ? (doc.sessionId as string) : doc.sessionId,
+    tenantId: doc.tenantId,
+    kind: (doc.kind as ComposerArtifactKind) || "article",
+    content: doc.content || undefined,
+    storageId: doc.storageId ? (doc.storageId as string) : undefined,
+    version: Number(doc.version || 1),
+    supersededBy: doc.supersededBy ? (doc.supersededBy as string) : undefined,
+    createdAt: doc.createdAt,
+  }
+}
+
+export function convexDocToAiUsageEvent(doc: any): AiUsageEvent {
+  return {
+    id: doc._id || doc.id,
+    tenantId: doc.tenantId,
+    sessionId: doc.sessionId ? (doc.sessionId as string) : undefined,
+    jobId: doc.jobId ? (doc.jobId as string) : undefined,
+    phase: doc.phase || "",
+    model: doc.model || undefined,
+    inputTokens: doc.inputTokens !== undefined ? Number(doc.inputTokens) : undefined,
+    outputTokens: doc.outputTokens !== undefined ? Number(doc.outputTokens) : undefined,
+    imageCount: doc.imageCount !== undefined ? Number(doc.imageCount) : undefined,
+    toolCalls: doc.toolCalls !== undefined ? Number(doc.toolCalls) : undefined,
+    estimatedCostUsd: doc.estimatedCostUsd !== undefined ? Number(doc.estimatedCostUsd) : undefined,
+    actualCostUsd: doc.actualCostUsd !== undefined ? Number(doc.actualCostUsd) : undefined,
+    status: doc.status || "succeeded",
+    requestId: doc.requestId || undefined,
+    createdAt: doc.createdAt,
   }
 }
 

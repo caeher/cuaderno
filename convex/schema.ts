@@ -72,10 +72,15 @@ export const composerSessionStatusValidator = v.union(
 /** Preferencias editoriales que el usuario fija en la conversación. */
 export const composerBriefValidator = v.object({
   topic: v.optional(v.string()),
+  objective: v.optional(v.string()),
   audience: v.optional(v.string()),
   tone: v.optional(v.string()),
   language: v.optional(v.string()),
+  targetCountry: v.optional(v.string()),
   targetLength: v.optional(v.number()),
+  cutoffDate: v.optional(v.string()),
+  preferredDomains: v.optional(v.array(v.string())),
+  excludedDomains: v.optional(v.array(v.string())),
   seoKeywords: v.optional(v.array(v.string())),
   constraints: v.optional(v.string()),
   wantsCoverImage: v.optional(v.boolean()),
@@ -395,11 +400,25 @@ export default defineSchema({
     tenantId: v.string(),
     url: v.string(),
     title: v.optional(v.string()),
+    domain: v.optional(v.string()),
     publisher: v.optional(v.string()),
     publishedAt: v.optional(v.string()),
     fetchedAt: v.string(),
     snippet: v.optional(v.string()),
-    claims: v.array(v.object({ text: v.string(), offset: v.optional(v.number()) })),
+    isExcluded: v.optional(v.boolean()),
+    claims: v.array(
+      v.object({
+        text: v.string(),
+        offset: v.optional(v.number()),
+        status: v.optional(
+          v.union(
+            v.literal("confirmed"),
+            v.literal("inferred"),
+            v.literal("unverified")
+          )
+        ),
+      })
+    ),
   })
     .index("by_session", ["sessionId"])
     .index("by_session_and_url", ["sessionId", "url"]),

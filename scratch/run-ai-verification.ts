@@ -15,9 +15,22 @@ interface SuiteResult {
 }
 
 const suites = [
-  { name: "1. Configuración global de modelos", file: "scratch/test-ai-config.ts" },
+  { name: "1. Configuración global de modelos y research", file: "scratch/test-ai-config.ts" },
   { name: "2. Seguridad y frontera de cliente", file: "scratch/test-ai-security.ts" },
-  { name: "3. Integración autenticada", file: "scratch/test-ai-integration.ts" },
+  { name: "3. Prompts de investigación y defensa Prompt Injection", file: "scratch/test-research-prompts-and-security.ts" },
+  { name: "4. Extracción, dominios y normalización de fuentes", file: "scratch/test-research-extraction.ts" },
+  { name: "5. Persistencia, revisión y exclusión de fuentes", file: "scratch/test-composer-research-persistence.ts" },
+  { name: "6. Integración autenticada", file: "scratch/test-ai-integration.ts" },
+  { name: "7. Prompts de redacción y outline sin Web Search", file: "scratch/test-writing-prompts-and-generation.ts" },
+  { name: "8. Validación de HTML TipTap, enlaces y placeholders", file: "scratch/test-draft-validation.ts" },
+  { name: "9. Handoff de Composer a post en estado draft", file: "scratch/test-composer-draft-handoff.ts" },
+  { name: "10. Prompts de imagen de Composer, brief visual y alt text", file: "scratch/test-image-brief-and-prompts.ts" },
+  { name: "11. Persistencia de imágenes en Convex Storage y aislamiento", file: "scratch/test-image-storage-and-persistence.ts" },
+  { name: "12. Control de costes de imagen, estimaciones y fallos", file: "scratch/test-image-cost-and-regeneration.ts" },
+  { name: "13. Evaluaciones (Evals) multilingües, moderación y ambigüedad", file: "scratch/test-composer-evals.ts" },
+  { name: "14. Seguridad, aislamiento multi-tenant e idempotencia", file: "scratch/test-composer-security-isolation.ts" },
+  { name: "15. Trazabilidad de citas 1:1 y cero auto-publicación", file: "scratch/test-composer-citations-and-publication.ts" },
+  { name: "16. Feature flags, kill switch y canary rollout", file: "scratch/test-composer-flags-and-killswitch.ts" },
 ]
 
 function runAllSuites() {

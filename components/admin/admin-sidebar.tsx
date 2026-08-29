@@ -13,6 +13,7 @@ import {
   Palette,
   Building2,
   FolderTree,
+  Sparkles,
 } from "lucide-react"
 import {
   Sidebar,
@@ -36,6 +37,7 @@ const navItems = [
   { title: "Panel", href: "/panel", icon: LayoutDashboard },
   { title: "Posts", href: "/panel/posts", icon: FileText },
   { title: "Nuevo post", href: "/panel/posts/nuevo", icon: PlusCircle },
+  { title: "Composer", href: "/panel/composer", icon: Sparkles },
   { title: "Diseño del blog", href: "/panel/disenador", icon: Palette },
   { title: "Categorías y Etiquetas", href: "/panel/taxonomias", icon: FolderTree },
   { title: "Comentarios", href: "/panel/comentarios", icon: MessageSquare },
