@@ -1,6 +1,7 @@
 import type {
   CategoryRepository,
   CommentRepository,
+  NarrationRepository,
   PostRepository,
   TagRepository,
   TemplateRepository,
@@ -15,7 +16,9 @@ export interface RepositoryBundle {
   postRepository: PostRepository
   commentRepository: CommentRepository
   templateRepository: TemplateRepository
+  narrationRepository: NarrationRepository
 }
+
 
 export interface ContractTestResults {
   suiteName: string
@@ -265,9 +268,46 @@ export async function runRepositoryContractSuite(
   assert(rolledBack !== null && rolledBack.draftSlots.home?.[0].props.text === "Encabezado Borrador v2", "TemplateRepository.rollback restaura draftSlots desde snapshot inmutable")
 
   // ----------------------------------------------------
-  // 7. Limpieza y desvinculación en cascada
+  // 7. Contrato: NarrationRepository
   // ----------------------------------------------------
-  console.log(`\n▶ [${suiteName}] 7. Limpieza y desvinculación en cascada`)
+  console.log(`\n▶ [${suiteName}] 7. Contrato: NarrationRepository`)
+  const testContentHash = `hash_${uid}1234567890`
+  const createdNarration = await repos.narrationRepository.create({
+    postId: createdPost.id,
+    authorId: testUser.id,
+    tenantId: `org_${uid}`,
+    organizationId: `org_${uid}`,
+    transcript: `Transcripción de audio para el post ${uid}`,
+    contentHash: testContentHash,
+    language: "es",
+    voice: "sarah",
+    format: "mp3",
+    status: "pending",
+  })
+  assert(createdNarration.postId === createdPost.id, "NarrationRepository.create persiste narración asociada al post")
+  assert(createdNarration.status === "pending", "NarrationRepository.create inicializa status como 'pending'")
+
+  const foundNarration = await repos.narrationRepository.findByPostId(createdPost.id)
+  assert(foundNarration !== null && foundNarration.id === createdNarration.id, "NarrationRepository.findByPostId recupera la narración")
+
+  const updatedNarration = await repos.narrationRepository.update(createdNarration.id, {
+    status: "ready",
+    duration: 180,
+  })
+  assert(updatedNarration !== null && updatedNarration.status === "ready" && updatedNarration.duration === 180, "NarrationRepository.update actualiza estado a 'ready' y duración")
+
+  const tenantNarrations = await repos.narrationRepository.findByTenant(`org_${uid}`)
+  assert(tenantNarrations.some((n) => n.id === createdNarration.id), "NarrationRepository.findByTenant recupera narraciones del tenant")
+
+  // Eliminar narración
+  await repos.narrationRepository.delete(createdNarration.id)
+  const narrationAfterDel = await repos.narrationRepository.findById(createdNarration.id)
+  assert(narrationAfterDel === null, "NarrationRepository.delete elimina la narración")
+
+  // ----------------------------------------------------
+  // 8. Limpieza y desvinculación en cascada
+  // ----------------------------------------------------
+  console.log(`\n▶ [${suiteName}] 8. Limpieza y desvinculación en cascada`)
   // Eliminar post
   await repos.postRepository.delete(createdPost.id)
   const postDeleted = await repos.postRepository.findById(createdPost.id)
@@ -295,3 +335,4 @@ export async function runRepositoryContractSuite(
     failures,
   }
 }
+

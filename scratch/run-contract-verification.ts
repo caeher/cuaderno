@@ -6,6 +6,7 @@ import {
   tagRepository,
   commentRepository,
   templateRepository,
+  narrationRepository,
 } from "../lib/infrastructure/repositories"
 import { runConvexAuthAndSecurityTests } from "./contract-tests/convex-handler-tests"
 import { runRepositoryContractSuite } from "./contract-tests/repository-contract-suite"
@@ -39,9 +40,10 @@ async function main() {
     repos.postRepository &&
     repos.tagRepository &&
     repos.commentRepository &&
-    repos.templateRepository
+    repos.templateRepository &&
+    repos.narrationRepository
   ) {
-    console.log("  ✅ createRepositories() instancia los 6 repositorios Convex correctamente")
+    console.log("  ✅ createRepositories() instancia los 7 repositorios Convex correctamente")
     grandTotalPassed++
   } else {
     console.error("  ❌ createRepositories() falló al instanciar repositorios")
@@ -54,7 +56,8 @@ async function main() {
     postRepository &&
     tagRepository &&
     commentRepository &&
-    templateRepository
+    templateRepository &&
+    narrationRepository
   ) {
     console.log("  ✅ Singletons de repositorios exportados correctamente")
     grandTotalPassed++
@@ -62,6 +65,7 @@ async function main() {
     console.error("  ❌ Singletons de repositorios no exportados")
     grandTotalFailed++
   }
+
 
   if (shouldRunLiveConvexTests) {
     console.log("\n==================================================")
