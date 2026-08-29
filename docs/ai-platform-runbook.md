@@ -54,6 +54,8 @@ Desde el panel, la query `ai.getConfigHealth` (requiere sesión) devuelve:
   "ok": true,
   "hasApiKey": true,
   "composerEnabled": false,
+  "killSwitchActive": false,
+  "availableForCurrentTenant": false,
   "researchModel": "gpt-5.6-luna",
   "writingModel": "gpt-5.6-luna",
   "imageModel": "gpt-image-1-mini",
