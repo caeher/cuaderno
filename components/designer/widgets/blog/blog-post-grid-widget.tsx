@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import type { BlockNode } from "@/lib/domain/block-schema"
+import type { User } from "@/lib/domain/entities"
 import { blockStyleToCss } from "../utils/style-converter"
 import { useTemplateContext } from "@/components/site/template-context"
 import { PostCard } from "@/components/site/post-card"
@@ -90,9 +91,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
         <PostCard
           key={post.id}
           post={post}
-          authorName={author.name}
-          authorAvatarUrl={author.avatarUrl}
-          tenantSlug={global?.isSubdomain ? undefined : author.username}
+          author={author as User}
         />
       ))}
     </div>
