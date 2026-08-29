@@ -341,7 +341,15 @@ export const update = mutation({
       updates.readingTimeMinutes = args.readingTimeMinutes
     }
     if (args.coverUrl !== undefined) updates.coverUrl = args.coverUrl || undefined
-    if (args.categoryId !== undefined) updates.categoryId = args.categoryId || undefined
+    if (args.categoryId !== undefined) {
+      updates.categoryId = args.categoryId || undefined
+      if (args.categoryId) {
+        const category = await findDocById(ctx.db, "categories", args.categoryId)
+        updates.categoryDocId = category?._id
+      } else {
+        updates.categoryDocId = undefined
+      }
+    }
     if (args.organizationId !== undefined) updates.organizationId = args.organizationId
     if (args.tags !== undefined) updates.tags = args.tags
     if (args.status !== undefined) {

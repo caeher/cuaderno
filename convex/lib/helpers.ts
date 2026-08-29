@@ -30,7 +30,7 @@ export async function findDocById<TableName extends TableNames>(
     // La tabla puede no tener índice by_legacy_id
   }
 
-  // 3. Casos especiales para usuarios
+  // 3. Casos especiales para usuarios y categorías
   if (tableName === "users") {
     // Buscar por clerkUserId
     const userByClerk = await (db.query("users") as any)
@@ -43,6 +43,17 @@ export async function findDocById<TableName extends TableNames>(
       .withIndex("by_username", (q: any) => q.eq("username", id))
       .first()
     if (userByUsername) return userByUsername
+  }
+
+  if (tableName === "categories") {
+    try {
+      const catBySlug = await (db.query("categories") as any)
+        .withIndex("by_slug", (q: any) => q.eq("slug", id))
+        .first()
+      if (catBySlug) return catBySlug
+    } catch {
+      // Ignorar si no existe el índice
+    }
   }
 
   return null
