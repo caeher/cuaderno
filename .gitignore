@@ -20,3 +20,10 @@ node_modules
 *.db-journal
 *.sqlite
 *.sqlite-journal
+
+# ── memoria per-project: runtime local, NUNCA se versiona (norma CKIS) ──────
+.brain/
+.claude/
+graphify-out
+# (forma con slash: la espera el grep de idempotencia de brain-init)
+graphify-out/
