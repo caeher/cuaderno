@@ -159,14 +159,39 @@ export function normalizeCustomDomain(value: string | null | undefined): string 
 }
 
 /**
+ * Indica si el dominio raíz está configurado explícitamente en el entorno.
+ *
+ * `getRootDomain()` cae a "localhost:3000" cuando no hay variable, y ese default es
+ * indistinguible de una configuración real. Saberlo importa para no tratar el dominio
+ * de producción como si fuera ajeno.
+ */
+export function isRootDomainConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN ||
+      process.env.ROOT_DOMAIN ||
+      process.env.VERCEL_PROJECT_PRODUCTION_URL
+  )
+}
+
+/**
  * Indica si un host pertenece a la propia plataforma — el dominio raíz, cualquiera
  * de sus subdominios, o localhost.
  *
  * Es la guarda que evita salir a buscar un dominio personalizado en la base de datos
  * en cada request del sitio principal.
+ *
+ * **Falla del lado seguro cuando no hay dominio raíz configurado.** Sin la variable de
+ * entorno, `getRootDomain()` devuelve "localhost:3000"; con ese valor, el dominio real
+ * de producción NO coincide con la raíz y quedaría clasificado como dominio ajeno, con
+ * lo que cada request del sitio principal intentaría resolver un dominio personalizado
+ * que no existe. Devolver `true` en ese caso desactiva la resolución de dominios
+ * propios hasta que alguien configure la variable — que es exactamente el
+ * comportamiento anterior a esta función, y por lo tanto no puede romper nada que hoy
+ * funcione.
  */
 export function isPlatformHost(hostHeader: string | null | undefined): boolean {
   if (!hostHeader) return true
+  if (!isRootDomainConfigured()) return true
 
   const host = hostHeader.split(":")[0].toLowerCase().trim()
   const rootDomain = getRootDomain().split(":")[0].toLowerCase().trim()
@@ -180,7 +205,7 @@ export function isPlatformHost(hostHeader: string | null | undefined): boolean {
     return true
   }
 
-  if (!rootDomain) return false
+  if (!rootDomain) return true
 
   return host === rootDomain || host.endsWith(`.${rootDomain}`)
 }

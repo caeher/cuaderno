@@ -23,14 +23,14 @@ export function StatBadgeGroup({
     <div
       className={cn(
         "flex flex-wrap items-center gap-6 py-4",
-        bordered && "border-y border-border/70",
+        bordered && "border-y border-border",
         className
       )}
       {...props}
     >
       {stats.map((stat, idx) => (
         <div key={idx} className="flex flex-col">
-          <p className="font-serif text-xl font-medium tracking-tight text-foreground">
+          <p className="text-xl font-semibold tracking-[-0.02em] tabular-nums text-foreground">
             {stat.value}
           </p>
           <p className="text-xs text-muted-foreground">{stat.label}</p>

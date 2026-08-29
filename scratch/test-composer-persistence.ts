@@ -634,6 +634,7 @@ async function runPersistenceTests() {
   const storageBlobId = "blob_cover_img_999"
   db.storageBlobs.add(storageBlobId)
   db.recordArtifact(sessionA, "cover", undefined, storageBlobId)
+  db.cancelSession(sessionA, TENANT_A)
 
   // Avanzar reloj ficticio 91 días
   const future = new Date(Date.now() + 91 * 24 * 60 * 60 * 1000)

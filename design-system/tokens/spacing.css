@@ -1,0 +1,81 @@
+/* ============================================================================
+   Cuaderno — Design System · spacing.css
+   Espacio, radios y layout: la geometría del sistema.
+   ----------------------------------------------------------------------------
+   Este archivo es la mitad callada del diseño. Las pantallas no se sostienen
+   con sombra ni con color de fondo: se sostienen con BORDE Y AIRE. El aire vive
+   acá. Si una pantalla se ve apretada o inconsistente, casi siempre es porque
+   alguien escribió un píxel a mano en vez de tomar un escalón de esta escala.
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     ESPACIO — escala de 4px.
+     Todo margen, padding y gap del producto sale de estos diez escalones. No se
+     inventan valores intermedios: si hacen falta 18px, la respuesta correcta es
+     --sp-4 (16) o --sp-5 (20), nunca 18.
+
+     Cómo se usan en la práctica, leído de las pantallas:
+       --sp-1   4px  · separación entre un icono y su etiqueta, alto de un punto
+       --sp-2   8px  · padding interno de badges y chips, gap de iconos en fila
+       --sp-3  12px  · padding vertical de control, gap de lista densa
+       --sp-4  16px  · gap por defecto entre elementos hermanos
+       --sp-5  20px  · padding interno de tarjeta compacta
+       --sp-6  24px  · padding interno de tarjeta estándar, gap de grilla
+       --sp-8  32px  · separación entre secciones dentro de una página
+       --sp-10 40px  · padding horizontal del área de contenido del panel
+       --sp-12 48px  · separación entre bloques mayores
+       --sp-16 64px  · respiración de sección del landing
+     -------------------------------------------------------------------------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* --------------------------------------------------------------------------
+     RADIOS
+     Cuatro radios con destino fijo. El radio comunica la ESCALA del elemento:
+     cuanto más grande la superficie, más generosa la curva. Mezclarlos hace que
+     dos elementos del mismo tamaño se vean de sistemas distintos.
+
+       --radius-card    14px · tarjetas, tablas, modales, popovers
+       --radius-control 10px · botones, selects, tabs, menús
+       --radius-input    8px · inputs, textareas, buscador
+       --radius-thumb    8px · miniaturas de entrada, imagen destacada, avatares
+                               cuadrados
+       --radius-pill    999px · badges de estado, contadores, avatar circular
+     -------------------------------------------------------------------------- */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --radius-input: 8px;
+  --radius-thumb: 8px;
+  --radius-pill: 999px;
+
+  /* --------------------------------------------------------------------------
+     LAYOUT — el chrome del producto.
+     Estas cuatro medidas son estructura, no estilo: cambiarlas mueve toda la
+     aplicación a la vez.
+
+       --sidebar-w    260px · ancho del sidebar del panel: logo, navegación de
+                              contenido, divisor, herramientas de IA, selector de
+                              blog, tarjeta Cuaderno Pro y toggle de tema
+       --topbar-h      64px · alto de la barra superior: buscador ⌘K, toggle de
+                              tema, notificaciones y menú de usuario
+       --content-max 1440px · ancho máximo del área de contenido; más allá de
+                              esto la línea de lectura se vuelve incómoda
+       --touch-target  44px · área mínima tocable de CUALQUIER control
+                              interactivo. Un icono de 16px sigue necesitando
+                              44px de zona activa: el tamaño visual y el tamaño
+                              tocable son cosas distintas.
+     -------------------------------------------------------------------------- */
+  --sidebar-w: 260px;
+  --topbar-h: 64px;
+  --content-max: 1440px;
+  --touch-target: 44px;
+}

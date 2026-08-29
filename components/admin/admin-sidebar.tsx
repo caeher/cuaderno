@@ -9,9 +9,8 @@ import {
   MessageSquare,
   Settings,
   Globe,
-  NotebookPen,
+  BookOpen,
   Palette,
-  Building2,
   FolderTree,
   Sparkles,
 } from "lucide-react"
@@ -45,6 +44,19 @@ const navItems = [
   { title: "Comentarios", href: "/panel/comentarios", icon: MessageSquare },
 ]
 
+/**
+ * Item de navegación del sidebar.
+ * Reposo: texto secundario sobre superficie transparente.
+ * Hover: gris hundido — nunca índigo, el índigo es solo del item activo.
+ * Activo: pill índigo tenue (bg-sidebar-accent) + texto e icono índigo.
+ * Las variantes `data-active:hover:*` existen para que el pill activo NO
+ * pierda el índigo al pasar el cursor (ganan por especificidad).
+ */
+const navItemClass = [
+  "h-11 gap-3 rounded-lg px-3 text-muted-foreground [&_svg]:size-5",
+  "hover:bg-muted hover:text-foreground",
+  "data-active:hover:bg-sidebar-accent data-active:hover:text-sidebar-accent-foreground",
+].join(" ")
 
 export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
   const pathname = usePathname()
@@ -60,21 +72,25 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
   const avatarUrl = currentUser?.avatarUrl || user?.imageUrl || ""
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="gap-3 border-b border-sidebar-border/70 pb-3">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <SidebarHeader className="gap-3 p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/" />}>
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                <NotebookPen className="size-4" />
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href="/" />}
+              className="h-14 gap-3 rounded-lg px-2 hover:bg-transparent hover:text-foreground active:bg-transparent active:text-foreground [&_svg]:size-5"
+            >
+              <BookOpen className="text-foreground" />
+              <span className="text-xl font-semibold lowercase tracking-tight text-foreground">
+                Cuaderno
               </span>
-              <span className="font-serif text-base font-medium">Cuaderno</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
         {/* Organization / Blog Switcher */}
-        <div className="px-2 group-data-[collapsible=icon]:hidden">
+        <div className="px-2 pb-1 group-data-[collapsible=icon]:hidden">
           <OrganizationSwitcher
             hidePersonal={false}
             afterCreateOrganizationUrl="/panel"
@@ -83,23 +99,25 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
             appearance={{
               elements: {
                 rootBox: "w-full",
-                organizationSwitcherTrigger: "w-full justify-between py-1.5 px-2 rounded-md border border-sidebar-border bg-sidebar-accent/50 text-xs text-sidebar-foreground hover:bg-sidebar-accent",
+                organizationSwitcherTrigger:
+                  "w-full justify-between gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-muted",
               },
             }}
           />
         </div>
       </SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Contenido</SidebarGroupLabel>
+      <SidebarContent className="gap-0 pt-1">
+        <SidebarGroup className="p-2">
+          <SidebarGroupLabel className="hidden">Contenido</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {visibleNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
                     isActive={pathname === item.href}
                     tooltip={item.title}
+                    className={navItemClass}
                   >
                     <item.icon />
                     <span>{item.title}</span>
@@ -109,15 +127,16 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Cuenta</SidebarGroupLabel>
+        <SidebarGroup className="mx-2 mt-2 w-auto border-t border-sidebar-border p-0 pt-3">
+          <SidebarGroupLabel className="hidden">Cuenta</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               <SidebarMenuItem>
                 <SidebarMenuButton
                   render={<Link href="/panel/configuracion" />}
                   isActive={pathname === "/panel/configuracion"}
                   tooltip="Configuración"
+                  className={navItemClass}
                 >
                   <Settings />
                   <span>Configuración</span>
@@ -138,6 +157,7 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
                     />
                   }
                   tooltip="Ver blog público"
+                  className={navItemClass}
                 >
                   <Globe />
                   <span>Ver mi blog</span>
@@ -147,20 +167,22 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="gap-2 border-t border-sidebar-border p-2">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2 p-2">
+          <SidebarMenuItem className="flex items-center gap-2 p-1">
             {user ? (
               <UserButton showName />
             ) : (
               <div className="flex items-center gap-2.5 px-1 py-1">
-                <Avatar className="size-7">
+                <Avatar className="size-8 border border-border">
                   <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback className="text-xs">{getInitials(displayName)}</AvatarFallback>
+                  <AvatarFallback className="bg-muted text-xs text-muted-foreground">
+                    {getInitials(displayName)}
+                  </AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col overflow-hidden text-left text-xs">
-                  <span className="truncate font-medium text-foreground">{displayName}</span>
-                  <span className="truncate text-[10px] text-muted-foreground">@{username}</span>
+                <div className="flex flex-col overflow-hidden text-left">
+                  <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+                  <span className="truncate text-xs text-text-tertiary">@{username}</span>
                 </div>
               </div>
             )}

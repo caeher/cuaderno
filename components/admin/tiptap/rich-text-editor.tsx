@@ -53,7 +53,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         codeBlock: false,
         link: {
           openOnClick: false,
-          HTMLAttributes: { class: "text-primary underline underline-offset-2" },
+          HTMLAttributes: { class: "text-ia underline underline-offset-2 decoration-ia-border hover:decoration-ia" },
         },
       }),
       Placeholder.configure({
@@ -86,7 +86,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: "notion-image rounded-lg shadow-sm border border-border/60 my-4 max-w-full h-auto",
+          class: "notion-image rounded-xl border border-border my-4 max-w-full h-auto",
         },
       }),
       CharacterCount,
@@ -129,7 +129,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   return (
     <div
       ref={containerRef}
-      className="relative flex flex-col rounded-xl border border-border/80 bg-card shadow-xs"
+      className="relative flex flex-col rounded-xl border border-border bg-card"
     >
       {/* Notion Gutter Block Handle (+ and :: grip) */}
       <BlockHandle editor={editor} containerRef={containerRef} />
@@ -148,7 +148,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       />
 
       {/* Main Block Content Canvas */}
-      <div className="relative flex-1 p-6 pl-10 md:pl-12">
+      <div className="relative flex-1 px-6 py-7 pl-10 md:pl-12">
         <EditorContent editor={editor} />
       </div>
 

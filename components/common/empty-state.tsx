@@ -46,6 +46,14 @@ const presets: Record<
   },
 }
 
+const mediaTones: Record<EmptyPreset, string> = {
+  search: "bg-neutral-tint text-neutral",
+  posts: "bg-ia-tint text-ia",
+  comments: "bg-ia-tint text-ia",
+  "author-posts": "bg-neutral-tint text-neutral",
+  custom: "bg-ia-tint text-ia",
+}
+
 export function EmptyState({
   preset = "search",
   title,
@@ -63,17 +71,32 @@ export function EmptyState({
 
   return (
     <Empty
-      className={cn(bordered && "border border-dashed border-border", className)}
+      className={cn(
+        "gap-0 px-6 py-12",
+        bordered && "border border-dashed border-border bg-card",
+        className
+      )}
       {...props}
     >
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
+      <EmptyHeader className="gap-0">
+        <EmptyMedia
+          className={cn(
+            "mb-5 size-12 rounded-lg [&_svg]:size-6 [&_svg]:stroke-[1.5]",
+            mediaTones[preset]
+          )}
+        >
           <IconComp />
         </EmptyMedia>
-        <EmptyTitle>{finalTitle}</EmptyTitle>
-        {finalDescription && <EmptyDescription>{finalDescription}</EmptyDescription>}
+        <EmptyTitle className="text-base font-semibold tracking-[-0.01em] text-foreground">
+          {finalTitle}
+        </EmptyTitle>
+        {finalDescription && (
+          <EmptyDescription className="mt-2 max-w-[40ch] text-sm leading-relaxed text-muted-foreground">
+            {finalDescription}
+          </EmptyDescription>
+        )}
       </EmptyHeader>
-      {action && <div className="mt-4">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </Empty>
   )
 }

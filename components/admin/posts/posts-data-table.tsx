@@ -4,7 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import {
   Search,
-  SlidersHorizontal,
   LayoutGrid,
   List,
   Eye,
@@ -13,17 +12,13 @@ import {
   Copy,
   Trash2,
   Star,
-  CheckCircle2,
-  FileText,
-  Clock,
-  ArrowUpDown,
-  Filter,
   X,
-  Folder,
+  Image as ImageIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Category, Post, PostStatus, Tag } from "@/lib/domain/entities"
 import { formatCompactNumber, formatShortDate } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -55,6 +50,15 @@ const statusLabels: Record<string, string> = {
   draft: "Borrador",
   scheduled: "Programado",
 }
+
+/** Vocabulario cerrado de badges de estado — la regla de los tres colores. */
+const statusBadgeStyles: Record<string, string> = {
+  published: "bg-perf-tint text-perf-strong",
+  draft: "bg-warn-tint text-warn-ink",
+  scheduled: "bg-ia-tint text-ia",
+}
+
+const NEUTRAL_BADGE = "bg-neutral-tint text-neutral"
 
 type SortOption = "newest" | "oldest" | "views" | "likes" | "comments" | "title"
 
@@ -293,263 +297,244 @@ export function PostsDataTable({
     }
   }
 
+  const statusTabs: { value: "all" | PostStatus; label: string; count: number }[] = [
+    { value: "all", label: "Todas", count: counts.all },
+    { value: "published", label: "Publicadas", count: counts.published },
+    { value: "draft", label: "Borradores", count: counts.draft },
+    { value: "scheduled", label: "Programadas", count: counts.scheduled },
+  ]
+
+  const hasActiveFilters = Boolean(searchQuery) || statusFilter !== "all" || tagFilter !== "all"
+
   return (
     <div className="flex flex-col gap-5">
-      {/* Search and Filter Controls */}
-      <div className="flex flex-col gap-4">
-        {/* Status Tabs Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+      {/* Tabs por estado — subrayado índigo en el activo */}
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-border">
+        {statusTabs.map((tab) => {
+          const isActive = statusFilter === tab.value
+          return (
             <button
-              onClick={() => setStatusFilter("all")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                statusFilter === "all"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
+              key={tab.value}
+              onClick={() => setStatusFilter(tab.value)}
+              className={cn(
+                "relative shrink-0 cursor-pointer px-3 pb-3 pt-1 text-sm font-medium transition-colors",
+                "after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:transition-colors",
+                isActive
+                  ? "text-ia after:bg-ia"
+                  : "text-muted-foreground after:bg-transparent hover:text-foreground"
+              )}
             >
-              <span>Todos</span>
-              <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-semibold">
-                {counts.all}
-              </span>
+              {tab.label} ({tab.count})
             </button>
-            <button
-              onClick={() => setStatusFilter("published")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                statusFilter === "published"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Publicados</span>
-              <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-semibold">
-                {counts.published}
-              </span>
-            </button>
-            <button
-              onClick={() => setStatusFilter("draft")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                statusFilter === "draft"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Borradores</span>
-              <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-semibold">
-                {counts.draft}
-              </span>
-            </button>
-            <button
-              onClick={() => setStatusFilter("scheduled")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer ${
-                statusFilter === "scheduled"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              <span>Programados</span>
-              <span className="rounded-full bg-background/20 px-1.5 py-0.2 text-[10px] font-semibold">
-                {counts.scheduled}
-              </span>
-            </button>
-          </div>
+          )
+        })}
+      </div>
 
-          <div className="flex items-center gap-2">
-            {/* View Mode Toggle */}
-            <div className="flex items-center rounded-md border border-border bg-muted/40 p-0.5">
-              <button
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-sm transition-colors cursor-pointer ${
-                  viewMode === "table" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-                }`}
-                title="Vista de tabla"
-              >
-                <List className="size-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-1.5 rounded-sm transition-colors cursor-pointer ${
-                  viewMode === "grid" ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-                }`}
-                title="Vista de cuadrícula"
-              >
-                <LayoutGrid className="size-4" />
-              </button>
-            </div>
-          </div>
+      {/* Barra de lista: buscador · filtros · orden · alternador de vista */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar entradas…"
+            className="pl-9 pr-8"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer text-text-tertiary hover:text-foreground"
+              aria-label="Limpiar búsqueda"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
         </div>
 
-        {/* Search Bar + Filters Row */}
-        <div className="grid gap-3 sm:grid-cols-12 items-center">
-          {/* Search Input */}
-          <div className="relative sm:col-span-5 lg:col-span-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por título o contenido..."
-              className="pl-9 pr-8"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+        {allCategories.length > 0 && (
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="h-9 max-w-48 cursor-pointer truncate rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <option value="all">Todas las categorías</option>
+            <option value="uncategorized">Sin categoría</option>
+            {allCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        )}
 
-          {/* Category Filter */}
-          {allCategories.length > 0 && (
-            <div className="sm:col-span-3 lg:col-span-3">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer truncate"
-              >
-                <option value="all">Todas las categorías</option>
-                <option value="uncategorized">Sin categoría</option>
-                {allCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    📁 {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+        {allTags.length > 0 && (
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="h-9 max-w-48 cursor-pointer truncate rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <option value="all">Todas las etiquetas</option>
+            {allTags.map((tag) => (
+              <option key={tag.id} value={tag.slug}>
+                #{tag.name}
+              </option>
+            ))}
+          </select>
+        )}
 
-          {/* Tag Filter */}
-          {allTags.length > 0 && (
-            <div className="sm:col-span-2 lg:col-span-2">
-              <select
-                value={tagFilter}
-                onChange={(e) => setTagFilter(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer truncate"
-              >
-                <option value="all">Todas las etiquetas</option>
-                {allTags.map((tag) => (
-                  <option key={tag.id} value={tag.slug}>
-                    #{tag.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="h-9 cursor-pointer rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <option value="newest">Más recientes</option>
+            <option value="oldest">Más antiguas</option>
+            <option value="views">Más vistas</option>
+            <option value="likes">Más me gusta</option>
+            <option value="comments">Más comentarios</option>
+            <option value="title">Alfabético (A-Z)</option>
+          </select>
 
-          {/* Sort By Dropdown */}
-          <div className="sm:col-span-2 lg:col-span-3 flex items-center justify-end gap-2">
-            <span className="text-xs text-muted-foreground hidden lg:inline">Ordenar:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="w-full sm:w-auto rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+          {/* Alternador lista / grilla — activo en índigo */}
+          <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+            <button
+              onClick={() => setViewMode("table")}
+              className={cn(
+                "cursor-pointer rounded-md p-1.5 transition-colors",
+                viewMode === "table"
+                  ? "bg-ia-tint text-ia"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Vista de lista"
+              aria-label="Vista de lista"
             >
-              <option value="newest">Más recientes</option>
-              <option value="oldest">Más antiguos</option>
-              <option value="views">Más vistos</option>
-              <option value="likes">Más me gusta</option>
-              <option value="comments">Más comentarios</option>
-              <option value="title">Alfabético (A-Z)</option>
-            </select>
+              <List className="size-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("grid")}
+              className={cn(
+                "cursor-pointer rounded-md p-1.5 transition-colors",
+                viewMode === "grid"
+                  ? "bg-ia-tint text-ia"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title="Vista de cuadrícula"
+              aria-label="Vista de cuadrícula"
+            >
+              <LayoutGrid className="size-4" />
+            </button>
           </div>
         </div>
       </div>
 
-
-      {/* Bulk Actions Floating Bar */}
+      {/* Barra de selección múltiple */}
       {selectedIds.size > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 p-3 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-primary">
-              {selectedIds.size} post{selectedIds.size > 1 ? "s" : ""} seleccionado{selectedIds.size > 1 ? "s" : ""}
-            </span>
-            <Button variant="ghost" size="xs" onClick={() => setSelectedIds(new Set())} className="text-xs text-muted-foreground">
-              Deseleccionar
-            </Button>
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ia-border bg-ia-tint px-3 py-2">
+          <span className="text-sm font-medium text-ia">
+            {selectedIds.size} entrada{selectedIds.size > 1 ? "s" : ""} seleccionada{selectedIds.size > 1 ? "s" : ""}
+          </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
-              size="xs"
+              size="sm"
               variant="outline"
               onClick={() => handleBulkStatus("published")}
               disabled={isActionPending}
+              className="cursor-pointer"
             >
-              Publicar seleccionados
+              Publicar
             </Button>
             <Button
-              size="xs"
+              size="sm"
               variant="outline"
               onClick={() => handleBulkStatus("draft")}
               disabled={isActionPending}
+              className="cursor-pointer"
             >
               Mover a borrador
             </Button>
             <Button
-              size="xs"
-              variant="destructive"
+              size="sm"
+              variant="ghost"
               onClick={() => setShowBulkDeleteDialog(true)}
               disabled={isActionPending}
+              className="cursor-pointer text-destructive hover:bg-danger-tint hover:text-destructive"
             >
-              <Trash2 className="size-3" />
+              <Trash2 data-icon="inline-start" />
               Eliminar ({selectedIds.size})
+            </Button>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => setSelectedIds(new Set())}
+              className="cursor-pointer text-ia hover:bg-card hover:text-ia-hover"
+              aria-label="Limpiar selección"
+            >
+              <X className="size-4" />
             </Button>
           </div>
         </div>
       )}
 
-      {/* Main Content Area: Table View vs Grid View */}
+      {/* Contenido: tabla o grilla */}
       {filteredPosts.length === 0 ? (
-        <EmptyState
-          preset="posts"
-          title={searchQuery || statusFilter !== "all" || tagFilter !== "all" ? "No se encontraron posts" : "Aún no tienes posts"}
-          description={
-            searchQuery || statusFilter !== "all" || tagFilter !== "all"
-              ? "Prueba cambiando o limpiando los filtros de búsqueda."
-              : "Comienza a escribir tu primera historia o diseña con el lienzo visual."
-          }
-          action={
-            searchQuery || statusFilter !== "all" || tagFilter !== "all" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("")
-                  setStatusFilter("all")
-                  setTagFilter("all")
-                }}
-              >
-                Limpiar filtros
-              </Button>
-            ) : (
-              <Button size="sm" render={<Link href="/panel/posts/nuevo" />}>
-                Crear primer post
-              </Button>
-            )
-          }
-        />
+        <div className="rounded-xl border border-border bg-card px-6 py-10">
+          <EmptyState
+            preset={hasActiveFilters ? "search" : "posts"}
+            bordered={false}
+            title={
+              hasActiveFilters
+                ? searchQuery
+                  ? `Sin resultados para “${searchQuery}”`
+                  : "Sin resultados"
+                : "Aún no tienes entradas"
+            }
+            description={
+              hasActiveFilters
+                ? "Prueba con otro término o quita los filtros."
+                : "Crea tu primera entrada y empieza a publicar."
+            }
+            action={
+              hasActiveFilters ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setSearchQuery("")
+                    setStatusFilter("all")
+                    setTagFilter("all")
+                  }}
+                >
+                  Limpiar filtros
+                </Button>
+              ) : (
+                <Button size="sm" className="cursor-pointer" render={<Link href="/panel/posts/nuevo" />}>
+                  Nueva entrada
+                </Button>
+              )
+            }
+          />
+        </div>
       ) : viewMode === "table" ? (
-        <div className="rounded-md border border-border overflow-hidden bg-card">
-          <Table>
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <Table className="[&_td]:px-3 [&_td:first-child]:pl-5 [&_td:last-child]:pr-5 [&_th]:px-3 [&_th:first-child]:pl-5 [&_th:last-child]:pr-5">
             <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead className="w-10">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="h-12 w-10">
                   <Checkbox
                     checked={selectedIds.size === filteredPosts.length && filteredPosts.length > 0}
                     onCheckedChange={handleSelectAll}
-                    aria-label="Seleccionar todos"
+                    aria-label="Seleccionar todas"
                   />
                 </TableHead>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Categoría</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Vistas</TableHead>
-                <TableHead className="text-right">Me gusta</TableHead>
-                <TableHead className="text-right">Comentarios</TableHead>
-                <TableHead className="text-right">Actualizado</TableHead>
-                <TableHead className="w-12 text-center" />
+                <TableHead className="h-12 text-xs font-medium text-muted-foreground">Título</TableHead>
+                <TableHead className="h-12 text-xs font-medium text-muted-foreground">Categoría</TableHead>
+                <TableHead className="h-12 text-xs font-medium text-muted-foreground">Estado</TableHead>
+                <TableHead className="h-12 text-xs font-medium text-muted-foreground">Vistas</TableHead>
+                <TableHead className="h-12 text-xs font-medium text-muted-foreground">Fecha</TableHead>
+                <TableHead className="h-12 w-14" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -558,126 +543,139 @@ export function PostsDataTable({
                 const category = post.categoryId ? categoryMap.get(post.categoryId) : null
 
                 return (
-                  <TableRow key={post.id} className={isSelected ? "bg-muted/30" : ""}>
-                    <TableCell>
+                  <TableRow key={post.id} className={cn("h-[72px]", isSelected && "bg-surface-sunken")}>
+                    <TableCell className="py-3 align-middle">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => handleToggleSelect(post.id)}
                         aria-label={`Seleccionar ${post.title}`}
                       />
                     </TableCell>
-                    <TableCell className="p-0 text-center">
-                      <button
-                        onClick={() => handleToggleFeatured(post.id)}
-                        title={post.featured ? "Quitar de destacados" : "Marcar como destacado"}
-                        className="cursor-pointer text-muted-foreground hover:text-amber-500 transition-colors p-1"
-                      >
-                        <Star
-                          className={`size-4 ${
-                            post.featured ? "fill-amber-400 text-amber-500" : "opacity-30 hover:opacity-100"
-                          }`}
-                        />
-                      </button>
-                    </TableCell>
-                    <TableCell className="max-w-xs md:max-w-md font-medium text-foreground">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2">
-                          <Link href={`/panel/posts/${post.id}`} className="hover:underline font-medium truncate">
-                            {post.title}
-                          </Link>
+
+                    <TableCell className="py-3 align-middle">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-surface-sunken">
+                          {post.coverUrl ? (
+                            <img src={post.coverUrl} alt="" className="size-full object-cover" />
+                          ) : (
+                            <ImageIcon className="size-5 text-text-tertiary" />
+                          )}
                         </div>
-                        {post.excerpt && (
-                          <span className="text-xs text-muted-foreground truncate">{post.excerpt}</span>
-                        )}
-                        {post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {post.tags.slice(0, 3).map((tagSlug) => (
-                              <span key={tagSlug} className="text-[10px] text-muted-foreground font-mono">
-                                #{tagSlug}
-                              </span>
-                            ))}
-                            {post.tags.length > 3 && (
-                              <span className="text-[10px] text-muted-foreground">+{post.tags.length - 3}</span>
-                            )}
+                        <div className="flex min-w-0 max-w-xs flex-col gap-0.5 md:max-w-md">
+                          <div className="flex items-start gap-1.5">
+                            <button
+                              onClick={() => handleToggleFeatured(post.id)}
+                              title={post.featured ? "Quitar de destacadas" : "Marcar como destacada"}
+                              aria-label={post.featured ? "Quitar de destacadas" : "Marcar como destacada"}
+                              className="mt-0.5 shrink-0 cursor-pointer transition-colors"
+                            >
+                              <Star
+                                className={cn(
+                                  "size-3.5",
+                                  post.featured
+                                    ? "fill-warn text-warn"
+                                    : "text-text-tertiary opacity-40 hover:opacity-100"
+                                )}
+                              />
+                            </button>
+                            <Link
+                              href={`/panel/posts/${post.id}`}
+                              className="line-clamp-2 text-sm font-medium whitespace-normal text-foreground hover:underline"
+                            >
+                              {post.title}
+                            </Link>
                           </div>
-                        )}
+                          <span className="truncate text-xs text-text-tertiary">/{post.slug}</span>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+
+                    <TableCell className="py-3 align-middle">
                       {category ? (
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-muted/60 border border-border/80">
+                        <span className="inline-flex max-w-40 items-center gap-1.5 rounded-full bg-surface-sunken px-2.5 py-1 text-xs font-medium text-foreground">
                           <span
-                            className="size-2 rounded-full shrink-0"
-                            style={{ backgroundColor: category.color || "#3b82f6" }}
+                            className="size-1.5 shrink-0 rounded-full bg-cat-8"
+                            style={category.color ? { backgroundColor: category.color } : undefined}
                           />
-                          <span className="truncate max-w-[120px]">{category.name}</span>
-                        </div>
+                          <span className="truncate">{category.name}</span>
+                        </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground italic">Sin categoría</span>
+                        <span className="text-sm text-text-tertiary">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+
+                    <TableCell className="py-3 align-middle">
                       <DropdownMenu>
                         <DropdownMenuTrigger render={<button className="cursor-pointer" />}>
                           <Badge
-                            variant={
-                              post.status === "published"
-                                ? "default"
-                                : post.status === "scheduled"
-                                ? "outline"
-                                : "secondary"
-                            }
-                            className="cursor-pointer hover:opacity-80"
+                            className={cn(
+                              "h-6 rounded-full border-transparent px-2.5 text-xs font-medium transition-opacity hover:opacity-80",
+                              statusBadgeStyles[post.status] ?? NEUTRAL_BADGE
+                            )}
                           >
                             {statusLabels[post.status] ?? post.status}
                           </Badge>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start">
                           <DropdownMenuLabel className="text-xs">Cambiar estado</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleChangeStatus(post.id, "published")}>
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleChangeStatus(post.id, "published")}>
                             Publicado
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleChangeStatus(post.id, "draft")}>
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleChangeStatus(post.id, "draft")}>
                             Borrador
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleChangeStatus(post.id, "scheduled")}>
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => handleChangeStatus(post.id, "scheduled")}>
                             Programado
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
+
+                    <TableCell className="py-3 align-middle text-sm tabular-nums text-muted-foreground">
                       {formatCompactNumber(post.views)}
                     </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {formatCompactNumber(post.likes)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {formatCompactNumber(post.comments)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
+
+                    <TableCell className="py-3 align-middle text-sm tabular-nums text-muted-foreground">
                       {formatShortDate(post.updatedAt)}
                     </TableCell>
-                    <TableCell className="text-center">
+
+                    <TableCell className="py-3 align-middle">
                       <DropdownMenu>
-                        <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" className="cursor-pointer" />}>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="cursor-pointer text-muted-foreground hover:text-foreground"
+                            />
+                          }
+                        >
                           <MoreHorizontal className="size-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuGroup>
-                            <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}`} />}>
-                              <Pencil data-icon="inline-start" /> Editar post
+                            <DropdownMenuItem className="cursor-pointer" render={<Link href={`/panel/posts/${post.id}`} />}>
+                              <Pencil data-icon="inline-start" /> Editar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(post.id)}>
+                            {post.status === "published" && (
+                              <DropdownMenuItem
+                                className="cursor-pointer"
+                                render={<Link href={`/post/${post.slug}`} target="_blank" rel="noreferrer" />}
+                              >
+                                <Eye data-icon="inline-start" /> Ver entrada
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem className="cursor-pointer" onClick={() => handleDuplicate(post.id)}>
                               <Copy data-icon="inline-start" /> Duplicar
                             </DropdownMenuItem>
                           </DropdownMenuGroup>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             variant="destructive"
+                            className="cursor-pointer"
                             onClick={() => setDeleteDialogPost(post)}
                           >
-                            <Trash2 data-icon="inline-start" /> Eliminar post
+                            <Trash2 data-icon="inline-start" /> Eliminar entrada
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -689,15 +687,29 @@ export function PostsDataTable({
           </Table>
         </div>
       ) : (
-        /* Grid Card View */
+        /* Vista de grilla */
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPosts.map((post) => {
             const isSelected = selectedIds.has(post.id)
             const category = post.categoryId ? categoryMap.get(post.categoryId) : null
 
             return (
-              <Card key={post.id} className={`relative flex flex-col justify-between transition-shadow hover:shadow-md ${isSelected ? "border-primary ring-1 ring-primary" : ""}`}>
-                <CardHeader className="pb-3">
+              <Card
+                key={post.id}
+                className={cn(
+                  "flex flex-col justify-between gap-0 overflow-hidden rounded-xl border bg-card py-0 shadow-none ring-0 transition-colors",
+                  isSelected ? "border-ia-border bg-ia-tint" : "border-border"
+                )}
+              >
+                <div className="flex aspect-[16/9] items-center justify-center overflow-hidden bg-surface-sunken">
+                  {post.coverUrl ? (
+                    <img src={post.coverUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    <ImageIcon className="size-6 text-text-tertiary" />
+                  )}
+                </div>
+
+                <CardHeader className="flex flex-col gap-2 px-4 pt-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <Checkbox
@@ -706,62 +718,80 @@ export function PostsDataTable({
                         aria-label={`Seleccionar ${post.title}`}
                       />
                       <Badge
-                        variant={
-                          post.status === "published"
-                            ? "default"
-                            : post.status === "scheduled"
-                            ? "outline"
-                            : "secondary"
-                        }
+                        className={cn(
+                          "h-6 rounded-full border-transparent px-2.5 text-xs font-medium",
+                          statusBadgeStyles[post.status] ?? NEUTRAL_BADGE
+                        )}
                       >
                         {statusLabels[post.status] ?? post.status}
                       </Badge>
                       {category && (
-                        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted border border-border">
+                        <span className="inline-flex max-w-28 items-center gap-1.5 rounded-full bg-surface-sunken px-2 py-0.5 text-xs font-medium text-foreground">
                           <span
-                            className="size-1.5 rounded-full shrink-0"
-                            style={{ backgroundColor: category.color || "#3b82f6" }}
+                            className="size-1.5 shrink-0 rounded-full bg-cat-8"
+                            style={category.color ? { backgroundColor: category.color } : undefined}
                           />
-                          <span className="truncate max-w-[90px]">{category.name}</span>
-                        </div>
+                          <span className="truncate">{category.name}</span>
+                        </span>
                       )}
                     </div>
                     <button
                       onClick={() => handleToggleFeatured(post.id)}
-                      className="cursor-pointer text-muted-foreground hover:text-amber-500"
+                      title={post.featured ? "Quitar de destacadas" : "Marcar como destacada"}
+                      aria-label={post.featured ? "Quitar de destacadas" : "Marcar como destacada"}
+                      className="shrink-0 cursor-pointer"
                     >
-                      <Star className={`size-4 ${post.featured ? "fill-amber-400 text-amber-500" : "opacity-30"}`} />
+                      <Star
+                        className={cn(
+                          "size-4",
+                          post.featured ? "fill-warn text-warn" : "text-text-tertiary opacity-40 hover:opacity-100"
+                        )}
+                      />
                     </button>
                   </div>
-                  <CardTitle className="text-base mt-2 line-clamp-2">
+
+                  <CardTitle className="line-clamp-2 text-sm font-medium text-foreground">
                     <Link href={`/panel/posts/${post.id}`} className="hover:underline">
                       {post.title}
                     </Link>
                   </CardTitle>
-                  <CardDescription className="line-clamp-2 text-xs mt-1">
-                    {post.excerpt || "Sin resumen"}
+                  <CardDescription className="line-clamp-2 text-xs text-muted-foreground">
+                    {post.excerpt || "Sin extracto"}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center justify-between border-t border-border/60 pt-3 text-xs text-muted-foreground">
+
+                <CardContent className="px-4 pb-3 pt-3">
+                  <div className="flex items-center justify-between border-t border-border pt-3 text-xs tabular-nums text-muted-foreground">
                     <div className="flex items-center gap-3">
                       <span>{formatCompactNumber(post.views)} vistas</span>
-                      <span>{formatCompactNumber(post.likes)} likes</span>
+                      <span>{formatCompactNumber(post.likes)} me gusta</span>
                       <span>{formatCompactNumber(post.comments)} com.</span>
                     </div>
                     <DropdownMenu>
-                      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" className="cursor-pointer" />}>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
+                          />
+                        }
+                      >
                         <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem render={<Link href={`/panel/posts/${post.id}`} />}>
+                        <DropdownMenuItem className="cursor-pointer" render={<Link href={`/panel/posts/${post.id}`} />}>
                           <Pencil data-icon="inline-start" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicate(post.id)}>
+                        <DropdownMenuItem className="cursor-pointer" onClick={() => handleDuplicate(post.id)}>
                           <Copy data-icon="inline-start" /> Duplicar
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onClick={() => setDeleteDialogPost(post)}>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          className="cursor-pointer"
+                          onClick={() => setDeleteDialogPost(post)}
+                        >
                           <Trash2 data-icon="inline-start" /> Eliminar
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -774,13 +804,22 @@ export function PostsDataTable({
         </div>
       )}
 
+      {/* Pie de lista */}
+      {filteredPosts.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Mostrando <span className="tabular-nums">{filteredPosts.length}</span> de{" "}
+          <span className="tabular-nums">{posts.length}</span>{" "}
+          {posts.length === 1 ? "entrada" : "entradas"}
+        </p>
+      )}
+
       {/* Single Delete Confirmation Dialog */}
       <ConfirmDialog
         open={Boolean(deleteDialogPost)}
         onOpenChange={(open) => !open && setDeleteDialogPost(null)}
-        title="¿Eliminar este post?"
+        title="¿Eliminar esta entrada?"
         description={`¿Estás seguro de que deseas eliminar permanentemente "${deleteDialogPost?.title}"? Esta acción no se puede deshacer.`}
-        confirmText="Eliminar post"
+        confirmText="Eliminar entrada"
         variant="destructive"
         isLoading={isActionPending}
         onConfirm={handleDeleteConfirm}
@@ -790,9 +829,9 @@ export function PostsDataTable({
       <ConfirmDialog
         open={showBulkDeleteDialog}
         onOpenChange={setShowBulkDeleteDialog}
-        title={`¿Eliminar ${selectedIds.size} posts?`}
-        description="Esta acción eliminará de forma permanente todos los posts seleccionados junto con sus comentarios. No se puede deshacer."
-        confirmText={`Eliminar ${selectedIds.size} posts`}
+        title={`¿Eliminar ${selectedIds.size} entradas?`}
+        description="Esta acción eliminará de forma permanente todas las entradas seleccionadas junto con sus comentarios. No se puede deshacer."
+        confirmText={`Eliminar ${selectedIds.size} entradas`}
         variant="destructive"
         isLoading={isBulkDeleting}
         onConfirm={handleBulkDelete}
@@ -800,4 +839,3 @@ export function PostsDataTable({
     </div>
   )
 }
-

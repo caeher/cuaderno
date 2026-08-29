@@ -145,7 +145,7 @@ export function BlockHandle({ editor, containerRef }: BlockHandleProps) {
         onClick={handleAddBlock}
         title="Añadir bloque debajo (/)"
         aria-label="Añadir bloque"
-        className="flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+        className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <Plus className="size-4" />
       </button>
@@ -162,7 +162,7 @@ export function BlockHandle({ editor, containerRef }: BlockHandleProps) {
           onDragStart={handleDragStart}
           title="Arrastrar para mover o hacer clic para opciones"
           aria-label="Opciones de bloque"
-          className="flex size-6 cursor-grab items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground active:cursor-grabbing"
+          className="flex size-7 cursor-grab items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
         >
           <GripVertical className="size-4" />
         </button>

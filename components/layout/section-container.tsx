@@ -11,8 +11,8 @@ export interface SectionContainerProps extends React.HTMLAttributes<HTMLElement>
 
 const backgroundClasses = {
   default: "bg-background",
-  muted: "bg-muted/30",
-  card: "bg-card/40",
+  muted: "bg-surface-sunken",
+  card: "bg-card",
 }
 
 const containerSizeClasses = {
@@ -20,7 +20,7 @@ const containerSizeClasses = {
   md: "max-w-3xl",
   lg: "max-w-4xl",
   xl: "max-w-6xl",
-  full: "max-w-full",
+  full: "max-w-[90rem]",
 }
 
 export function SectionContainer({
@@ -36,13 +36,19 @@ export function SectionContainer({
     <section
       id={id}
       className={cn(
-        bordered && "border-t border-border/70",
+        // El sistema se sostiene con el hairline de 1px, no con sombra.
+        bordered && "border-t border-border",
         backgroundClasses[background],
         className
       )}
       {...props}
     >
-      <div className={cn("mx-auto px-6 py-20 md:py-24", containerSizeClasses[containerSize])}>
+      <div
+        className={cn(
+          "mx-auto w-full px-4 py-12 md:px-6 md:py-16 xl:px-10",
+          containerSizeClasses[containerSize]
+        )}
+      >
         {children}
       </div>
     </section>

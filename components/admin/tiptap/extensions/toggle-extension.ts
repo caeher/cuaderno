@@ -137,7 +137,7 @@ export const ToggleContent = Node.create({
       "div",
       mergeAttributes(HTMLAttributes, {
         "data-type": "toggle-content",
-        class: "notion-toggle-content pl-6 pt-1 border-l-2 border-border/40 ml-2",
+        class: "notion-toggle-content pl-6 pt-1 border-l border-border ml-2",
       }),
       0,
     ]

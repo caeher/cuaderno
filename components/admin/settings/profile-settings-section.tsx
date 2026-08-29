@@ -57,28 +57,32 @@ export function ProfileSettingsSection({
   const [showCustomCoverInput, setShowCustomCoverInput] = React.useState(false)
 
   return (
-    <FieldSet>
-      <FieldLegend>Perfil público</FieldLegend>
-      <FieldDescription>Esta información se muestra en tu página de autor y en todos tus artículos.</FieldDescription>
+    <FieldSet className="rounded-xl border border-border bg-card p-5">
+      <FieldLegend className="text-base font-semibold text-foreground">Perfil público</FieldLegend>
+      <FieldDescription className="text-sm text-muted-foreground">
+        Esta información se muestra en tu página de autor y en todos tus artículos.
+      </FieldDescription>
       <FieldGroup className="gap-5">
         {/* Avatar Section */}
         <Field>
           <FieldLabel>Foto de perfil</FieldLabel>
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <Avatar className="size-16 border-2 border-border shadow-xs shrink-0">
+            <Avatar className="size-16 shrink-0 border-2 border-border">
               <AvatarImage src={avatarUrl || "/placeholder.svg"} alt={name} />
               <AvatarFallback className="text-lg">{getInitials(name)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-muted-foreground font-medium">Elegir preset:</span>
+                <span className="text-xs font-medium text-muted-foreground">Elegir preset:</span>
                 {PRESET_AVATARS.map((url, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => onAvatarUrlChange(url)}
                     className={`size-7 rounded-full overflow-hidden border transition-all cursor-pointer ${
-                      avatarUrl === url ? "ring-2 ring-primary border-primary scale-110" : "border-border opacity-70 hover:opacity-100"
+                      avatarUrl === url
+                        ? "ring-2 ring-ia ring-offset-2 ring-offset-card border-ia scale-110"
+                        : "border-border opacity-70 hover:opacity-100"
                     }`}
                   >
                     <img src={url} alt={`Avatar preset ${i}`} className="size-full object-cover" />
@@ -98,7 +102,7 @@ export function ProfileSettingsSection({
                   value={avatarUrl}
                   onChange={(e) => onAvatarUrlChange(e.target.value)}
                   placeholder="https://ejemplo.com/avatar.jpg"
-                  className="text-xs h-8"
+                  className="text-sm"
                 />
               )}
             </div>
@@ -110,19 +114,21 @@ export function ProfileSettingsSection({
           <FieldLabel>Imagen de portada</FieldLabel>
           <div className="flex flex-col gap-3">
             {coverUrl && (
-              <div className="relative h-24 w-full overflow-hidden rounded-md border border-border">
+              <div className="relative h-24 w-full overflow-hidden rounded-lg border border-border">
                 <img src={coverUrl} alt="Portada" className="size-full object-cover" />
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground font-medium">Elegir portada:</span>
+              <span className="text-xs font-medium text-muted-foreground">Elegir portada:</span>
               {PRESET_COVERS.map((url, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => onCoverUrlChange(url)}
                   className={`h-7 w-12 rounded overflow-hidden border transition-all cursor-pointer ${
-                    coverUrl === url ? "ring-2 ring-primary border-primary scale-105" : "border-border opacity-70 hover:opacity-100"
+                    coverUrl === url
+                    ? "ring-2 ring-ia ring-offset-2 ring-offset-card border-ia scale-105"
+                    : "border-border opacity-70 hover:opacity-100"
                   }`}
                 >
                   <img src={url} alt={`Cover preset ${i}`} className="size-full object-cover" />
@@ -142,7 +148,7 @@ export function ProfileSettingsSection({
                 value={coverUrl}
                 onChange={(e) => onCoverUrlChange(e.target.value)}
                 placeholder="https://ejemplo.com/portada.jpg"
-                className="text-xs h-8"
+                className="text-sm"
               />
             )}
           </div>
@@ -165,7 +171,7 @@ export function ProfileSettingsSection({
         <Field>
           <FieldLabel htmlFor="location">Ubicación</FieldLabel>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <MapPin className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
             <Input
               id="location"
               value={location}

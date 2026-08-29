@@ -125,9 +125,9 @@ export function BlockContextMenu({
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger render={children as React.ReactElement} />
-      <DropdownMenuContent className="w-56 text-xs" align="start" side="right" sideOffset={8}>
+      <DropdownMenuContent className="w-56 rounded-xl text-sm" align="start" side="right" sideOffset={8}>
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+          <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:bg-danger-tint focus:text-destructive">
             <Trash2 className="size-3.5" />
             <span>Eliminar bloque</span>
           </DropdownMenuItem>
@@ -145,7 +145,7 @@ export function BlockContextMenu({
               <Type className="size-3.5" />
               <span>Convertir en</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-52 text-xs">
+            <DropdownMenuSubContent className="w-52 rounded-xl text-sm">
               <DropdownMenuItem onClick={() => transformNode(() => editor.chain().focus().setParagraph().run())}>
                 <Type className="size-3.5" />
                 <span>Texto / Párrafo</span>
@@ -190,8 +190,8 @@ export function BlockContextMenu({
               <Palette className="size-3.5" />
               <span>Color de bloque</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-48 text-xs max-h-72 overflow-y-auto">
-              <div className="px-2 py-1 font-semibold text-[10px] uppercase text-muted-foreground">Texto</div>
+            <DropdownMenuSubContent className="max-h-72 w-48 overflow-y-auto rounded-xl text-sm">
+              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">Texto</div>
               {NOTION_TEXT_COLORS.map((c) => (
                 <DropdownMenuItem
                   key={c.value}
@@ -205,7 +205,7 @@ export function BlockContextMenu({
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <div className="px-2 py-1 font-semibold text-[10px] uppercase text-muted-foreground">Fondo</div>
+              <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">Fondo</div>
               {NOTION_BG_COLORS.map((b) => (
                 <DropdownMenuItem
                   key={b.value}

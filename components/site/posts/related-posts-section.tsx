@@ -19,9 +19,9 @@ export function RelatedPostsSection({
   if (!posts || posts.length === 0) return null
 
   return (
-    <div className={cn("mt-14 border-t border-border/70 pt-10", className)}>
-      <h2 className="font-serif text-xl font-medium">{title}</h2>
-      <div className="mt-6 flex flex-col divide-y divide-border/70">
+    <div className={cn("mt-14 border-t border-border pt-10", className)}>
+      <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+      <div className="mt-6 flex flex-col divide-y divide-border">
         {posts.map((relatedPost) => {
           const relatedAuthor = authorMap.get(relatedPost.authorId)
           if (!relatedAuthor) return null

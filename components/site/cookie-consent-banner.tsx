@@ -73,21 +73,21 @@ export function CookieConsentBanner() {
           aria-label="Aviso de cookies"
           className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-4xl animate-in fade-in slide-in-from-bottom-5 duration-300 sm:bottom-6 sm:left-6 sm:right-6"
         >
-          <div className="rounded-2xl border border-border/80 bg-background/95 p-5 shadow-xl backdrop-blur-md dark:border-border/60 sm:p-6">
+          <div className="rounded-xl border border-border bg-card p-5 shadow-lg sm:p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-3.5">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-ia-tint text-ia">
                   <Cookie className="size-5" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">
+                  <h3 className="text-sm font-semibold tracking-[-0.01em] text-foreground">
                     Control de privacidad y cookies en Cuaderno
                   </h3>
                   <p className="text-xs leading-relaxed text-muted-foreground">
                     Utilizamos cookies técnicas para mantener tu sesión segura y, con tu consentimiento, cookies analíticas anónimas para que los autores conozcan el alcance de sus lecturas.{" "}
                     <Link
                       href="/legal/cookies"
-                      className="text-primary underline underline-offset-2 hover:text-primary/80"
+                      className="font-medium text-ia underline underline-offset-2 transition-colors hover:text-ia-hover"
                     >
                       Leer política de cookies
                     </Link>
@@ -101,7 +101,7 @@ export function CookieConsentBanner() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowModal(true)}
-                  className="text-xs h-8 cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg border-border px-3 text-xs font-medium"
                 >
                   <Sliders className="mr-1.5 size-3.5" />
                   Configurar
@@ -110,14 +110,14 @@ export function CookieConsentBanner() {
                   variant="outline"
                   size="sm"
                   onClick={() => saveConsent(false)}
-                  className="text-xs h-8 cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg border-border px-3 text-xs font-medium"
                 >
                   Rechazar no esenciales
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => saveConsent(true)}
-                  className="text-xs h-8 cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg px-4 text-xs font-semibold"
                 >
                   <Check className="mr-1.5 size-3.5" />
                   Aceptar todas
@@ -130,15 +130,15 @@ export function CookieConsentBanner() {
 
       {/* Modal interactivo de configuración de preferencias */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-2xl border border-border bg-background p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-border/70 pb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-lg animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-ia-tint text-ia">
                   <Shield className="size-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-foreground">
+                  <h2 className="text-base font-semibold tracking-[-0.01em] text-foreground">
                     Configuración de Cookies
                   </h2>
                   <p className="text-xs text-muted-foreground">
@@ -149,7 +149,7 @@ export function CookieConsentBanner() {
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer transition-colors"
+                className="cursor-pointer rounded-lg p-1 text-text-tertiary transition-colors hover:bg-surface-sunken hover:text-foreground"
                 aria-label="Cerrar modal"
               >
                 <X className="size-5" />
@@ -158,13 +158,13 @@ export function CookieConsentBanner() {
 
             <div className="mt-5 space-y-4">
               {/* Cookies Esenciales */}
-              <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
+              <div className="rounded-xl border border-border bg-surface-sunken p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <span className="text-xs font-semibold text-foreground">
                       Cookies Técnicas y Esenciales
                     </span>
-                    <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-medium text-primary">
+                    <span className="ml-2 rounded bg-ia-tint px-1.5 py-0.5 font-mono text-[10px] font-medium text-ia">
                       Siempre activas
                     </span>
                   </div>
@@ -176,7 +176,7 @@ export function CookieConsentBanner() {
               </div>
 
               {/* Cookies Analíticas */}
-              <div className="rounded-xl border border-border/70 bg-card p-4">
+              <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-foreground">
                     Cookies de Rendimiento y Análisis
@@ -192,11 +192,11 @@ export function CookieConsentBanner() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-between border-t border-border/70 pt-4">
+            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
               <Link
                 href="/legal/cookies"
                 onClick={() => setShowModal(false)}
-                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                className="text-xs text-muted-foreground underline underline-offset-2 transition-colors hover:text-foreground"
               >
                 Ver tabla técnica completa
               </Link>
@@ -205,14 +205,14 @@ export function CookieConsentBanner() {
                   variant="outline"
                   size="sm"
                   onClick={() => saveConsent(false)}
-                  className="text-xs h-8 cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg border-border px-3 text-xs font-medium"
                 >
                   Solo necesarias
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => saveConsent(analyticsAllowed)}
-                  className="text-xs h-8 cursor-pointer"
+                  className="h-9 cursor-pointer rounded-lg px-4 text-xs font-semibold"
                 >
                   Guardar selección
                 </Button>

@@ -23,17 +23,21 @@ export function FeaturedPostsSection({
   viewAllHref = "/explorar",
 }: FeaturedPostsSectionProps) {
   return (
-    <SectionContainer background="card">
+    <SectionContainer>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <SectionHeading eyebrow={eyebrow} title={title} />
         {viewAllHref && (
-          <Button variant="ghost" render={<Link href={viewAllHref} />}>
+          <Button
+            variant="ghost"
+            className="h-9 px-3 text-ia hover:bg-ia-tint hover:text-ia-hover"
+            render={<Link href={viewAllHref} />}
+          >
             Ver todo
-            <ArrowRight data-icon="inline-end" />
+            <ArrowRight data-icon="inline-end" strokeWidth={1.5} />
           </Button>
         )}
       </div>
-      <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => {
           const author = authorMap.get(post.authorId)
           if (!author) return null

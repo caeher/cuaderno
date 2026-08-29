@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { MessageSquare, ArrowRight, Trash2 } from "lucide-react"
+import { ArrowRight, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import type { Comment, Post } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
@@ -44,48 +44,62 @@ export function RecentCommentsWidget({ comments: initialComments, postMap }: Rec
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-        <div>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <MessageSquare className="size-4 text-muted-foreground" />
-            <span>Últimos comentarios</span>
-          </CardTitle>
-          <CardDescription>Opiniones recientes de tus lectores.</CardDescription>
+    <Card className="gap-0 overflow-hidden rounded-xl border border-border py-0 shadow-none ring-0">
+      <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 py-4">
+        <div className="flex flex-col gap-0.5">
+          <CardTitle className="text-base font-medium text-foreground">Últimos comentarios</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Opiniones recientes de tus lectores.
+          </CardDescription>
         </div>
-        <Button variant="ghost" size="sm" render={<Link href="/panel/comentarios" />}>
-          Gestionar ({comments.length})
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 cursor-pointer text-ia hover:bg-ia-tint hover:text-ia-hover"
+          render={<Link href="/panel/comentarios" />}
+        >
+          Ver todos
           <ArrowRight data-icon="inline-end" />
         </Button>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="border-t border-border px-5 py-2">
         {comments.length === 0 ? (
-          <EmptyState
-            preset="comments"
-            bordered={false}
-            title="Sin comentarios recientes"
-            description="Tus artículos aún no han recibido comentarios nuevos."
-          />
+          <div className="py-6">
+            <EmptyState
+              preset="comments"
+              bordered={false}
+              title="Sin comentarios recientes"
+              description="Tus entradas aún no han recibido comentarios nuevos."
+            />
+          </div>
         ) : (
-          <div className="flex flex-col divide-y divide-border/60">
+          <div className="flex flex-col divide-y divide-border">
             {comments.slice(0, 4).map((comment) => {
               const post = postMap.get(comment.postId)
               return (
-                <div key={comment.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
-                  <Avatar className="size-8 shrink-0 mt-0.5">
+                <div key={comment.id} className="flex items-start gap-3 py-3">
+                  <Avatar className="mt-0.5 size-8 shrink-0">
                     <AvatarImage src={comment.authorAvatarUrl || "/placeholder.svg"} alt={comment.authorName} />
-                    <AvatarFallback className="text-[10px]">{getInitials(comment.authorName)}</AvatarFallback>
+                    <AvatarFallback className="text-xs">{getInitials(comment.authorName)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-xs font-semibold text-foreground truncate">{comment.authorName}</p>
-                      <time className="text-[11px] text-muted-foreground shrink-0">{formatShortDate(comment.createdAt)}</time>
+                      <p className="truncate text-sm font-medium text-foreground">{comment.authorName}</p>
+                      <time className="shrink-0 text-xs tabular-nums text-text-tertiary">
+                        {formatShortDate(comment.createdAt)}
+                      </time>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">&ldquo;{comment.content}&rdquo;</p>
+                    <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                      &ldquo;{comment.content}&rdquo;
+                    </p>
                     {post && (
-                      <p className="mt-1 text-[11px] text-muted-foreground truncate">
+                      <p className="mt-1 truncate text-xs text-text-tertiary">
                         En{" "}
-                        <Link href={`/panel/posts/${post.id}`} className="text-foreground hover:underline font-medium">
+                        <Link
+                          href={`/panel/posts/${post.id}`}
+                          className="font-medium text-muted-foreground hover:text-foreground hover:underline"
+                        >
                           {post.title}
                         </Link>
                       </p>
@@ -93,8 +107,8 @@ export function RecentCommentsWidget({ comments: initialComments, postMap }: Rec
                   </div>
                   <Button
                     variant="ghost"
-                    size="icon-xs"
-                    className="shrink-0 text-muted-foreground hover:text-destructive cursor-pointer opacity-70 hover:opacity-100"
+                    size="icon-sm"
+                    className="shrink-0 cursor-pointer text-text-tertiary hover:bg-danger-tint hover:text-destructive"
                     onClick={() => handleDelete(comment.id, post?.title)}
                     disabled={deletingId === comment.id}
                     title="Eliminar comentario"

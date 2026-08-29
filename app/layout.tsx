@@ -1,7 +1,7 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import { shadcn } from '@clerk/ui/themes'
 import type { Metadata, Viewport } from 'next'
-import { Fraunces, JetBrains_Mono, Work_Sans } from 'next/font/google'
+import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans, Work_Sans } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { JsonLdScript } from '@/components/seo/json-ld-script'
@@ -19,6 +19,15 @@ const fraunces = Fraunces({
 const workSans = Work_Sans({
   subsets: ['latin'],
   variable: '--font-work-sans',
+})
+
+// Familia del design system (design-system/tokens/fonts.css). Work Sans se conserva
+// declarada porque 35 archivos siguen usando font-serif/Fraunces: cambiar las dos
+// familias a la vez es un salto visual que nadie pidio.
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
 })
 
 const jetbrainsMono = JetBrains_Mono({
@@ -120,7 +129,7 @@ export default function RootLayout({
         <JsonLdScript data={organizationJsonLd} />
       </head>
       <body
-        className={`${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${plusJakarta.variable} ${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <ClerkProvider
           appearance={{ theme: shadcn }}

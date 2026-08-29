@@ -1,0 +1,149 @@
+/* ============================================================================
+   Cuaderno — Design System · typography.css
+   La escala tipográfica: siete tamaños y ni uno más.
+   ----------------------------------------------------------------------------
+   Depende de fonts.css, que es quien importa la familia y declara --font-sans.
+   Este archivo NO vuelve a declarar la familia: sólo la escala.
+   ----------------------------------------------------------------------------
+   QUÉ SIGNIFICA CADA ESCALÓN — la jerarquía se construye con tamaño y aire,
+   nunca cambiando de familia ni metiendo un tamaño intermedio «sólo por esta
+   pantalla». Siete escalones cubren landing, panel y editor:
+
+     display  44px → sólo el hero del landing. Grande y APRETADO (tracking
+                     negativo): a este tamaño el espaciado por defecto sobra.
+     h1       30px → título de página del panel («Entradas», «Analíticas»).
+     h2       20px → título de tarjeta y de sección.
+     h3       16px → subtítulo, nombre de fila destacada, label de grupo.
+     body     14px → el texto de trabajo del panel. Interlínea 1.55: es la
+                     medida que hace legible un párrafo largo del editor.
+     sm       13px → texto de apoyo, celdas secundarias de tabla, ayudas.
+     label    12px → MAYÚSCULAS con letter-spacing .06em. Encabezado de columna,
+                     título de grupo del sidebar, eyebrow. En mayúsculas y a
+                     este tamaño, sin ese tracking las letras se pegan.
+   ----------------------------------------------------------------------------
+   SOBRE LOS PARES --fs-* / --lh-* / --ls-*
+   El contrato define cada escalón como un par «tamaño/interlínea» (44px/1.05).
+   --fs-* es la mitad izquierda de ese par y --lh-* la mitad derecha: NO son
+   tokens nuevos del sistema, son las dos mitades del mismo valor del contrato,
+   separadas porque CSS necesita declararlas en propiedades distintas. --ls-*
+   existe sólo donde el contrato pide tracking explícito (display y label).
+   Las clases .t-* de abajo atan las mitades para que nadie use un tamaño con
+   la interlínea equivocada.
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     TAMAÑOS
+     -------------------------------------------------------------------------- */
+  --fs-display: 44px;
+  --fs-h1: 30px;
+  --fs-h2: 20px;
+  --fs-h3: 16px;
+  --fs-body: 14px;
+  --fs-sm: 13px;
+  --fs-label: 12px;
+
+  /* --------------------------------------------------------------------------
+     INTERLÍNEAS — la mitad derecha del par del contrato.
+     Sin unidad: se multiplican por el tamaño y sobreviven a cualquier cambio
+     de escala. Apretadas arriba (títulos), abiertas abajo (lectura).
+     -------------------------------------------------------------------------- */
+  --lh-display: 1.05;
+  --lh-h1: 1.15;
+  --lh-h2: 1.3;
+  --lh-h3: 1.4;
+  --lh-body: 1.55;
+  --lh-sm: 1.5;
+  --lh-label: 1.4;
+
+  /* --------------------------------------------------------------------------
+     TRACKING — sólo donde el contrato lo pide.
+     Negativo en display porque a 44px el espaciado por defecto se abre de más;
+     positivo en label porque las mayúsculas a 12px se pegan entre sí.
+     -------------------------------------------------------------------------- */
+  --ls-display: -0.02em;
+  --ls-h1: -0.01em;
+  --ls-label: 0.06em;
+}
+
+/* ============================================================================
+   NÚMEROS TABULARES — regla dura del sistema.
+   Todo número que se compare con otro va con font-variant-numeric: tabular-nums.
+   Métricas de stat cards, columnas de tabla, contadores de tabs, ejes del
+   gráfico, SEO Score, fechas. Sin esto las cifras bailan de fila en fila y una
+   columna de números deja de leerse como columna.
+   ========================================================================== */
+.tabular-nums,
+table,
+[data-metric],
+[data-numeric] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ============================================================================
+   LA ESCALA, ATADA
+   Cada clase junta tamaño + interlínea + tracking + peso de un escalón. Usalas
+   en vez de combinar los tokens a mano: así ningún h1 termina con interlínea de
+   body ni ningún label pierde su tracking.
+   ========================================================================== */
+.t-display {
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  font-weight: 700;
+}
+
+.t-h1 {
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
+  letter-spacing: var(--ls-h1);
+  font-weight: 650;
+}
+
+.t-h2 {
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
+  font-weight: 600;
+}
+
+.t-h3 {
+  font-size: var(--fs-h3);
+  line-height: var(--lh-h3);
+  font-weight: 600;
+}
+
+.t-body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+}
+
+.t-sm {
+  font-size: var(--fs-sm);
+  line-height: var(--lh-sm);
+  font-weight: 400;
+}
+
+/* El label SIEMPRE va en mayúsculas: la caja es parte del token, no una
+   decisión de cada pantalla. */
+.t-label {
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  letter-spacing: var(--ls-label);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* ============================================================================
+   APLICACIÓN BASE
+   El documento arranca en la medida de trabajo del panel. Todo lo demás sube
+   desde acá con una clase .t-*.
+   ========================================================================== */
+body {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}

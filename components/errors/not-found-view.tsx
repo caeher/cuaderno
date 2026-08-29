@@ -56,22 +56,21 @@ export function NotFoundView({
     >
       <div className="mx-auto flex max-w-xl flex-col items-center">
         {/* Subtle Decorative Icon Container */}
-        <div className="relative mb-6 flex size-20 items-center justify-center rounded-2xl border border-border/80 bg-card/80 shadow-xs backdrop-blur-xs">
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-primary/5 to-transparent" />
-          <FileQuestion className="relative size-10 text-primary/80 stroke-[1.5]" />
-          <span className="absolute -bottom-2 -right-2 flex size-6 items-center justify-center rounded-full border border-border bg-background text-[11px] font-mono font-medium text-muted-foreground shadow-xs">
+        <div className="relative mb-6 flex size-20 items-center justify-center rounded-xl border border-border bg-neutral-tint">
+          <FileQuestion className="size-10 stroke-[1.5] text-neutral" />
+          <span className="absolute -bottom-2 -right-2 flex size-6 items-center justify-center rounded-full border border-border bg-card font-mono text-[11px] font-medium tabular-nums text-muted-foreground">
             404
           </span>
         </div>
 
         {/* Badge */}
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface-sunken px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span className="size-1.5 rounded-full bg-warn" />
           {badge}
         </div>
 
         {/* Title */}
-        <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-[-0.02em] text-foreground sm:text-4xl">
           {title}
         </h1>
 
@@ -87,7 +86,7 @@ export function NotFoundView({
               variant="outline"
               size="default"
               onClick={handleBack}
-              className="gap-2 cursor-pointer"
+              className="h-10 cursor-pointer gap-2 rounded-lg border-border px-5 font-medium"
             >
               <ArrowLeft className="size-4" />
               <span>Volver atrás</span>
@@ -97,7 +96,7 @@ export function NotFoundView({
           <Button
             variant="default"
             size="default"
-            className="gap-2 cursor-pointer"
+            className="h-10 cursor-pointer gap-2 rounded-lg px-5 font-semibold"
             render={<Link href={homeUrl} />}
           >
             <Home className="size-4" />
@@ -109,46 +108,46 @@ export function NotFoundView({
 
         {/* Suggested Helpful Navigation */}
         {showSuggestions && (
-          <div className="mt-12 w-full border-t border-border/70 pt-8">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mt-12 w-full border-t border-border pt-8">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
               Rutas útiles que podrían interesarte
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-left">
               <Link
                 href="/explorar"
-                className="group flex flex-col rounded-xl border border-border/60 bg-card/50 p-4 transition-all hover:border-primary/40 hover:bg-card hover:shadow-xs"
+                className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-ia-border hover:bg-ia-tint"
               >
-                <div className="flex items-center gap-2 text-foreground font-medium text-sm group-hover:text-primary">
-                  <Compass className="size-4 text-primary" />
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground transition-colors group-hover:text-ia">
+                  <Compass className="size-4 text-ia" />
                   <span>Explorar posts</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                <p className="mt-1 text-xs leading-snug text-muted-foreground">
                   Descubre artículos y notas por temática.
                 </p>
               </Link>
 
               <Link
                 href="/#autores"
-                className="group flex flex-col rounded-xl border border-border/60 bg-card/50 p-4 transition-all hover:border-primary/40 hover:bg-card hover:shadow-xs"
+                className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-ia-border hover:bg-ia-tint"
               >
-                <div className="flex items-center gap-2 text-foreground font-medium text-sm group-hover:text-primary">
-                  <Users className="size-4 text-primary" />
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground transition-colors group-hover:text-ia">
+                  <Users className="size-4 text-ia" />
                   <span>Autores</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                <p className="mt-1 text-xs leading-snug text-muted-foreground">
                   Conoce a los creadores de Cuaderno.
                 </p>
               </Link>
 
               <Link
                 href="/registro"
-                className="group flex flex-col rounded-xl border border-border/60 bg-card/50 p-4 transition-all hover:border-primary/40 hover:bg-card hover:shadow-xs"
+                className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-ia-border hover:bg-ia-tint"
               >
-                <div className="flex items-center gap-2 text-foreground font-medium text-sm group-hover:text-primary">
-                  <PenLine className="size-4 text-primary" />
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground transition-colors group-hover:text-ia">
+                  <PenLine className="size-4 text-ia" />
                   <span>Crear blog</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-snug">
+                <p className="mt-1 text-xs leading-snug text-muted-foreground">
                   Empieza a publicar con tu propia identidad.
                 </p>
               </Link>

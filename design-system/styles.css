@@ -1,0 +1,53 @@
+/* ============================================================================
+   Cuaderno — Design System · styles.css
+   LA ÚNICA PUERTA DE ENTRADA AL SISTEMA.
+   ----------------------------------------------------------------------------
+   Este archivo no define ni un solo valor. Importa los cinco archivos de
+   tokens en el único orden válido y no hace nada más. Todo lo que el producto
+   consume — colores, familia, escala, espacio, sombras y tiempo — entra por acá.
+
+   CÓMO SE USA
+     En `app/globals.css`, ANTES de cualquier otra regla del proyecto:
+
+       @import "../design-system/styles.css";
+       @import "tailwindcss";
+
+     Y en `app/layout.tsx` se monta `next/font` con la variable técnica que
+     fonts.css espera (`--font-sans-family`) y el `ThemeProvider` de
+     `next-themes` con `attribute="data-theme"`, que es el atributo que leen
+     todos los bloques de modo oscuro del sistema.
+
+   POR QUÉ ESTE ORDEN, Y NO OTRO
+     Las reglas @import de CSS sólo son válidas al inicio de la hoja, y hay una
+     dependencia real entre archivos:
+
+       1. fonts.css       declara --font-sans. Va PRIMERO, siempre.
+       2. colors.css      la gramática de tres colores + los tres bloques de tema.
+       3. typography.css  la escala. Depende de --font-sans; no la redeclara.
+       4. spacing.css     espacio, radios y geometría del layout.
+       5. effects.css     sombras, duraciones y curva. Cierra el contrato.
+
+     Cambiar el orden no rompe con un error visible: rompe en silencio, con una
+     fuente que no aplica o un token vacío. Por eso está escrito acá y no en la
+     memoria de nadie.
+
+   LA REGLA QUE GOBIERNA TODO — TRES COLORES, TRES SIGNIFICADOS
+     NEGRO  #111111  = la acción del usuario. Todo CTA primario.
+     ÍNDIGO #6366F1  = el producto pensando, y la navegación.
+     VERDE  #10B981  = rendimiento y éxito.
+     Si el índigo aparece donde no hay navegación ni IA, o el verde donde no se
+     mide rendimiento, está mal puesto.
+
+   QUÉ NO VA EN ESTE ARCHIVO
+     · Ningún `:root { --algo: … }`. Los tokens viven en `tokens/`.
+     · Ningún estilo de componente. Los componentes viven en `components/ui/`
+       y consumen tokens por nombre.
+     · Ningún reset ni preflight. Eso lo aporta Tailwind.
+     · Ningún hexadecimal. Cero, en todo el sistema, fuera de `tokens/`.
+   ========================================================================== */
+
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/effects.css";
