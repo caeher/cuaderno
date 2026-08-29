@@ -20,6 +20,13 @@
  * Ante cualquier error se falla ABIERTO: se devuelve `null` y el middleware trata el
  * host como si fuera de la plataforma. Un blog que no resuelve es un 404; una excepción
  * en el middleware es un 500 en todo el sitio.
+ *
+ * **Por qué NO usa `lib/infrastructure/convex/client.ts`:** ese helper resuelve un JWT
+ * de Clerk con `auth()` y consulta con `fetchQuery` de `convex/nextjs`, que asumen el
+ * contexto de un Server Component o Route Handler. Este código corre en el middleware,
+ * antes de ese contexto y sin sesión — la consulta es deliberadamente anónima y por eso
+ * `users.getByCustomDomain` devuelve una proyección mínima. No lo refactorices para
+ * reutilizar aquel cliente.
  */
 
 import { ConvexHttpClient } from "convex/browser"
