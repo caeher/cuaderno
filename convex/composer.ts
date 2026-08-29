@@ -5,9 +5,10 @@
  * no deshacer sin entender por qué están:
  *
  * 1. **El `tenantId` NUNCA llega del cliente.** Se deriva de la identidad de Clerk en
- *    cada mutation. `posts.ts` acepta `args.tenantId` con fallback a la identidad;
- *    acá eso sería un agujero de aislamiento entre tenants, que es justo lo que el
- *    issue prohíbe. Un cliente que manda un tenantId ajeno no obtiene nada.
+ *    cada mutation. `posts.ts` usa otra estrategia igual de segura — acepta
+ *    `args.tenantId` y lo valida con `assertCanManageResource` antes de usarlo —, pero
+ *    #15 pide explícitamente no aceptarlo como autorización, y derivarlo deja menos
+ *    superficie: no hay un camino donde olvidarse del assert abra un agujero.
  *
  * 2. **Los jobs son idempotentes por `idempotencyKey`.** Encolar dos veces la misma
  *    operación devuelve el job existente en vez de crear uno nuevo. Sin esto, un
@@ -29,7 +30,7 @@ import {
   isTerminalStatus,
   type ComposerSessionStatus,
 } from "./lib/composer-state"
-import { getCurrentIsoTimestamp } from "./lib/helpers"
+import { calculateReadingTime, getCurrentIsoTimestamp } from "./lib/helpers"
 import { composerBriefValidator, composerSessionStatusValidator } from "./schema"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -497,5 +498,141 @@ export const recordUsage = internalMutation({
       ...args,
       createdAt: getCurrentIsoTimestamp(),
     })
+  },
+})
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Handoff al editor — issue #17
+// ─────────────────────────────────────────────────────────────────────────────
+
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+}
+
+/**
+ * Crea el post en estado `draft` a partir de los artefactos de la sesión.
+ *
+ * **`status: "draft"` es un literal, no un parámetro.** Es el invariante que define la
+ * épica: Composer nunca publica. Convertirlo en argumento para "dar flexibilidad" sería
+ * abrir el camino que el criterio de aceptación prohíbe.
+ *
+ * **Es idempotente:** si la sesión ya tiene `postId` y ese post existe, lo devuelve sin
+ * crear otro. Es el criterio de #15 — un refresh o un reintento no puede generar dos
+ * posts.
+ *
+ * Inserta directo en `posts` en vez de llamar a `posts.create` porque una mutation no
+ * puede invocar otra mutation. Los campos replican los de `posts.create`, incluido el
+ * incremento de `postCount` del autor; si aquella cambia de forma, esta debe seguirla.
+ */
+export const createDraftFromSession = mutation({
+  args: { sessionId: v.id("composerSessions") },
+  handler: async (ctx, args) => {
+    const { session, tenantId } = await requireOwnedSession(ctx, args.sessionId)
+
+    if (session.postId) {
+      const existing = await ctx.db.get(session.postId)
+      if (existing) return session.postId
+    }
+
+    if (session.status !== "awaiting_review") {
+      throw new Error(
+        `La sesión está en estado "${session.status}". Solo se puede crear el borrador desde "awaiting_review".`
+      )
+    }
+
+    const artifacts = await ctx.db
+      .query("composerArtifacts")
+      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
+      .collect()
+
+    const vigentes = artifacts.filter((a: Doc<"composerArtifacts">) => !a.supersededBy)
+    const porTipo = (kind: string) =>
+      vigentes.find((a: Doc<"composerArtifacts">) => a.kind === kind)
+
+    const article = porTipo("article")
+    if (!article?.content) {
+      throw new Error("La sesión no tiene un artículo generado; no hay nada que convertir en borrador.")
+    }
+
+    // Las etiquetas llegan como JSON del modelo: si viene mal formado se ignora en vez
+    // de tumbar el handoff. Perder etiquetas es recuperable; perder el artículo no.
+    let tags: string[] = []
+    const taxonomy = porTipo("taxonomy")
+    if (taxonomy?.content) {
+      try {
+        const parsed = JSON.parse(taxonomy.content)
+        if (Array.isArray(parsed)) {
+          tags = parsed.filter((x: unknown): x is string => typeof x === "string")
+        } else if (parsed && Array.isArray(parsed.tags)) {
+          tags = parsed.tags.filter((x: unknown): x is string => typeof x === "string")
+        }
+      } catch {
+        tags = []
+      }
+    }
+
+    const cover = porTipo("cover")
+    const coverUrl = cover?.storageId ? await ctx.storage.getUrl(cover.storageId) : undefined
+
+    const title =
+      session.title?.trim() ||
+      session.brief.topic?.trim() ||
+      "Borrador sin título"
+
+    // Slug único dentro del tenant: se sufija hasta encontrar uno libre.
+    const base = slugify(title) || "borrador"
+    let slug = base
+    let intento = 1
+    while (
+      await ctx.db
+        .query("posts")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first()
+    ) {
+      intento += 1
+      slug = `${base}-${intento}`
+    }
+
+    const authorDoc = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", session.authorId))
+      .first()
+
+    const now = getCurrentIsoTimestamp()
+
+    const postId = await ctx.db.insert("posts", {
+      authorId: authorDoc?.clerkUserId || authorDoc?.legacyId || session.authorId,
+      authorDocId: authorDoc?._id,
+      tenantId,
+      title,
+      slug,
+      excerpt: porTipo("excerpt")?.content ?? "",
+      content: article.content,
+      coverUrl: coverUrl ?? undefined,
+      tags,
+      status: "draft",
+      updatedAt: now,
+      readingTimeMinutes: calculateReadingTime(article.content),
+      views: 0,
+      likes: 0,
+      comments: 0,
+      featured: false,
+      editorMode: "notion",
+    })
+
+    if (authorDoc) {
+      await ctx.db.patch(authorDoc._id, { postCount: (authorDoc.postCount || 0) + 1 })
+    }
+
+    await ctx.db.patch(args.sessionId, { postId, updatedAt: now })
+
+    return postId
   },
 })
