@@ -23,6 +23,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Contenedor principal para organizar bloques con fondo y espaciado",
     category: "layout",
     icon: "Layout",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       isFluid: false,
     },
@@ -46,6 +48,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Distribuye elementos en columnas horizontales o verticales",
     category: "layout",
     icon: "Columns",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       columnsCount: 2,
     },
@@ -91,6 +95,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Grid responsivo automático de 2 a 4 columnas",
     category: "layout",
     icon: "Grid",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       columns: 3,
     },
@@ -108,6 +114,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Añade separación vertical personalizada",
     category: "layout",
     icon: "MoveVertical",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       height: "48px",
     },
@@ -122,6 +130,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Línea horizontal decorativa para separar contenidos",
     category: "layout",
     icon: "Minus",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       styleType: "solid",
     },
@@ -141,6 +151,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Títulos y subtítulos con jerarquía H1 a H6",
     category: "typography",
     icon: "Heading",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       text: "Título del Bloque",
       level: 2,
@@ -161,6 +173,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Bloque de texto continuo o cuerpo de lectura",
     category: "typography",
     icon: "Type",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       text: "Escribe aquí tu texto descriptivo. Puedes personalizar el tamaño de letra, color, interlineado y alineación.",
     },
@@ -180,6 +194,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Frase memorable o testimonio de autor",
     category: "typography",
     icon: "Quote",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       quote: "El buen diseño no es cómo se ve, sino cómo funciona y qué emociones despierta en quien lo usa.",
       author: "Steve Jobs",
@@ -205,6 +221,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Muestra métricas y números clave con etiquetas",
     category: "typography",
     icon: "Hash",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: false,
     defaultProps: {
       number: "10K+",
       label: "Lectores activos este mes",
@@ -228,6 +246,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Fotografía o ilustración con recorte, caption y borde",
     category: "media",
     icon: "Image",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       src: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=1200&auto=format&fit=crop&q=80",
       alt: "Imagen descriptiva",
@@ -249,6 +269,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Mosaico de imágenes en grid",
     category: "media",
     icon: "Images",
+    allowedSlots: ["home", "post"],
+    isDynamic: false,
     defaultProps: {
       images: [
         "https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=600&auto=format&fit=crop&q=80",
@@ -269,6 +291,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Reproductor para YouTube, Vimeo o video MP4",
     category: "media",
     icon: "Video",
+    allowedSlots: ["home", "post"],
+    isDynamic: false,
     defaultProps: {
       url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       title: "Video explicativo",
@@ -288,6 +312,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Encabezado visual con fondo, título y botón CTA",
     category: "media",
     icon: "Maximize",
+    allowedSlots: ["home", "post"],
+    isDynamic: false,
     defaultProps: {
       title: "Explora Nuevas Historias",
       subtitle: "Un espacio de reflexión, diseño y notas de proceso escritas con honestidad.",
@@ -311,6 +337,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Tarjeta de característica con icono, título y descripción",
     category: "media",
     icon: "Sparkles",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: false,
     defaultProps: {
       icon: "Sparkles",
       title: "Diseño Enfocado",
@@ -333,6 +361,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Enlace llamativo para redirigir a los lectores",
     category: "interactive",
     icon: "MousePointerClick",
+    allowedSlots: ["home", "post", "header", "footer"],
+    isDynamic: false,
     defaultProps: {
       text: "Hacer Clic Aquí",
       url: "#",
@@ -353,11 +383,13 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Paneles desplegables para ahorrar espacio",
     category: "interactive",
     icon: "HelpCircle",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: false,
     defaultProps: {
       items: [
-        { id: "acc_1", title: "¿Cómo funciona este diseñador de bloques?", content: "Puedes arrastrar y soltar bloques, ajustar estilos desde el panel lateral y ver cambios en tiempo real." },
-        { id: "acc_2", title: "¿Es compatible con dispositivos móviles?", content: "Sí, todos los bloques cuentan con soporte responsivo automático para tabletas y teléfonos." },
-        { id: "acc_3", title: "¿Puedo cambiar entre editor Notion y Elementor?", content: "Absolutamente, puedes alternar según tus necesidades creativas para cada artículo." },
+        { id: "acc_1", title: "¿Cómo funciona este diseñador de bloques?", content: "Puedes seleccionar bloques, ajustar estilos desde el panel lateral y ver cambios en tiempo real en la superficie activa." },
+        { id: "acc_2", title: "¿Es compatible con dispositivos móviles?", content: "Sí, todos los bloques cuentan con soporte responsivo automático para computadoras, tabletas y teléfonos." },
+        { id: "acc_3", title: "¿Cómo se aplican los cambios de diseño?", content: "Al hacer clic en Publicar, los cambios se aplican de forma global a la plantilla del blog en producción." },
       ],
     },
     defaultStyle: {
@@ -371,6 +403,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Contenido organizado en solapas alternables",
     category: "interactive",
     icon: "Layers",
+    allowedSlots: ["home", "post"],
+    isDynamic: false,
     defaultProps: {
       tabs: [
         { id: "tab_1", label: "General", content: "Información general sobre el tema tratado." },
@@ -389,10 +423,12 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Caja de aviso informativo, tip o advertencia",
     category: "interactive",
     icon: "Info",
+    allowedSlots: ["home", "post"],
+    isDynamic: false,
     defaultProps: {
       type: "tip",
       title: "Nota importante",
-      message: "Recuerda que los cambios en el diseño se aplican de forma instantánea al publicar tu post.",
+      message: "Recuerda que los cambios en el diseño se aplican de forma instantánea al publicar tu plantilla.",
     },
     defaultStyle: {
       padding: { top: "16px", right: "20px", bottom: "16px", left: "20px" },
@@ -408,6 +444,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Muestra tarjetas de posts recomendados o filtrados",
     category: "blog",
     icon: "BookOpen",
+    allowedSlots: ["home", "post"],
+    isDynamic: true,
     defaultProps: {
       count: 2,
       showExcerpt: true,
@@ -425,6 +463,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Biografía, foto y redes del creador del contenido",
     category: "blog",
     icon: "User",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: true,
     defaultProps: {
       name: "Elena Martí",
       role: "Autora & Diseñadora de Producto",
@@ -448,6 +488,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Llamada a la acción para captar lectores y correos",
     category: "blog",
     icon: "Mail",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: true,
     defaultProps: {
       title: "Suscríbete al Cuaderno Semanal",
       description: "Recibe cada domingo un ensayo corto sobre diseño, tecnología y notas de producción.",
@@ -471,8 +513,10 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Botones para difundir el artículo en redes sociales",
     category: "blog",
     icon: "Share2",
+    allowedSlots: ["home", "post", "footer"],
+    isDynamic: true,
     defaultProps: {
-      label: "¿Te ha gustado este artículo? Compártelo con tu red:",
+      label: "¿Te ha gustado este contenido? Compártelo con tu red:",
       platforms: ["twitter", "linkedin", "facebook", "whatsapp", "copy"],
     },
     defaultStyle: {
@@ -487,6 +531,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Espacio donde se renderiza el contenido editorial redactado del post",
     category: "blog",
     icon: "FileText",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       placeholderText: "El contenido editorial del artículo se inyectará automáticamente aquí en tiempo de render.",
     },
@@ -503,6 +549,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Muestra el título del artículo actual con jerarquía visual",
     category: "blog",
     icon: "Heading1",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       level: 1,
     },
@@ -522,6 +570,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Fecha de publicación, autor, tiempo de lectura y categoría",
     category: "blog",
     icon: "Calendar",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       showAuthor: true,
       showDate: true,
@@ -540,6 +590,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Muestra la fotografía destacada asociada al artículo",
     category: "blog",
     icon: "ImagePlus",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       aspectRatio: "16/9",
       rounded: true,
@@ -557,6 +609,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Caja de resumen ejecutivo para lectores rápidos y motores de IA",
     category: "blog",
     icon: "Sparkles",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       title: "Resumen ejecutivo",
     },
@@ -576,6 +630,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Botón de Me Gusta, contador de comentarios y compartir",
     category: "blog",
     icon: "Heart",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       showLikes: true,
       showCommentsCount: true,
@@ -593,6 +649,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Lista de comentarios del artículo y formulario interactivo",
     category: "blog",
     icon: "MessageSquare",
+    allowedSlots: ["post"],
+    isDynamic: true,
     defaultProps: {
       title: "Comentarios",
     },
@@ -608,6 +666,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Cuadrícula o feed de artículos publicados del tenant",
     category: "blog",
     icon: "LayoutList",
+    allowedSlots: ["home"],
+    isDynamic: true,
     defaultProps: {
       columns: 2,
       showExcerpt: true,
@@ -625,6 +685,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Barra de navegación de etiquetas y categorías del blog",
     category: "blog",
     icon: "Tags",
+    allowedSlots: ["home"],
+    isDynamic: true,
     defaultProps: {
       showCount: true,
     },
@@ -640,6 +702,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Logo del tenant, enlaces principales y selector de tema",
     category: "layout",
     icon: "Compass",
+    allowedSlots: ["header"],
+    isDynamic: true,
     defaultProps: {
       showSearch: true,
       showThemeToggle: true,
@@ -659,6 +723,8 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
     description: "Derechos reservados, enlaces legales y redes sociales del blog",
     category: "layout",
     icon: "PanelBottom",
+    allowedSlots: ["footer"],
+    isDynamic: true,
     defaultProps: {
       copyrightText: "Todos los derechos reservados",
       showLegalLinks: true,

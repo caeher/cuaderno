@@ -58,22 +58,46 @@ const ICON_MAP: Record<string, React.ElementType> = {
 }
 
 export function WidgetLibrary() {
-  const { addBlock, selectedBlockId } = useDesigner()
+  const { addBlock, selectedBlockId, activeSlot } = useDesigner()
   const [search, setSearch] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState<BlockCategory | "all">("all")
+
+  const slotLabels: Record<string, string> = {
+    home: "Portada (Home)",
+    post: "Artículo (Post)",
+    header: "Cabecera (Header)",
+    footer: "Pie (Footer)",
+  }
 
   const allWidgets = Object.values(WIDGET_DEFINITIONS)
 
   const filtered = allWidgets.filter((w) => {
+    // 1. Surface compatibility check
+    if (w.allowedSlots && !w.allowedSlots.includes(activeSlot)) {
+      return false
+    }
+
+    // 2. Search filter
     const matchesSearch =
       w.name.toLowerCase().includes(search.toLowerCase()) ||
       w.description.toLowerCase().includes(search.toLowerCase())
+
+    // 3. Category filter
     const matchesCategory = selectedCategory === "all" || w.category === selectedCategory
+
     return matchesSearch && matchesCategory
   })
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* Surface context notification */}
+      <div className="flex items-center justify-between px-4 py-2 bg-muted/40 border-b border-border/80 text-[11px]">
+        <span className="text-muted-foreground">Superficie activa:</span>
+        <span className="font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-md font-mono text-[10px]">
+          {slotLabels[activeSlot] || activeSlot}
+        </span>
+      </div>
+
       {/* Search & Category Filter */}
       <div className="flex flex-col gap-2.5 p-4 border-b border-border bg-card">
         <div className="relative">
@@ -137,8 +161,13 @@ export function WidgetLibrary() {
                       key={widget.type}
                       type="button"
                       onClick={() => addBlock(widget.type, selectedBlockId || undefined, "after")}
-                      className="group flex flex-col items-center justify-center gap-2 rounded-xl border border-border/80 bg-card p-3 text-center transition-all hover:border-primary/60 hover:bg-accent/40 hover:shadow-xs active:scale-95"
+                      className="group relative flex flex-col items-center justify-center gap-2 rounded-xl border border-border/80 bg-card p-3 text-center transition-all hover:border-primary/60 hover:bg-accent/40 hover:shadow-xs active:scale-95"
                     >
+                      {widget.isDynamic && (
+                        <span className="absolute top-1.5 right-1.5 flex items-center gap-0.5 rounded px-1 py-0.2 bg-primary/10 text-primary font-mono text-[9px] font-semibold" title="Bloque dinámico vinculado al contexto">
+                          ⚡ Dinámico
+                        </span>
+                      )}
                       <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                         <IconComp className="size-4" />
                       </div>
@@ -155,7 +184,7 @@ export function WidgetLibrary() {
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-            <p className="text-xs">No se encontraron bloques con "{search}".</p>
+            <p className="text-xs">No hay bloques disponibles en esta categoría para la superficie de {slotLabels[activeSlot]}.</p>
           </div>
         )}
       </div>
