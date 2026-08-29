@@ -1,7 +1,25 @@
+import type { PostStatus } from "@/lib/domain/entities"
 import { commentRepository, postRepository, userRepository } from "@/lib/infrastructure/repositories"
 
-export async function getDashboardData(userId: string) {
-  const [user, posts] = await Promise.all([userRepository.findById(userId), postRepository.findByAuthorId(userId)])
+export interface PanelTenantScope {
+  tenantId: string
+  authorId: string
+  tenantType: "organization" | "user"
+}
+
+async function getPostsForPanelScope(scope: PanelTenantScope, status?: PostStatus) {
+  if (scope.tenantType === "organization") {
+    return postRepository.findByOrganization(scope.tenantId, status)
+  }
+
+  return postRepository.findByAuthorId(scope.authorId, status)
+}
+
+export async function getDashboardData(scope: PanelTenantScope) {
+  const [user, posts] = await Promise.all([
+    userRepository.findById(scope.authorId),
+    getPostsForPanelScope(scope),
+  ])
 
   if (!user) throw new Error("Usuario no encontrado")
 
@@ -16,7 +34,6 @@ export async function getDashboardData(userId: string) {
   const avgReadingTime = published.length > 0 ? Math.round(totalReadingTime / published.length) : 0
   const engagementRate = totalViews > 0 ? Number((((totalLikes + totalComments) / totalViews) * 100).toFixed(1)) : 0
 
-  // Fetch recent comments across all user's posts
   const commentLists = await Promise.all(posts.map((p) => commentRepository.findByPostId(p.id)))
   const allComments = commentLists.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const postMap = new Map(posts.map((p) => [p.id, p]))

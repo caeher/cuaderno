@@ -9,12 +9,20 @@ export async function deleteComment(id: string) {
   return commentRepository.delete(id)
 }
 
-export async function getAllCommentsForAdmin(userId: string): Promise<{
+export async function getAllCommentsForAdmin(scope: {
+  tenantId: string
+  authorId: string
+  tenantType: "organization" | "user"
+}): Promise<{
   comments: Comment[]
   postMap: Map<string, Post>
   posts: Post[]
 }> {
-  const posts = await postRepository.findByAuthorId(userId)
+  const posts =
+    scope.tenantType === "organization"
+      ? await postRepository.findByOrganization(scope.tenantId)
+      : await postRepository.findByAuthorId(scope.authorId)
+
   const postMap = new Map(posts.map((p) => [p.id, p]))
   const commentLists = await Promise.all(posts.map((p) => commentRepository.findByPostId(p.id)))
   const comments = commentLists.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt))

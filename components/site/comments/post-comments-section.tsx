@@ -3,7 +3,10 @@
 import * as React from "react"
 import { Send, MessageSquarePlus } from "lucide-react"
 import { toast } from "sonner"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import type { Comment } from "@/lib/domain/entities"
+import { convexDocToComment } from "@/lib/infrastructure/convex/mappers"
 import { CommentItem } from "@/components/site/comments/comment-item"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -24,14 +27,27 @@ export function PostCommentsSection({
   className,
   ...props
 }: PostCommentsSectionProps) {
-  const [comments, setComments] = React.useState<Comment[]>(initialComments)
+  // Suscripción reactiva en tiempo real vía WebSocket a Convex
+  const liveCommentDocs = useQuery(
+    api.comments.getByPostId,
+    postId ? { postId } : "skip"
+  )
+
+  const [optimisticComments, setOptimisticComments] = React.useState<Comment[]>([])
+
+  const comments = React.useMemo<Comment[]>(() => {
+    if (liveCommentDocs && Array.isArray(liveCommentDocs) && liveCommentDocs.length > 0) {
+      return liveCommentDocs.map(convexDocToComment)
+    }
+    if (optimisticComments.length > 0) {
+      return [...optimisticComments, ...initialComments]
+    }
+    return initialComments
+  }, [liveCommentDocs, initialComments, optimisticComments])
+
   const [authorName, setAuthorName] = React.useState("")
   const [content, setContent] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
-
-  React.useEffect(() => {
-    setComments(initialComments)
-  }, [initialComments])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,7 +66,7 @@ export function PostCommentsSection({
       })
 
       if (res.success && res.comment) {
-        setComments((prev) => [res.comment!, ...prev])
+        setOptimisticComments((prev) => [res.comment!, ...prev])
         setContent("")
         toast.success("¡Comentario publicado con éxito!")
       } else {

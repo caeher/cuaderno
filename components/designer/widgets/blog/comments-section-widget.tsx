@@ -11,7 +11,7 @@ export function CommentsSectionBlock({ node }: { node: BlockNode }) {
   const css = blockStyleToCss(node.style)
   const { post, isStudioCanvas } = useTemplateContext()
 
-  const comments = post?.comments || (isStudioCanvas ? [
+  const comments = post?.comments ?? (isStudioCanvas ? [
     {
       id: "c_demo_1",
       postId: "p1",
@@ -30,8 +30,12 @@ export function CommentsSectionBlock({ node }: { node: BlockNode }) {
     },
   ] : [])
 
-  const postId = post?.post?.id || "demo-post-id"
-  const postSlug = post?.post?.slug || "demo-post-slug"
+  const postId = post?.post?.id || (isStudioCanvas ? "demo-post-id" : "")
+  const postSlug = post?.post?.slug || (isStudioCanvas ? "demo-post-slug" : "")
+
+  if (!postId && !isStudioCanvas) {
+    return null
+  }
 
   return (
     <div style={css} className={cn("comments-section-widget w-full", node.style?.customClass)}>
@@ -39,3 +43,4 @@ export function CommentsSectionBlock({ node }: { node: BlockNode }) {
     </div>
   )
 }
+

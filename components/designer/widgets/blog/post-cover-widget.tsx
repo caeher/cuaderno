@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils"
 
 export function PostCoverBlock({ node }: { node: BlockNode }) {
   const css = blockStyleToCss(node.style)
-  const { post } = useTemplateContext()
+  const { post, isStudioCanvas } = useTemplateContext()
 
   const coverUrl =
     post?.post?.coverUrl ||
-    "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&auto=format&fit=crop&q=80"
+    (isStudioCanvas
+      ? "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&auto=format&fit=crop&q=80"
+      : "")
   const title = post?.post?.title || "Imagen de portada del artículo"
 
   if (!coverUrl) return null
@@ -29,3 +31,4 @@ export function PostCoverBlock({ node }: { node: BlockNode }) {
     </div>
   )
 }
+

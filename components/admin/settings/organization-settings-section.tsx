@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/field"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { ConvexAuthStatus } from "@/components/admin/convex-auth-status"
 
 export function OrganizationSettingsSection() {
   const { user, isLoaded: isUserLoaded } = useUser()
@@ -197,6 +198,9 @@ export function OrganizationSettingsSection() {
             </div>
           )}
         </div>
+
+        {/* Convex Backend & Clerk Auth Diagnostic Card */}
+        <ConvexAuthStatus />
       </FieldGroup>
     </FieldSet>
   )

@@ -1,20 +1,16 @@
-import { getAllCategories, getAllTags, getCurrentUser } from "@/lib/application/blog-use-cases"
+import { getPanelScopedData } from "@/lib/application/tenant"
 import { PanelPageLayout } from "@/components/admin/layout/panel-page-layout"
 import { TaxonomyManager } from "@/components/admin/taxonomies/taxonomy-manager"
 
 export default async function AdminTaxonomiesPage() {
-  const user = await getCurrentUser()
-  const [allCategories, allTags] = await Promise.all([
-    getAllCategories(),
-    getAllTags(),
-  ])
+  const { scope, categories, tags } = await getPanelScopedData()
 
   return (
     <PanelPageLayout title="Categorías y Etiquetas">
       <TaxonomyManager
-        initialCategories={allCategories}
-        initialTags={allTags}
-        organizationId={user.id}
+        initialCategories={categories}
+        initialTags={tags}
+        organizationId={scope.tenantId}
       />
     </PanelPageLayout>
   )

@@ -24,16 +24,37 @@ export async function getOrCreateTenantTemplate(
     return existing
   }
 
-  return templateRepository.create({
+  const defaultTemplate: TenantTemplate = {
+    id: `tpl_${tenantId}`,
     tenantId,
     tenantType,
     name: "Plantilla del Blog",
     draftSlots: {},
+    publishedSlots: {},
     settings: {
       primaryColor: "#3b82f6",
       containerMaxWidth: "1100px",
     },
-  })
+    version: 1,
+    isPublished: false,
+    updatedAt: new Date().toISOString(),
+  }
+
+  try {
+    const created = await templateRepository.create({
+      tenantId,
+      tenantType,
+      name: "Plantilla del Blog",
+      draftSlots: {},
+      settings: {
+        primaryColor: "#3b82f6",
+        containerMaxWidth: "1100px",
+      },
+    })
+    return created || defaultTemplate
+  } catch {
+    return defaultTemplate
+  }
 }
 
 /**

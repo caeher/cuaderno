@@ -1,4 +1,4 @@
-import { getCurrentUser, getDashboardData } from "@/lib/application/blog-use-cases"
+import { getPanelScopedData } from "@/lib/application/tenant"
 import { PanelPageLayout } from "@/components/admin/layout/panel-page-layout"
 import {
   WelcomeHeader,
@@ -10,8 +10,8 @@ import {
 } from "@/components/admin/dashboard"
 
 export default async function AdminDashboardPage() {
-  const user = await getCurrentUser()
-  const { posts, stats, recentComments, postMap } = await getDashboardData(user.id)
+  const { dashboard } = await getPanelScopedData()
+  const { user, posts, stats, recentComments, postMap } = dashboard
 
   return (
     <PanelPageLayout title="Panel Principal" action={<NewPostButton />}>

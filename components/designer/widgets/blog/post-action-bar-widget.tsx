@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils"
 
 export function PostActionBarBlock({ node }: { node: BlockNode }) {
   const css = blockStyleToCss(node.style)
-  const { post } = useTemplateContext()
+  const { post, isStudioCanvas } = useTemplateContext()
 
-  const likes = post?.post?.likes || 42
-  const commentsCount = post?.comments?.length ?? post?.post?.comments ?? 3
-  const title = post?.post?.title || "Artículo del blog"
+  const likes = post?.post?.likes ?? (isStudioCanvas ? 42 : 0)
+  const commentsCount = post?.comments?.length ?? post?.post?.comments ?? (isStudioCanvas ? 3 : 0)
+  const title = post?.post?.title || (isStudioCanvas ? "Artículo del blog" : "")
 
   return (
     <div style={css} className={cn("post-action-bar-widget w-full", node.style?.customClass)}>
@@ -21,3 +21,4 @@ export function PostActionBarBlock({ node }: { node: BlockNode }) {
     </div>
   )
 }
+

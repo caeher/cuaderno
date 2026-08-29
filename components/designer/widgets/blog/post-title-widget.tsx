@@ -8,10 +8,15 @@ import { cn } from "@/lib/utils"
 
 export function PostTitleBlock({ node }: { node: BlockNode }) {
   const css = blockStyleToCss(node.style)
-  const { post } = useTemplateContext()
+  const { post, isStudioCanvas } = useTemplateContext()
 
-  const title = post?.post?.title || "El futuro de las publicaciones modulares en la web moderna"
-  const Tag = (`h${node.props?.level || 1}`) as keyof React.JSX.IntrinsicElements
+  const title =
+    post?.post?.title ||
+    (isStudioCanvas ? "El futuro de las publicaciones modulares en la web moderna" : "")
+  const level = Math.min(Math.max(Number(node.props?.level || 1), 1), 6)
+  const Tag = (`h${level}`) as keyof React.JSX.IntrinsicElements
+
+  if (!title) return null
 
   return (
     <Tag
@@ -25,3 +30,4 @@ export function PostTitleBlock({ node }: { node: BlockNode }) {
     </Tag>
   )
 }
+

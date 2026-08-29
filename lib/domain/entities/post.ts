@@ -24,7 +24,9 @@ export interface Post {
   likes: number
   comments: number
   featured: boolean
+  /** @deprecated Kept for schema backwards compatibility only; templates are managed at tenant level */
   designData?: string | null
+  /** @deprecated Kept for schema backwards compatibility only; standard editor is used */
   editorMode?: EditorMode
 }
 
