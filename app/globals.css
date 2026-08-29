@@ -1,0 +1,534 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@clerk/ui/themes/shadcn.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-work-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  /* Cool paper canvas — not cream, not pure white */
+  --background: oklch(0.9835 0.0025 264);
+  --foreground: oklch(0.19 0.014 264);
+  --card: oklch(0.995 0.001 264);
+  --card-foreground: oklch(0.19 0.014 264);
+  --popover: oklch(0.995 0.001 264);
+  --popover-foreground: oklch(0.19 0.014 264);
+  /* Single accent — cobalt ink blue, used sparingly */
+  --primary: oklch(0.4 0.19 264);
+  --primary-foreground: oklch(0.98 0.005 264);
+  --secondary: oklch(0.95 0.004 264);
+  --secondary-foreground: oklch(0.24 0.014 264);
+  --muted: oklch(0.955 0.004 264);
+  --muted-foreground: oklch(0.47 0.014 264);
+  --accent: oklch(0.93 0.03 264);
+  --accent-foreground: oklch(0.29 0.05 264);
+  --destructive: oklch(0.55 0.2 25);
+  --border: oklch(0.9 0.006 264);
+  --input: oklch(0.9 0.006 264);
+  --ring: oklch(0.4 0.19 264);
+  --chart-1: oklch(0.4 0.19 264);
+  --chart-2: oklch(0.6 0.14 220);
+  --chart-3: oklch(0.7 0.12 60);
+  --chart-4: oklch(0.55 0.16 320);
+  --chart-5: oklch(0.65 0.15 150);
+  --radius: 0.5rem;
+  /* Admin shell — deep ink sidebar, distinct from public paper canvas */
+  --sidebar: oklch(0.18 0.016 264);
+  --sidebar-foreground: oklch(0.9 0.006 264);
+  --sidebar-primary: oklch(0.62 0.16 264);
+  --sidebar-primary-foreground: oklch(0.98 0.005 264);
+  --sidebar-accent: oklch(0.25 0.018 264);
+  --sidebar-accent-foreground: oklch(0.96 0.004 264);
+  --sidebar-border: oklch(0.27 0.018 264);
+  --sidebar-ring: oklch(0.62 0.16 264);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ==========================================================================
+   Tiptap Editor & Post Content Typography (Notion-like Design System)
+   ========================================================================== */
+
+.tiptap,
+.post-content {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--foreground);
+}
+
+.tiptap > * + *,
+.post-content > * + * {
+  margin-top: 0.85em;
+}
+
+/* Empty Block Placeholders */
+.tiptap p.is-editor-empty:first-child::before,
+.tiptap p.is-empty::before,
+.tiptap h2.is-empty::before,
+.tiptap h3.is-empty::before,
+.tiptap h4.is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+/* Headings */
+.tiptap h2,
+.post-content h2 {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1.4em;
+  margin-bottom: 0.3em;
+}
+
+.tiptap h3,
+.post-content h3 {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.25em;
+  margin-bottom: 0.25em;
+}
+
+.tiptap h4,
+.post-content h4 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 1.1em;
+}
+
+/* Standard Lists */
+.tiptap ul:not([data-type="taskList"]),
+.post-content ul:not([data-type="taskList"]),
+.tiptap ol,
+.post-content ol {
+  padding-left: 1.4em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.tiptap ul:not([data-type="taskList"]),
+.post-content ul:not([data-type="taskList"]) {
+  list-style: disc;
+}
+
+.tiptap ol,
+.post-content ol {
+  list-style: decimal;
+}
+
+/* Notion-like Task Lists (To-Do) */
+.tiptap ul[data-type="taskList"],
+.post-content ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+}
+
+.tiptap li[data-type="taskItem"],
+.post-content li[data-type="taskItem"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.tiptap li[data-type="taskItem"] > label,
+.post-content li[data-type="taskItem"] > label {
+  user-select: none;
+  margin-top: 0.25em;
+  cursor: pointer;
+}
+
+.tiptap li[data-type="taskItem"] > label input[type="checkbox"],
+.post-content li[data-type="taskItem"] > label input[type="checkbox"] {
+  appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 1.5px solid var(--muted-foreground);
+  border-radius: 0.25rem;
+  background-color: transparent;
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: all 120ms ease-in-out;
+}
+
+.tiptap li[data-type="taskItem"] > label input[type="checkbox"]:checked,
+.post-content li[data-type="taskItem"] > label input[type="checkbox"]:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.tiptap li[data-type="taskItem"] > label input[type="checkbox"]:checked::before,
+.post-content li[data-type="taskItem"] > label input[type="checkbox"]:checked::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.35rem;
+  border-left: 2px solid white;
+  border-bottom: 2px solid white;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.tiptap li[data-type="taskItem"][data-checked="true"] > div,
+.post-content li[data-type="taskItem"][data-checked="true"] > div {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+
+.tiptap li[data-type="taskItem"] > div,
+.post-content li[data-type="taskItem"] > div {
+  flex: 1 1 auto;
+}
+
+/* Notion Callout Box */
+.notion-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-lg);
+  margin: 1.2em 0;
+  border: 1px solid var(--border);
+  background-color: var(--muted);
+  transition: background-color 150ms ease;
+}
+
+.notion-callout-icon-wrapper {
+  font-size: 1.25rem;
+  line-height: 1.2;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.notion-callout-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notion-callout-default { background-color: var(--muted); }
+.notion-callout-gray { background-color: rgba(227, 226, 224, 0.45); border-color: rgba(227, 226, 224, 0.9); }
+.notion-callout-brown { background-color: rgba(238, 224, 218, 0.45); border-color: rgba(238, 224, 218, 0.9); }
+.notion-callout-orange { background-color: rgba(250, 222, 201, 0.45); border-color: rgba(250, 222, 201, 0.9); }
+.notion-callout-yellow { background-color: rgba(253, 236, 200, 0.45); border-color: rgba(253, 236, 200, 0.9); }
+.notion-callout-green { background-color: rgba(219, 237, 219, 0.45); border-color: rgba(219, 237, 219, 0.9); }
+.notion-callout-blue { background-color: rgba(211, 229, 239, 0.45); border-color: rgba(211, 229, 239, 0.9); }
+.notion-callout-purple { background-color: rgba(232, 222, 238, 0.45); border-color: rgba(232, 222, 238, 0.9); }
+.notion-callout-pink { background-color: rgba(244, 223, 235, 0.45); border-color: rgba(244, 223, 235, 0.9); }
+.notion-callout-red { background-color: rgba(251, 228, 228, 0.45); border-color: rgba(251, 228, 228, 0.9); }
+
+/* Notion Toggle / Collapsible Accordion */
+.notion-toggle {
+  margin: 0.85em 0;
+  border-radius: var(--radius-md);
+}
+
+.notion-toggle summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.notion-toggle summary::-webkit-details-marker {
+  display: none;
+}
+
+.notion-toggle summary::before {
+  content: "▶";
+  font-size: 0.65rem;
+  transition: transform 150ms ease;
+  display: inline-block;
+  opacity: 0.6;
+}
+
+.notion-toggle[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.notion-toggle-content {
+  padding-left: 1.5rem;
+  margin-top: 0.35rem;
+  border-left: 2px solid var(--border);
+}
+
+/* Blockquote */
+.tiptap blockquote,
+.post-content blockquote {
+  border-left: 3px solid var(--foreground);
+  padding-left: 1.1em;
+  color: var(--muted-foreground);
+  font-style: italic;
+  margin: 1.2em 0;
+}
+
+/* Notion Tables */
+.tiptap table,
+.post-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.2em 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.tiptap td,
+.tiptap th,
+.post-content td,
+.post-content th {
+  min-width: 1em;
+  border: 1px solid var(--border);
+  padding: 0.5em 0.75em;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.tiptap th,
+.post-content th {
+  font-weight: 600;
+  background-color: var(--muted);
+  text-align: left;
+}
+
+.tiptap .selectedCell:after {
+  z-index: 2;
+  position: absolute;
+  content: "";
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(200, 200, 255, 0.3);
+  pointer-events: none;
+}
+
+.tiptap .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 20;
+  background-color: var(--primary);
+  pointer-events: none;
+}
+
+/* Code Blocks & Syntax Highlighting */
+.tiptap pre,
+.post-content pre {
+  background: var(--muted);
+  border-radius: var(--radius-lg);
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  border: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+
+.tiptap code,
+.post-content code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--muted);
+  border-radius: 0.3em;
+  padding: 0.15em 0.35em;
+  border: 1px solid var(--border);
+}
+
+.tiptap pre code,
+.post-content pre code {
+  background: none;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+}
+
+/* Code Copy Button */
+.code-copy-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background-color: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: all 120ms ease;
+  opacity: 0;
+}
+
+pre:hover .code-copy-btn {
+  opacity: 1;
+}
+
+.code-copy-btn:hover {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.code-copy-btn.copied {
+  color: #10b981;
+  border-color: #10b981;
+}
+
+/* Syntax Highlighting Colors (Lowlight / Highlight.js) */
+.hljs-comment,
+.hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  color: #005cc5;
+}
+
+.hljs-string,
+.hljs-doctag {
+  color: #032f62;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: #22863a;
+  font-weight: 600;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  color: #22863a;
+}
+
+.hljs-regexp,
+.hljs-link {
+  color: #032f62;
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  color: #e36209;
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #e36209;
+}
+
+/* Dividers */
+.tiptap hr,
+.post-content hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+
+/* Links */
+.tiptap a,
+.post-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Custom Highlight / Text Colors in Editor */
+mark[data-color],
+span[data-color] {
+  border-radius: 0.2em;
+  padding: 0.1em 0.2em;
+}
