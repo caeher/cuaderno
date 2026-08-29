@@ -23,45 +23,41 @@ export async function getAllAuthorsWithStats(): Promise<AuthorWithStats[]> {
 
 /**
  * Returns the authenticated user from Clerk session, synced with Convex.
- * Returns null if there is no active Clerk session or sync fails.
+ * Returns null only when there is no active Clerk session.
  */
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const { auth, currentUser } = await import("@clerk/nextjs/server")
-    const session = await auth()
-    if (!session?.userId) {
-      return null
-    }
-
-    const existing = await userRepository.findByClerkUserId(session.userId)
-    if (existing) {
-      return existing
-    }
-
-    const clerkUser = await currentUser().catch(() => null)
-    if (!clerkUser) {
-      return null
-    }
-
-    const primaryEmail =
-      clerkUser.emailAddresses[0]?.emailAddress || `${session.userId}@clerk.user`
-    const displayName =
-      clerkUser.fullName || clerkUser.username || clerkUser.firstName || "Usuario"
-    const username =
-      clerkUser.username ||
-      primaryEmail.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "") ||
-      `user_${session.userId.slice(-6)}`
-
-    return await userRepository.syncFromClerk({
-      clerkUserId: session.userId,
-      name: displayName,
-      email: primaryEmail,
-      username,
-      avatarUrl: clerkUser.imageUrl || "/placeholder.svg?height=200&width=200",
-    })
-  } catch {
+  const { auth, currentUser } = await import("@clerk/nextjs/server")
+  const session = await auth()
+  if (!session?.userId) {
     return null
   }
+
+  const existing = await userRepository.findByClerkUserId(session.userId)
+  if (existing) {
+    return existing
+  }
+
+  const clerkUser = await currentUser()
+  if (!clerkUser) {
+    return null
+  }
+
+  const primaryEmail =
+    clerkUser.emailAddresses[0]?.emailAddress || `${session.userId}@clerk.user`
+  const displayName =
+    clerkUser.fullName || clerkUser.username || clerkUser.firstName || "Usuario"
+  const username =
+    clerkUser.username ||
+    primaryEmail.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "") ||
+    `user_${session.userId.slice(-6)}`
+
+  return await userRepository.syncFromClerk({
+    clerkUserId: session.userId,
+    name: displayName,
+    email: primaryEmail,
+    username,
+    avatarUrl: clerkUser.imageUrl || "/placeholder.svg?height=200&width=200",
+  })
 }
 
 export async function requireCurrentUser(): Promise<User> {
@@ -70,6 +66,16 @@ export async function requireCurrentUser(): Promise<User> {
     throw new Error("No autenticado")
   }
   return user
+}
+
+/** Clerk user id for personal tenant scope (org id when in org context). */
+export async function resolveClerkTenantId(): Promise<string | null> {
+  const { auth } = await import("@clerk/nextjs/server")
+  const session = await auth()
+  if (!session?.userId) {
+    return null
+  }
+  return session.orgId ?? session.userId
 }
 
 export async function getAuthorProfile(username: string): Promise<{

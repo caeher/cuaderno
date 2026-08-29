@@ -3,6 +3,13 @@ import { NextResponse } from "next/server"
 import { extractTenantFromHost } from "@/lib/tenant-utils"
 
 const isProtectedRoute = createRouteMatcher(["/panel(.*)"])
+const isAuthRoute = createRouteMatcher([
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/iniciar-sesion(.*)",
+  "/registro(.*)",
+  "/__clerk(.*)",
+])
 
 export default clerkMiddleware(async (auth, req) => {
   if (isProtectedRoute(req)) {
@@ -12,6 +19,11 @@ export default clerkMiddleware(async (auth, req) => {
   const url = req.nextUrl
   const hostname = req.headers.get("host")
   const tenantSlug = extractTenantFromHost(hostname)
+
+  // Auth routes must never be rewritten under a tenant slug.
+  if (isAuthRoute(req)) {
+    return NextResponse.next()
+  }
 
   // 1. Subdomain Request (e.g. {slug}.mydomain.com or {slug}.localhost:3000)
   if (tenantSlug) {
@@ -29,7 +41,6 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Rewrite internally: e.g. "acme.mydomain.com/post/slug" -> "/acme/post/slug"
-    // The user's browser URL remains "acme.mydomain.com/post/slug"
     const rewriteUrl = new URL(`/${tenantSlug}${url.pathname}${url.search}`, req.url)
     const requestHeaders = new Headers(req.headers)
     requestHeaders.set("x-tenant-slug", tenantSlug)
@@ -43,7 +54,6 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // 2. Root Domain Request (e.g. mydomain.com or localhost:3000)
-  // Normal routing handles /, /explorar, /panel, and /{slug}/...
   const response = NextResponse.next()
   response.headers.set("x-is-subdomain", "false")
   return response

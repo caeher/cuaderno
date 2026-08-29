@@ -122,7 +122,13 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <ClerkProvider appearance={{ theme: shadcn }}>
+        <ClerkProvider
+          appearance={{ theme: shadcn }}
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/panel"
+          signUpFallbackRedirectUrl="/panel"
+        >
           <ConvexClientProvider>
             <TooltipProvider>{children}</TooltipProvider>
             <Toaster />
