@@ -33,6 +33,8 @@ pnpm convex env list          # verifica nombres, no valores
 
 Los defaults son los que documenta el epic #13. **Confirmar que esos modelos están disponibles en la cuenta antes de fijarlos**; si no lo están, la variable de entorno es justamente el mecanismo para apuntar a otros sin tocar código.
 
+Los nombres (no los secretos) también están listados en `.env.example` para que un cambio de entorno se documente en el mismo sitio que el resto del despliegue.
+
 ---
 
 ## 3. Por qué Web Search solo en investigación
@@ -98,20 +100,52 @@ Cambiar `OPENAI_WRITING_MODEL` afecta a **todas las ejecuciones nuevas** sin dep
 
 ## 8. Observabilidad
 
-Cada fase escribe un registro en `aiUsageEvents` con tenant, sesión, job, modelo efectivo, tokens o imágenes, tool calls, coste estimado, estado y request ID.
+Cada fase escribe un registro en `aiUsageEvents` con tenant, sesión, job, modelo efectivo, tokens o imágenes, tool calls, coste estimado y real (si el proveedor lo expone), estado y request ID.
 
 **Es solo observabilidad.** En esta fase no hay cuotas, presupuestos ni límites por tenant — lo dicen explícitamente #14 y #15. El control de gasto vive en el panel del proveedor, no en la aplicación.
 
 ---
 
-## 9. Estado
+## 9. Retención, `store` y contenido que no se envía
+
+Ver [ai-data-retention-policy.md](./ai-data-retention-policy.md). Resumen operativo:
+
+- Responses se llama con `store: false`.
+- No se envían emails, JWT, claves ni datos de otros tenants.
+- Un refusal o un bloqueo de moderación no genera posts ni assets.
+
+---
+
+## 10. Moderación y refusals
+
+1. Texto de usuario → `moderations.create` antes de Responses.
+2. Responses lleva `moderation.model = omni-moderation-latest`.
+3. Texto o imagen generados se vuelven a moderar antes de persistir.
+
+Tratamiento: job `failed`, `aiUsageEvents.status` = `moderated` | `refused` | `blocked`, sin `recordArtifact` / `recordSources`. La sesión puede ir a `failed` o quedarse recuperable según la fase; #16–#18 deciden la transición. En esta capa el contenido no se publica.
+
+---
+
+## 11. Verificar tras un deploy
+
+```bash
+pnpm convex env list
+pnpm test:ai
+```
+
+1. `ai.getConfigHealth` (sesión Clerk) → `ok: true`, sin `sk-` en el JSON.
+2. Con `COMPOSER_ENABLED=true`, `aiNode.runSmokeTest` (autenticada) o `npx convex run aiNode:runIntegrationSmoke` → `{ ok, model, requestId }`.
+3. Cambiar `OPENAI_WRITING_MODEL` y repetir el smoke: el modelo efectivo en `aiUsageEvents` debe ser el nuevo. No hace falta migrar datos.
+
+---
+
+## 12. Estado
 
 | Pieza | Estado |
 |---|---|
-| Resolvedor de configuración (`convex/lib/ai/config.ts`) | ✅ implementado |
-| Health check (`ai.getConfigHealth`) | ✅ implementado |
-| Cliente del SDK de OpenAI | ⛔ pendiente — falta instalar la dependencia |
-| Moderación de entrada y salida | ⛔ pendiente |
-| Registro de uso desde llamadas reales | ⛔ pendiente — la tabla existe, nadie la escribe todavía |
-
-Las variables de esta tabla **todavía no están en `.env.example`**: agregarlas es parte de cerrar #14.
+| Resolvedor de configuración (`convex/lib/ai/config.ts`) | implementado |
+| Health check (`ai.getConfigHealth`) | implementado |
+| Cliente Responses / imágenes (`convex/lib/ai/client.ts`) | implementado |
+| Moderación de entrada y salida | implementado |
+| Registro de uso desde llamadas reales | implementado (`recordUsage`) |
+| Variables en `.env.example` | documentadas (Convex env, no Next) |

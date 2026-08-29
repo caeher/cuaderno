@@ -190,7 +190,7 @@ Estas no las puede resolver quien implemente; son de producto o de cuenta.
 
 ## 11. Estado
 
-**#15 está implementado** (`convex/schema.ts`, `convex/lib/composer-state.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y el registro de uso.
+**#15 está implementado** (`convex/schema.ts`, `convex/lib/composerState.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y el registro de uso.
 
 El resto de la épica NO está implementado. Prerrequisitos que hoy no se cumplen:
 
