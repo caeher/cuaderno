@@ -60,23 +60,55 @@ export async function getPostForReading(slug: string) {
   const post = await postRepository.findBySlug(slug)
   if (!post || post.status !== "published") return null
 
-  const [author, comments, allPublished, postCategory, narration] = await Promise.all([
-    userRepository.findById(post.authorId),
+  let author = await userRepository.findById(post.authorId)
+  if (!author) {
+    author = await userRepository.findByClerkUserId(post.authorId)
+  }
+  if (!author) {
+    author = await userRepository.findByUsername(post.authorId)
+  }
+  if (!author) {
+    const allUsers = await userRepository.findAll()
+    author = allUsers.find(
+      (u) =>
+        u.id === post.authorId ||
+        u.clerkUserId === post.authorId ||
+        u.legacyId === post.authorId ||
+        u.username === post.authorId
+    ) ?? null
+  }
+
+  if (!author) {
+    author = {
+      id: post.authorId,
+      username: "autor",
+      name: "Autor",
+      email: "",
+      avatarUrl: "",
+      coverUrl: "",
+      bio: "",
+      tagline: "",
+      role: "owner",
+      joinedAt: new Date().toISOString(),
+      postCount: 1,
+      followerCount: 0,
+    }
+  }
+
+  const [comments, allPublished, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
-    postRepository.findPublished(),
+    postRepository.findPublished().catch(() => []),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
     narrationRepository.findByPostId(post.id),
   ])
 
-  if (!author) return null
-
-  const categories = await categoryRepository.findAll()
+  const categories = await categoryRepository.findAll().catch(() => [])
   const catMap = new Map(categories.map((c) => [c.id, c]))
 
   post.category = postCategory
   post.narration = isNarrationPlaybackEnabled() ? narration : null
 
-  const relatedPosts = allPublished
+  const relatedPosts = (allPublished || [])
     .filter(
       (p) =>
         p.id !== post.id &&
@@ -92,33 +124,67 @@ export async function getPostForReading(slug: string) {
 }
 
 export async function getPostForReadingByTenant(tenantSlug: string, postSlug: string) {
-  const author = await userRepository.findByUsername(tenantSlug)
-  if (!author) return null
+  let author = await userRepository.findByUsername(tenantSlug)
+  if (!author) {
+    author = await userRepository.findByClerkUserId(tenantSlug)
+  }
+  if (!author) {
+    author = await userRepository.findById(tenantSlug)
+  }
+  if (!author) {
+    const allUsers = await userRepository.findAll()
+    author = allUsers.find(
+      (u) =>
+        u.username.toLowerCase() === tenantSlug.toLowerCase() ||
+        u.clerkUserId === tenantSlug ||
+        u.legacyId === tenantSlug ||
+        u.id === tenantSlug
+    ) ?? null
+  }
 
   const post = await postRepository.findBySlug(postSlug)
-  const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
-  const postBelongsToAuthor =
-    post &&
-    (post.authorId === authorKey ||
-      post.authorId === author.id ||
-      post.authorId === author.legacyId)
+  if (!post || post.status !== "published") return null
 
-  if (!post || post.status !== "published" || !postBelongsToAuthor) return null
+  if (!author) {
+    author = await userRepository.findById(post.authorId)
+    if (!author) {
+      author = await userRepository.findByClerkUserId(post.authorId)
+    }
+  }
+
+  if (!author) {
+    author = {
+      id: post.authorId,
+      username: tenantSlug || "autor",
+      name: "Autor",
+      email: "",
+      avatarUrl: "",
+      coverUrl: "",
+      bio: "",
+      tagline: "",
+      role: "owner",
+      joinedAt: new Date().toISOString(),
+      postCount: 1,
+      followerCount: 0,
+    }
+  }
+
+  const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
 
   const [comments, allAuthorPosts, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
-    postRepository.findByAuthorId(authorKey, "published"),
+    postRepository.findByAuthorId(authorKey, "published").catch(() => []),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
     narrationRepository.findByPostId(post.id),
   ])
 
-  const categories = await categoryRepository.findAll()
+  const categories = await categoryRepository.findAll().catch(() => [])
   const catMap = new Map(categories.map((c) => [c.id, c]))
 
   post.category = postCategory
   post.narration = isNarrationPlaybackEnabled() ? narration : null
 
-  const relatedPosts = allAuthorPosts
+  const relatedPosts = (allAuthorPosts || [])
     .filter(
       (p) =>
         p.id !== post.id &&
