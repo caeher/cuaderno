@@ -13,14 +13,29 @@ import {
   serializeBlockTree,
   updateBlockById,
 } from "@/lib/domain/block-schema"
+import {
+  getDefaultFooterSlotBlocks,
+  getDefaultHeaderSlotBlocks,
+  getDefaultHomeSlotBlocks,
+  getDefaultPostSlotBlocks,
+  TEMPLATE_KITS,
+} from "@/lib/designer/template-kits"
 import { WIDGET_DEFINITIONS } from "@/lib/designer/widget-definitions"
-import { TEMPLATE_KITS } from "@/lib/designer/template-kits"
+import type {
+  SlotBlocksMap,
+  TemplateSlotType,
+  TenantTemplate,
+  TenantTemplateSettings,
+} from "@/lib/domain/template-schema"
 
 export type DeviceMode = "desktop" | "tablet" | "mobile"
 export type DesignerTab = "widgets" | "inspector" | "navigator" | "templates" | "globals"
 export type InspectorSubTab = "content" | "style" | "advanced"
 
 export interface DesignerState {
+  activeSlot: TemplateSlotType
+  draftSlots: SlotBlocksMap
+  settings: TenantTemplateSettings
   blocks: BlockNode[]
   selectedBlockId: string | null
   hoverBlockId: string | null
@@ -34,6 +49,7 @@ export interface DesignerState {
 }
 
 export interface DesignerActions {
+  setActiveSlot: (slot: TemplateSlotType) => void
   setBlocks: (blocks: BlockNode[]) => void
   addBlock: (type: BlockType, targetId?: string, position?: "before" | "after" | "inside") => void
   insertTemplate: (templateId: string, targetId?: string) => void
@@ -53,6 +69,9 @@ export interface DesignerActions {
   undo: () => void
   redo: () => void
   getSelectedBlock: () => BlockNode | null
+  updateTemplateSettings: (newSettings: Partial<TenantTemplateSettings>) => void
+  resetCurrentSlotToDefault: () => void
+  getAllDraftSlots: () => SlotBlocksMap
 }
 
 export type DesignerStore = DesignerState & DesignerActions
@@ -60,52 +79,75 @@ export type DesignerStore = DesignerState & DesignerActions
 const DesignerContext = React.createContext<DesignerStore | null>(null)
 
 export interface DesignerProviderProps {
-  initialBlocks?: BlockNode[] | string | null
+  initialTemplate?: TenantTemplate | null
+  initialSlot?: TemplateSlotType
+  initialBlocks?: BlockNode[] | string | null // For backwards-compat or isolated previews
   children: React.ReactNode
 }
 
-export function DesignerProvider({ initialBlocks, children }: DesignerProviderProps) {
-  const initialTree = React.useMemo(() => {
-    if (typeof initialBlocks === "string") {
-      return deserializeBlockTree(initialBlocks)
-    }
-    if (Array.isArray(initialBlocks) && initialBlocks.length > 0) {
-      return initialBlocks
-    }
-    // Default starter blocks if empty
-    return [
-      createBlockNode(
-        "section",
-        { isFluid: false },
-        {
-          padding: { top: "40px", right: "24px", bottom: "40px", left: "24px" },
-          maxWidth: "1000px",
-          margin: { top: "0px", right: "auto", bottom: "0px", left: "auto" },
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-        },
-        [
-          createBlockNode(
-            "heading",
-            { text: "Comienza a diseñar tu artículo", level: 1 },
-            { fontSize: "36px", fontWeight: 700 }
-          ),
-          createBlockNode(
-            "text",
-            {
-              text: "Selecciona este bloque para editar su texto, o arrastra nuevos elementos desde la barra lateral izquierda.",
-            },
-            { fontSize: "17px", lineHeight: "1.7" }
-          ),
-        ]
-      ),
-    ]
-  }, [initialBlocks])
+function getSlotFallback(slot: TemplateSlotType): BlockNode[] {
+  switch (slot) {
+    case "home":
+      return getDefaultHomeSlotBlocks()
+    case "post":
+      return getDefaultPostSlotBlocks()
+    case "header":
+      return getDefaultHeaderSlotBlocks()
+    case "footer":
+      return getDefaultFooterSlotBlocks()
+  }
+}
 
-  // Tree state & History
-  const [blocks, setBlocksState] = React.useState<BlockNode[]>(initialTree)
-  const [history, setHistory] = React.useState<BlockNode[][]>([initialTree])
+export function DesignerProvider({
+  initialTemplate,
+  initialSlot = "home",
+  initialBlocks,
+  children,
+}: DesignerProviderProps) {
+  // Initialize slots map with defaults if missing
+  const initialSlotsMap = React.useMemo<SlotBlocksMap>(() => {
+    const rawDraft = initialTemplate?.draftSlots || {}
+
+    return {
+      home:
+        rawDraft.home && rawDraft.home.length > 0
+          ? rawDraft.home
+          : initialBlocks
+          ? typeof initialBlocks === "string"
+            ? deserializeBlockTree(initialBlocks)
+            : initialBlocks
+          : getDefaultHomeSlotBlocks(),
+      post:
+        rawDraft.post && rawDraft.post.length > 0
+          ? rawDraft.post
+          : getDefaultPostSlotBlocks(),
+      header:
+        rawDraft.header && rawDraft.header.length > 0
+          ? rawDraft.header
+          : getDefaultHeaderSlotBlocks(),
+      footer:
+        rawDraft.footer && rawDraft.footer.length > 0
+          ? rawDraft.footer
+          : getDefaultFooterSlotBlocks(),
+    }
+  }, [initialTemplate, initialBlocks])
+
+  // Active Slot State
+  const [activeSlot, setActiveSlotState] = React.useState<TemplateSlotType>(initialSlot)
+  const [draftSlots, setDraftSlots] = React.useState<SlotBlocksMap>(initialSlotsMap)
+  const [settings, setSettings] = React.useState<TenantTemplateSettings>(
+    initialTemplate?.settings || { primaryColor: "#3b82f6", containerMaxWidth: "1100px" }
+  )
+
+  // Current slot's active blocks
+  const [blocks, setBlocksState] = React.useState<BlockNode[]>(
+    initialSlotsMap[initialSlot] || getSlotFallback(initialSlot)
+  )
+
+  // Undo/Redo History for the active slot
+  const [history, setHistory] = React.useState<BlockNode[][]>([
+    initialSlotsMap[initialSlot] || getSlotFallback(initialSlot),
+  ])
   const [historyIndex, setHistoryIndex] = React.useState(0)
 
   // UI Selection & Panels
@@ -117,34 +159,70 @@ export function DesignerProvider({ initialBlocks, children }: DesignerProviderPr
   const [isPreviewMode, setIsPreviewMode] = React.useState(false)
   const [zoom, setZoom] = React.useState(100)
 
-  // Commit changes to history
+  // Commit changes to history & sync into draftSlots
   const pushToHistory = React.useCallback(
     (newTree: BlockNode[]) => {
       setBlocksState(newTree)
+      setDraftSlots((prev) => ({
+        ...prev,
+        [activeSlot]: newTree,
+      }))
       setHistory((prev) => {
         const next = prev.slice(0, historyIndex + 1)
         return [...next, newTree]
       })
       setHistoryIndex((prev) => prev + 1)
     },
-    [historyIndex]
+    [activeSlot, historyIndex]
+  )
+
+  // Slot Switching
+  const setActiveSlot = React.useCallback(
+    (slot: TemplateSlotType) => {
+      if (slot === activeSlot) return
+
+      // Save current blocks to draftSlots
+      setDraftSlots((prev) => ({
+        ...prev,
+        [activeSlot]: blocks,
+      }))
+
+      const nextBlocks = draftSlots[slot] || getSlotFallback(slot)
+      setActiveSlotState(slot)
+      setBlocksState(nextBlocks)
+      setHistory([nextBlocks])
+      setHistoryIndex(0)
+      setSelectedBlockId(null)
+      setActiveTab("widgets")
+    },
+    [activeSlot, blocks, draftSlots]
   )
 
   const undo = React.useCallback(() => {
     if (historyIndex > 0) {
       const prevIndex = historyIndex - 1
+      const prevBlocks = history[prevIndex]
       setHistoryIndex(prevIndex)
-      setBlocksState(history[prevIndex])
+      setBlocksState(prevBlocks)
+      setDraftSlots((prev) => ({
+        ...prev,
+        [activeSlot]: prevBlocks,
+      }))
     }
-  }, [history, historyIndex])
+  }, [activeSlot, history, historyIndex])
 
   const redo = React.useCallback(() => {
     if (historyIndex < history.length - 1) {
       const nextIndex = historyIndex + 1
+      const nextBlocks = history[nextIndex]
       setHistoryIndex(nextIndex)
-      setBlocksState(history[nextIndex])
+      setBlocksState(nextBlocks)
+      setDraftSlots((prev) => ({
+        ...prev,
+        [activeSlot]: nextBlocks,
+      }))
     }
-  }, [history, historyIndex])
+  }, [activeSlot, history, historyIndex])
 
   const selectBlock = React.useCallback((id: string | null) => {
     setSelectedBlockId(id)
@@ -263,7 +341,26 @@ export function DesignerProvider({ initialBlocks, children }: DesignerProviderPr
     [pushToHistory]
   )
 
+  const updateTemplateSettings = React.useCallback((newSettings: Partial<TenantTemplateSettings>) => {
+    setSettings((prev) => ({ ...prev, ...newSettings }))
+  }, [])
+
+  const resetCurrentSlotToDefault = React.useCallback(() => {
+    const fallback = getSlotFallback(activeSlot)
+    pushToHistory(fallback)
+  }, [activeSlot, pushToHistory])
+
+  const getAllDraftSlots = React.useCallback((): SlotBlocksMap => {
+    return {
+      ...draftSlots,
+      [activeSlot]: blocks,
+    }
+  }, [activeSlot, blocks, draftSlots])
+
   const value: DesignerStore = {
+    activeSlot,
+    draftSlots,
+    settings,
     blocks,
     selectedBlockId,
     hoverBlockId,
@@ -274,6 +371,7 @@ export function DesignerProvider({ initialBlocks, children }: DesignerProviderPr
     zoom,
     canUndo: historyIndex > 0,
     canRedo: historyIndex < history.length - 1,
+    setActiveSlot,
     setBlocks,
     addBlock,
     insertTemplate,
@@ -293,6 +391,9 @@ export function DesignerProvider({ initialBlocks, children }: DesignerProviderPr
     undo,
     redo,
     getSelectedBlock,
+    updateTemplateSettings,
+    resetCurrentSlotToDefault,
+    getAllDraftSlots,
   }
 
   return <DesignerContext.Provider value={value}>{children}</DesignerContext.Provider>

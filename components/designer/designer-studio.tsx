@@ -3,67 +3,64 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import type { Category, Post, Tag } from "@/lib/domain/entities"
-import { savePostAction } from "@/app/actions/blog-actions"
+import type { TenantTemplate, TemplateRevision } from "@/lib/domain/template-schema"
+import {
+  getTenantTemplateRevisionsAction,
+  publishTenantTemplateAction,
+  rollbackTenantTemplateAction,
+  saveTenantTemplateDraftAction,
+} from "@/app/actions/template"
 import { DesignerProvider, useDesigner } from "@/components/designer/hooks/use-designer-store"
 import { DesignerTopbar } from "@/components/designer/designer-topbar"
 import { SidebarPanel } from "@/components/designer/panels/sidebar-panel"
 import { DesignerCanvas } from "@/components/designer/canvas/designer-canvas"
-import { serializeBlockTree } from "@/lib/domain/block-schema"
+import { TemplateRevisionsModal } from "@/components/designer/panels/template-revisions-modal"
+import { TemplateContextProvider } from "@/components/site/template-context"
 
 interface DesignerStudioProps {
-  post?: Post | null
-  allTags: Tag[]
-  allCategories?: Category[]
+  template: TenantTemplate
+  tenantSlug?: string
 }
 
-export function DesignerStudio({ post, allTags, allCategories = [] }: DesignerStudioProps) {
+export function DesignerStudio({ template, tenantSlug }: DesignerStudioProps) {
   return (
-    <DesignerProvider initialBlocks={post?.designData || null}>
-      <DesignerStudioInner post={post} allTags={allTags} allCategories={allCategories} />
+    <DesignerProvider initialTemplate={template}>
+      <DesignerStudioInner template={template} tenantSlug={tenantSlug} />
     </DesignerProvider>
   )
 }
 
-function DesignerStudioInner({ post, allTags, allCategories = [] }: DesignerStudioProps) {
+function DesignerStudioInner({ template, tenantSlug }: DesignerStudioProps) {
   const router = useRouter()
-  const { blocks, isPreviewMode } = useDesigner()
+  const { activeSlot, settings, isPreviewMode, getAllDraftSlots } = useDesigner()
 
-  const [title, setTitle] = React.useState(post?.title || "Nuevo artículo con diseño visual")
-  const [excerpt, setExcerpt] = React.useState(post?.excerpt || "")
-  const [coverUrl, setCoverUrl] = React.useState(post?.coverUrl || "")
-  const [selectedCategoryId, setSelectedCategoryId] = React.useState<string | null>(post?.categoryId ?? null)
-  const [selectedTags, setSelectedTags] = React.useState<string[]>(post?.tags || [])
+  const [templateName, setTemplateName] = React.useState(template.name || "Plantilla del Blog")
   const [isSaving, setIsSaving] = React.useState(false)
+  const [isPublished, setIsPublished] = React.useState(template.isPublished)
+  const [currentVersion, setCurrentVersion] = React.useState(template.version)
 
-  const handleSave = async (status: "draft" | "published") => {
+  // Revisions Modal State
+  const [isRevisionsOpen, setIsRevisionsOpen] = React.useState(false)
+  const [revisions, setRevisions] = React.useState<TemplateRevision[]>([])
+  const [isLoadingRevisions, setIsLoadingRevisions] = React.useState(false)
+
+  const handleSaveDraft = async () => {
     try {
       setIsSaving(true)
-      const serializedDesign = serializeBlockTree(blocks)
+      const currentDraftSlots = getAllDraftSlots()
 
-      const res = await savePostAction({
-        id: post?.id,
-        title,
-        excerpt: excerpt || `Artículo diseñado visualmente: ${title}`,
-        content: post?.content || "", // Fallback plain content
-        coverUrl,
-        categoryId: selectedCategoryId,
-        tags: selectedTags.length > 0 ? selectedTags : ["diseno"],
-        status,
-        designData: serializedDesign,
-        editorMode: "elementor",
+      const res = await saveTenantTemplateDraftAction(template.tenantId, {
+        name: templateName,
+        draftSlots: currentDraftSlots,
+        settings,
       })
 
-
       if (res.success) {
-        toast.success(status === "published" ? "¡Artículo publicado con éxito!" : "Borrador guardado", {
-          description: title,
+        toast.success("Borrador de plantilla guardado", {
+          description: "Los cambios se han guardado de forma segura.",
         })
-        if (!post?.id && res.post?.id) {
-          router.push(`/panel/posts/${res.post.id}/designer`)
-        }
       } else {
-        toast.error("Error al guardar el diseño del post")
+        toast.error("Error al guardar el borrador")
       }
     } catch (error) {
       console.error(error)
@@ -73,23 +70,108 @@ function DesignerStudioInner({ post, allTags, allCategories = [] }: DesignerStud
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground overflow-hidden">
-      {/* Top Studio Bar */}
-      <DesignerTopbar
-        postTitle={title}
-        onTitleChange={setTitle}
-        onSave={handleSave}
-        isSaving={isSaving}
-        postStatus={post?.status || "draft"}
-        backUrl={post?.id ? `/panel/posts/${post.id}` : "/panel/posts"}
-      />
+  const handlePublish = async () => {
+    try {
+      setIsSaving(true)
+      const currentDraftSlots = getAllDraftSlots()
 
-      {/* Main Workspace Area (Sidebar + Canvas) */}
-      <div className="relative flex flex-1 overflow-hidden">
-        {!isPreviewMode && <SidebarPanel />}
-        <DesignerCanvas />
+      // First ensure latest draft is saved
+      await saveTenantTemplateDraftAction(template.tenantId, {
+        name: templateName,
+        draftSlots: currentDraftSlots,
+        settings,
+      })
+
+      const res = await publishTenantTemplateAction(
+        template.tenantId,
+        `Publicación de plantilla (${activeSlot})`,
+        tenantSlug
+      )
+
+      if (res.success && res.template) {
+        setIsPublished(true)
+        setCurrentVersion(res.template.version)
+        toast.success("¡Plantilla publicada en producción!", {
+          description: `Versión ${res.template.version} activa para todos los lectores del blog.`,
+        })
+      } else {
+        toast.error("Error al publicar la plantilla")
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Ocurrió un error inesperado al publicar")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleOpenRevisions = async () => {
+    try {
+      setIsLoadingRevisions(true)
+      setIsRevisionsOpen(true)
+      const res = await getTenantTemplateRevisionsAction(template.tenantId)
+      if (res.success && res.revisions) {
+        setRevisions(res.revisions)
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("No se pudo cargar el historial")
+    } finally {
+      setIsLoadingRevisions(false)
+    }
+  }
+
+  const handleRollback = async (revisionId: string) => {
+    try {
+      const res = await rollbackTenantTemplateAction(template.tenantId, revisionId, tenantSlug)
+      if (res.success) {
+        toast.success("Versión restaurada con éxito")
+        router.refresh()
+      } else {
+        toast.error("Error al restaurar versión")
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Ocurrió un error al restaurar la versión")
+    }
+  }
+
+  return (
+    <TemplateContextProvider
+      value={{
+        slotType: activeSlot,
+        isStudioCanvas: true,
+      }}
+    >
+      <div className="fixed inset-0 z-50 flex flex-col bg-background text-foreground overflow-hidden">
+        {/* Top Studio Bar */}
+        <DesignerTopbar
+          templateName={templateName}
+          onTemplateNameChange={setTemplateName}
+          onSaveDraft={handleSaveDraft}
+          onPublish={handlePublish}
+          onOpenRevisions={handleOpenRevisions}
+          isSaving={isSaving}
+          isPublished={isPublished}
+          backUrl="/panel"
+        />
+
+        {/* Main Workspace Area (Sidebar + Canvas) */}
+        <div className="relative flex flex-1 overflow-hidden">
+          {!isPreviewMode && <SidebarPanel />}
+          <DesignerCanvas />
+        </div>
+
+        {/* Revisions History Modal */}
+        <TemplateRevisionsModal
+          isOpen={isRevisionsOpen}
+          onClose={() => setIsRevisionsOpen(false)}
+          revisions={revisions}
+          currentVersion={currentVersion}
+          onRollback={handleRollback}
+          isLoading={isLoadingRevisions}
+        />
       </div>
-    </div>
+    </TemplateContextProvider>
   )
 }
