@@ -12,28 +12,35 @@ type ClerkAuthSession = {
 }
 
 /**
- * Obtiene un JWT de Clerk válido para Convex.
- * Replica la lógica de ConvexProviderWithClerk: con integración nativa (aud === "convex")
- * usa el session token; si no, intenta el template "convex" y luego el session token.
+ * Obtiene un JWT de Clerk válido para Convex (aud === "convex").
+ * Nunca envía el session token por defecto: su aud no coincide y provoca NoAuthProvider.
  */
 async function tryGetClerkJwt(session: ClerkAuthSession): Promise<string | undefined> {
-  const useNativeConvexToken = session.sessionClaims?.aud === "convex"
+  const hasNativeConvexAudience = session.sessionClaims?.aud === "convex"
 
-  const attempts: Array<() => Promise<string | null>> = useNativeConvexToken
-    ? [() => session.getToken(), () => session.getToken({ template: "convex" })]
-    : [() => session.getToken({ template: "convex" }), () => session.getToken()]
-
-  for (const attempt of attempts) {
+  if (hasNativeConvexAudience) {
     try {
-      const token = await attempt()
-      if (token) {
-        return token
+      const sessionToken = await session.getToken()
+      if (sessionToken) {
+        return sessionToken
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      if (process.env.NODE_ENV !== "production" && message !== "Not Found") {
-        console.warn(`[Convex Auth] getToken attempt failed: ${message}`)
+      if (process.env.NODE_ENV !== "production") {
+        console.warn(`[Convex Auth] Native session token failed: ${message}`)
       }
+    }
+  }
+
+  try {
+    const templateToken = await session.getToken({ template: "convex" })
+    if (templateToken) {
+      return templateToken
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (process.env.NODE_ENV !== "production" && message !== "Not Found") {
+      console.warn(`[Convex Auth] JWT template "convex" failed: ${message}`)
     }
   }
 
@@ -81,7 +88,7 @@ async function requireAuthTokenForMutation(): Promise<string | undefined> {
 
   if (userId && !token) {
     throw new Error(
-      "Falta JWT de Clerk para Convex. Activa la integración Convex en Clerk o crea el template JWT \"convex\", y verifica CLERK_JWT_ISSUER_DOMAIN."
+      "Falta JWT de Clerk para Convex. Crea el template JWT \"convex\" en Clerk (pnpm setup:clerk-convex) o activa la integración Convex, y verifica CLERK_JWT_ISSUER_DOMAIN."
     )
   }
 
@@ -128,5 +135,15 @@ export async function convexMutation<Mutation extends FunctionReference<"mutatio
   const token = await requireAuthTokenForMutation()
   const options = token ? { token } : undefined
 
-  return (await fetchMutation(mutationRef, (args ?? {}) as any, options)) as FunctionReturnType<Mutation>
+  try {
+    return (await fetchMutation(mutationRef, (args ?? {}) as any, options)) as FunctionReturnType<Mutation>
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes("NoAuthProvider") || message.includes("No auth provider")) {
+      throw new Error(
+        "JWT de Clerk inválido para Convex. Crea el template JWT \"convex\" con aud: \"convex\" (pnpm setup:clerk-convex) y vuelve a iniciar sesión."
+      )
+    }
+    throw error
+  }
 }

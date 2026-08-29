@@ -12,7 +12,8 @@
     "convex:codegen": "convex codegen",
     "convex:export": "convex export",
     "test:contracts": "tsx scratch/run-contract-verification.ts",
-    "migrate:convex": "tsx scripts/migrate-to-convex.ts"
+    "migrate:convex": "tsx scripts/migrate-to-convex.ts",
+    "setup:clerk-convex": "tsx scripts/setup-clerk-convex-jwt.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
