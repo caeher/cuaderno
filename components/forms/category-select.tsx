@@ -1,27 +1,22 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Check, Folder, ChevronDown, Sparkles } from "lucide-react"
+import { Plus, Check, Folder, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import type { Category } from "@/lib/domain/entities"
 import { quickCreateCategoryAction } from "@/app/actions/blog-actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Field, FieldLabel, FieldDescription } from "@/components/ui/field"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
 export interface CategorySelectProps {
-  allCategories: Category[]
+  allCategories?: Category[]
   selectedCategoryId: string | null | undefined
   onChange: (categoryId: string | null) => void
   onCategoryCreated?: (category: Category) => void
@@ -32,7 +27,7 @@ export interface CategorySelectProps {
 }
 
 export function CategorySelect({
-  allCategories,
+  allCategories = [],
   selectedCategoryId,
   onChange,
   onCategoryCreated,
@@ -41,13 +36,21 @@ export function CategorySelect({
   description = "Selecciona una categoría para clasificar tu artículo.",
   className,
 }: CategorySelectProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const [isCreating, setIsCreating] = React.useState(false)
   const [newCatName, setNewCatName] = React.useState("")
   const [selectedColor, setSelectedColor] = React.useState("#3b82f6")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-  const selectedCategory = allCategories.find((c) => c.id === selectedCategoryId)
+  const selectedCategory = React.useMemo(() => {
+    if (!selectedCategoryId) return null
+    return (
+      allCategories.find(
+        (c) => c.id === selectedCategoryId || c.slug === selectedCategoryId
+      ) || null
+    )
+  }, [allCategories, selectedCategoryId])
 
   const filteredCategories = React.useMemo(() => {
     if (!search.trim()) return allCategories
@@ -80,6 +83,7 @@ export function CategorySelect({
         onChange(res.category.id)
         setNewCatName("")
         setIsCreating(false)
+        setIsOpen(false)
       } else {
         toast.error("Error al crear categoría")
       }
@@ -95,8 +99,8 @@ export function CategorySelect({
       {label && <FieldLabel className="text-xs font-semibold">{label}</FieldLabel>}
       {description && <FieldDescription className="text-[11px]">{description}</FieldDescription>}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger
           render={
             <Button
               variant="outline"
@@ -120,11 +124,11 @@ export function CategorySelect({
             </div>
           )}
           <ChevronDown className="size-3.5 text-muted-foreground opacity-70 shrink-0 ml-2" />
-        </DropdownMenuTrigger>
+        </PopoverTrigger>
 
-        <DropdownMenuContent align="start" className="w-72 p-2">
+        <PopoverContent align="start" className="w-72 p-2">
           {!isCreating ? (
-            <>
+            <div className="flex flex-col gap-1">
               <div className="p-1 pb-2">
                 <Input
                   value={search}
@@ -135,22 +139,37 @@ export function CategorySelect({
                 />
               </div>
 
-              <DropdownMenuGroup className="max-h-48 overflow-y-auto">
-                <DropdownMenuItem
-                  onClick={() => onChange(null)}
-                  className="flex items-center justify-between text-xs cursor-pointer py-1.5"
+              <div className="flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(null)
+                    setIsOpen(false)
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer text-left",
+                    !selectedCategoryId && "bg-accent/70 font-medium text-foreground"
+                  )}
                 >
-                  <span className="text-muted-foreground italic">Ninguna (Sin categoría)</span>
-                  {!selectedCategoryId && <Check className="size-3.5 text-primary" />}
-                </DropdownMenuItem>
+                  <span className="italic">Ninguna (Sin categoría)</span>
+                  {!selectedCategoryId && <Check className="size-3.5 text-primary shrink-0" />}
+                </button>
 
                 {filteredCategories.map((cat) => {
-                  const isSelected = cat.id === selectedCategoryId
+                  const isSelected =
+                    cat.id === selectedCategoryId || cat.slug === selectedCategoryId
                   return (
-                    <DropdownMenuItem
+                    <button
                       key={cat.id}
-                      onClick={() => onChange(cat.id)}
-                      className="flex items-center justify-between text-xs cursor-pointer py-1.5"
+                      type="button"
+                      onClick={() => {
+                        onChange(cat.id)
+                        setIsOpen(false)
+                      }}
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer text-left",
+                        isSelected && "bg-accent/70 font-medium"
+                      )}
                     >
                       <div className="flex items-center gap-2 truncate">
                         <span
@@ -159,8 +178,8 @@ export function CategorySelect({
                         />
                         <span className="truncate">{cat.name}</span>
                       </div>
-                      {isSelected && <Check className="size-3.5 text-primary shrink-0" />}
-                    </DropdownMenuItem>
+                      {isSelected && <Check className="size-3.5 text-primary shrink-0 ml-2" />}
+                    </button>
                   )
                 })}
 
@@ -169,21 +188,22 @@ export function CategorySelect({
                     No se encontraron categorías
                   </div>
                 )}
-              </DropdownMenuGroup>
+              </div>
 
-              <DropdownMenuSeparator className="my-1" />
+              <div className="border-t border-border/80 my-1" />
 
-              <DropdownMenuItem
+              <button
+                type="button"
                 onClick={() => {
                   setNewCatName(search.trim())
                   setIsCreating(true)
                 }}
-                className="flex items-center gap-2 text-xs font-medium text-primary cursor-pointer py-1.5"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-primary hover:bg-accent cursor-pointer transition-colors text-left"
               >
                 <Plus className="size-3.5" />
                 <span>Crear nueva categoría...</span>
-              </DropdownMenuItem>
-            </>
+              </button>
+            </div>
           ) : (
             <form onSubmit={handleQuickCreate} className="flex flex-col gap-2 p-1">
               <span className="text-xs font-semibold text-foreground">Nueva categoría</span>
@@ -217,7 +237,7 @@ export function CategorySelect({
                   variant="ghost"
                   size="xs"
                   onClick={() => setIsCreating(false)}
-                  className="text-xs h-6 px-2"
+                  className="text-xs h-6 px-2 cursor-pointer"
                 >
                   Cancelar
                 </Button>
@@ -225,15 +245,15 @@ export function CategorySelect({
                   type="submit"
                   size="xs"
                   disabled={!newCatName.trim() || isSubmitting}
-                  className="text-xs h-6 px-2"
+                  className="text-xs h-6 px-2 cursor-pointer"
                 >
                   {isSubmitting ? "Creando..." : "Guardar"}
                 </Button>
               </div>
             </form>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </PopoverContent>
+      </Popover>
     </Field>
   )
 }
