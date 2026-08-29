@@ -32,20 +32,6 @@ export function EditorActionBar({
 }: EditorActionBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Switch to Visual Designer Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="text-xs text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/60"
-        render={
-          <Link
-            href={postId ? `/panel/posts/${postId}/designer` : "/panel/posts/nuevo/designer"}
-          />
-        }
-      >
-        <Palette data-icon="inline-start" />
-        <span className="hidden sm:inline">Diseñador</span> Visual
-      </Button>
 
       {/* Featured Star Toggle */}
       {onToggleFeatured && (

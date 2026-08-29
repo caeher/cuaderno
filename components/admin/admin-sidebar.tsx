@@ -36,7 +36,7 @@ const navItems = [
   { title: "Panel", href: "/panel", icon: LayoutDashboard },
   { title: "Posts", href: "/panel/posts", icon: FileText },
   { title: "Nuevo post", href: "/panel/posts/nuevo", icon: PlusCircle },
-  { title: "Diseñador Visual", href: "/panel/posts/nuevo/designer", icon: Palette },
+  { title: "Plantilla del Blog", href: "/panel/disenador", icon: Palette },
   { title: "Categorías y Etiquetas", href: "/panel/taxonomias", icon: FolderTree },
   { title: "Comentarios", href: "/panel/comentarios", icon: MessageSquare },
 ]
