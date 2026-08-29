@@ -14,7 +14,7 @@ export function AuthorBioCard({ author, className, ...props }: AuthorBioCardProp
   return (
     <div
       className={cn(
-        "flex items-start gap-4 rounded-xl border border-border bg-card p-6",
+        "flex items-start gap-4 rounded-xl border border-border bg-card p-6 shadow-xs",
         className
       )}
       {...props}
@@ -24,13 +24,13 @@ export function AuthorBioCard({ author, className, ...props }: AuthorBioCardProp
         <AvatarFallback>{getInitials(author.name)}</AvatarFallback>
       </Avatar>
       <div className="flex-1">
-        <p className="text-base font-semibold text-foreground">{author.name}</p>
+        <p className="font-serif text-lg font-medium">{author.name}</p>
         {author.bio && (
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{author.bio}</p>
         )}
         <Button
           variant="link"
-          className="mt-2 h-auto px-0 text-sm font-medium text-ia hover:text-ia-hover hover:underline"
+          className="mt-2 h-auto px-0 text-primary hover:underline"
           render={<Link href={`/autor/${author.username}`} />}
         >
           Ver todos sus posts

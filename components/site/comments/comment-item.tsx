@@ -11,7 +11,7 @@ export interface CommentItemProps extends React.HTMLAttributes<HTMLDivElement> {
 export function CommentItem({ comment, className, ...props }: CommentItemProps) {
   return (
     <div className={cn("flex gap-3", className)} {...props}>
-      <Avatar className="size-8 shrink-0">
+      <Avatar className="size-8">
         <AvatarImage
           src={comment.authorAvatarUrl || "/placeholder.svg"}
           alt={comment.authorName}
@@ -20,14 +20,12 @@ export function CommentItem({ comment, className, ...props }: CommentItemProps) 
           {getInitials(comment.authorName)}
         </AvatarFallback>
       </Avatar>
-      <div className="min-w-0 flex-1">
+      <div className="flex-1">
         <div className="flex items-baseline gap-2">
           <p className="text-sm font-medium text-foreground">{comment.authorName}</p>
-          <time className="text-xs tabular-nums text-text-tertiary">
-            {formatDate(comment.createdAt)}
-          </time>
+          <time className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</time>
         </div>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{comment.content}</p>
+        <p className="mt-1 text-sm leading-relaxed text-foreground/90">{comment.content}</p>
       </div>
     </div>
   )

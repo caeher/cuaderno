@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Globe, AtSign, Link2, Share2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Field, FieldGroup, FieldLabel, FieldDescription, FieldSet, FieldLegend } from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel, FieldSet, FieldLegend } from "@/components/ui/field"
 
 export interface SocialSettingsSectionProps {
   website: string
@@ -27,16 +27,13 @@ export function SocialSettingsSection({
   onLinkedinChange,
 }: SocialSettingsSectionProps) {
   return (
-    <FieldSet className="rounded-xl border border-border bg-card p-5">
-      <FieldLegend className="text-base font-semibold text-foreground">Redes sociales y enlaces</FieldLegend>
-      <FieldDescription className="text-sm text-muted-foreground">
-        Los perfiles que enlazas al pie de tu blog y en tu página de autor.
-      </FieldDescription>
+    <FieldSet>
+      <FieldLegend>Redes sociales y enlaces</FieldLegend>
       <FieldGroup className="grid gap-4 sm:grid-cols-2">
         <Field>
           <FieldLabel htmlFor="website">Sitio web</FieldLabel>
           <div className="relative">
-            <Globe className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+            <Globe className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               id="website"
               value={website}
@@ -50,7 +47,7 @@ export function SocialSettingsSection({
         <Field>
           <FieldLabel htmlFor="twitter">X / Twitter</FieldLabel>
           <div className="relative">
-            <AtSign className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+            <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               id="twitter"
               value={twitter}
@@ -64,7 +61,7 @@ export function SocialSettingsSection({
         <Field>
           <FieldLabel htmlFor="github">GitHub</FieldLabel>
           <div className="relative">
-            <Link2 className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+            <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               id="github"
               value={github}
@@ -78,7 +75,7 @@ export function SocialSettingsSection({
         <Field>
           <FieldLabel htmlFor="linkedin">LinkedIn</FieldLabel>
           <div className="relative">
-            <Share2 className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+            <Share2 className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <Input
               id="linkedin"
               value={linkedin}

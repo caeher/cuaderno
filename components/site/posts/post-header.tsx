@@ -18,11 +18,11 @@ export function PostHeader({ post, author }: PostHeaderProps) {
         {post.category && (
           <Link
             href={`/explorar?category=${post.category.slug}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-sunken"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
           >
             <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: post.category.color || "var(--cat-2)" }}
+              className="size-2 rounded-full shrink-0"
+              style={{ backgroundColor: post.category.color || "#3b82f6" }}
             />
             <span>{post.category.name}</span>
           </Link>
@@ -31,46 +31,37 @@ export function PostHeader({ post, author }: PostHeaderProps) {
         {post.tags.length > 0 &&
           post.tags.map((tag) => (
             <Link key={tag} href={`/explorar?tag=${tag}`}>
-              <Badge
-                variant="secondary"
-                className="text-xs font-normal text-muted-foreground hover:bg-surface-sunken"
-              >
+              <Badge variant="secondary" className="hover:bg-muted font-mono text-xs font-normal">
                 #{tag}
               </Badge>
             </Link>
           ))}
       </div>
 
-      <h1 className="mt-5 text-3xl font-semibold leading-tight tracking-tight text-balance text-foreground">
+      <h1 className="mt-5 font-serif text-4xl font-medium leading-[1.1] text-balance sm:text-5xl">
         {post.title}
       </h1>
 
 
       {post.excerpt && (
-        <p className="mt-4 text-base leading-relaxed text-muted-foreground text-pretty">
-          {post.excerpt}
-        </p>
+        <p className="mt-4 text-lg leading-relaxed text-muted-foreground">{post.excerpt}</p>
       )}
 
-      <div className="mt-6 flex items-center justify-between border-y border-border py-4">
-        <Link href={`/autor/${author.username}`} rel="author" className="group flex items-center gap-3">
+      <div className="mt-6 flex items-center justify-between border-y border-border/70 py-4">
+        <Link href={`/autor/${author.username}`} rel="author" className="flex items-center gap-3">
           <Avatar className="size-10">
             <AvatarImage src={author.avatarUrl || "/placeholder.svg"} alt={author.name} />
             <AvatarFallback>{getInitials(author.name)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-sm font-medium text-foreground transition-colors group-hover:text-ia">
-              {author.name}
-            </p>
-            <div className="flex items-center gap-1.5 text-xs tabular-nums text-text-tertiary">
+            <p className="text-sm font-medium text-foreground">{author.name}</p>
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
               {post.publishedAt ? (
                 <time dateTime={post.publishedAt}>
                   {formatDate(post.publishedAt)}
                 </time>
               ) : (
-                <span className="rounded-full bg-warn-tint px-2 py-0.5 font-medium text-warn-ink">
-                  Borrador
-                </span>
+                <span>Borrador</span>
               )}
               <span>·</span>
               <span>{post.readingTimeMinutes} min de lectura</span>

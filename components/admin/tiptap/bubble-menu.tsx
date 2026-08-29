@@ -80,7 +80,7 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
     <TiptapBubbleMenu
       editor={editor}
       shouldShow={shouldShow}
-      className="flex items-center gap-1 rounded-xl border border-border bg-popover p-1 shadow-lg"
+      className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-2xl backdrop-blur-md"
       options={{
         placement: "top",
         offset: 8,
@@ -89,14 +89,14 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
       {/* Turn Into dropdown */}
       <Popover open={turnIntoOpen} onOpenChange={setTurnIntoOpen}>
         <PopoverTrigger
-          className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+          className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-foreground transition-colors hover:bg-accent"
           aria-label="Convertir bloque en"
         >
-          {currentType.icon && <currentType.icon className="size-4" />}
+          {currentType.icon && <currentType.icon className="size-3.5" />}
           <span>{currentType.label}</span>
           <ChevronDown className="size-3 opacity-60" />
         </PopoverTrigger>
-        <PopoverContent className="w-52 rounded-xl p-1 text-sm" align="start">
+        <PopoverContent className="w-48 p-1 text-xs" align="start">
           <div className="flex flex-col gap-0.5">
             <button
               type="button"
@@ -104,7 +104,7 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().setParagraph().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
               <span>Texto / Párrafo</span>
             </button>
@@ -114,9 +114,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleHeading({ level: 2 }).run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <Heading1 className="size-4" />
+              <Heading1 className="size-3.5" />
               <span>Título 1 (Grande)</span>
             </button>
             <button
@@ -125,9 +125,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleHeading({ level: 3 }).run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <Heading2 className="size-4" />
+              <Heading2 className="size-3.5" />
               <span>Título 2 (Medio)</span>
             </button>
             <button
@@ -136,9 +136,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleHeading({ level: 4 }).run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <Heading3 className="size-4" />
+              <Heading3 className="size-3.5" />
               <span>Título 3 (Pequeño)</span>
             </button>
             <button
@@ -147,9 +147,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleBulletList().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <List className="size-4" />
+              <List className="size-3.5" />
               <span>Lista con viñetas</span>
             </button>
             <button
@@ -158,9 +158,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleOrderedList().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <ListOrdered className="size-4" />
+              <ListOrdered className="size-3.5" />
               <span>Lista numerada</span>
             </button>
             <button
@@ -169,9 +169,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleTaskList().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <CheckSquare className="size-4" />
+              <CheckSquare className="size-3.5" />
               <span>Lista de tareas</span>
             </button>
             <button
@@ -180,9 +180,9 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleBlockquote().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <Quote className="size-4" />
+              <Quote className="size-3.5" />
               <span>Cita</span>
             </button>
             <button
@@ -191,16 +191,16 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 editor.chain().focus().toggleCallout().run()
                 setTurnIntoOpen(false)
               }}
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent"
             >
-              <Sparkles className="size-4" />
+              <Sparkles className="size-3.5" />
               <span>Cuadro Destacado</span>
             </button>
           </div>
         </PopoverContent>
       </Popover>
 
-      <div className="mx-1 h-5 w-px bg-border" />
+      <div className="mx-1 h-4 w-px bg-border" />
 
       {/* Basic formatting */}
       <FormatButton
@@ -208,59 +208,59 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
         onClick={() => editor.chain().focus().toggleBold().run()}
         label="Negrita (Ctrl+B)"
       >
-        <Bold className="size-4" />
+        <Bold className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         label="Cursiva (Ctrl+I)"
       >
-        <Italic className="size-4" />
+        <Italic className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive("underline")}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         label="Subrayado (Ctrl+U)"
       >
-        <UnderlineIcon className="size-4" />
+        <UnderlineIcon className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive("strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
         label="Tachado"
       >
-        <Strikethrough className="size-4" />
+        <Strikethrough className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive("code")}
         onClick={() => editor.chain().focus().toggleCode().run()}
         label="Código en línea (Ctrl+E)"
       >
-        <Code className="size-4" />
+        <Code className="size-3.5" />
       </FormatButton>
 
       {/* Link popover */}
       <Popover open={linkOpen} onOpenChange={setLinkOpen}>
         <PopoverTrigger
           className={cn(
-            "flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-            editor.isActive("link") && "bg-muted text-foreground",
+            "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+            editor.isActive("link") && "bg-accent text-accent-foreground",
           )}
           onClick={openLinkPopover}
           aria-label="Enlace"
         >
-          <LinkIcon className="size-4" />
+          <LinkIcon className="size-3.5" />
         </PopoverTrigger>
-        <PopoverContent className="w-72 rounded-xl p-2 text-sm" align="center">
+        <PopoverContent className="w-72 p-2 text-xs" align="center">
           <form onSubmit={handleSetLink} className="flex gap-1.5">
             <Input
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://..."
-              className="h-8 text-sm"
+              className="h-8 text-xs"
               autoFocus
             />
-            <Button type="submit" size="sm" className="h-8 px-2.5 text-sm">
+            <Button type="submit" size="sm" className="h-8 px-2.5 text-xs">
               Aplicar
             </Button>
             {editor.isActive("link") && (
@@ -268,7 +268,7 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2 text-sm text-destructive hover:bg-danger-tint hover:text-destructive"
+                className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
                 onClick={() => {
                   editor.chain().focus().unsetLink().run()
                   setLinkOpen(false)
@@ -284,7 +284,7 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
       {/* Notion Text & Highlight Color Picker */}
       <ColorPicker editor={editor} />
 
-      <div className="mx-1 h-5 w-px bg-border" />
+      <div className="mx-1 h-4 w-px bg-border" />
 
       {/* Alignment */}
       <FormatButton
@@ -292,21 +292,21 @@ export function EditorBubbleMenu({ editor }: BubbleMenuProps) {
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
         label="Alinear a la izquierda"
       >
-        <AlignLeft className="size-4" />
+        <AlignLeft className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive({ textAlign: "center" })}
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
         label="Centrar"
       >
-        <AlignCenter className="size-4" />
+        <AlignCenter className="size-3.5" />
       </FormatButton>
       <FormatButton
         active={editor.isActive({ textAlign: "right" })}
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
         label="Alinear a la derecha"
       >
-        <AlignRight className="size-4" />
+        <AlignRight className="size-3.5" />
       </FormatButton>
     </TiptapBubbleMenu>
   )
@@ -331,8 +331,8 @@ function FormatButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-        active && "bg-muted text-foreground",
+        "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+        active && "bg-accent text-accent-foreground font-semibold",
       )}
     >
       {children}

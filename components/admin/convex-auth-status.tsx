@@ -49,20 +49,20 @@ export function ConvexAuthStatus() {
 
   if (!isConvexConfigured) {
     return (
-      <Card className="border-border bg-warn-tint shadow-none">
+      <Card className="border-amber-200 bg-amber-50/50">
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2 text-warn-ink">
-            <ShieldAlert className="size-5 text-warn" />
+          <div className="flex items-center gap-2 text-amber-800">
+            <ShieldAlert className="size-5 text-amber-600" />
             <CardTitle className="text-base font-medium">Convex no configurado localmente</CardTitle>
           </div>
-          <CardDescription className="text-warn-ink">
+          <CardDescription className="text-amber-700">
             La variable <code className="font-mono font-semibold">NEXT_PUBLIC_CONVEX_URL</code> no está definida en tu archivo <code className="font-mono">.env.local</code>.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-warn-ink">
+        <CardContent className="text-xs text-amber-800 space-y-2">
           <p>Para conectar Convex con Clerk:</p>
           <ol className="list-decimal pl-4 space-y-1">
-            <li>Ejecuta <code className="rounded bg-card px-1 py-0.5 font-mono">npx convex dev</code> para iniciar tu backend.</li>
+            <li>Ejecuta <code className="bg-amber-100 px-1 py-0.5 rounded font-mono">npx convex dev</code> para iniciar tu backend.</li>
             <li>Copia la variable <code className="font-mono">NEXT_PUBLIC_CONVEX_URL</code> en tu <code className="font-mono">.env.local</code>.</li>
             <li>Configura el JWT Template <code className="font-mono">convex</code> en el Dashboard de Clerk.</li>
           </ol>
@@ -72,15 +72,15 @@ export function ConvexAuthStatus() {
   }
 
   return (
-    <Card className="rounded-xl border-border shadow-none">
+    <Card className="border-border shadow-xs">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Database className="size-5 text-ia" />
+            <Database className="size-5 text-primary" />
             <CardTitle className="text-base font-medium">Estado de Autenticación Convex + Clerk</CardTitle>
           </div>
           {authStatus?.identity.isAuthenticated ? (
-            <Badge variant="default" className="gap-1 border-transparent bg-perf-tint text-perf-strong">
+            <Badge variant="default" className="bg-emerald-600 text-white gap-1">
               <ShieldCheck className="size-3.5" /> Autenticado en Convex
             </Badge>
           ) : (
@@ -97,11 +97,11 @@ export function ConvexAuthStatus() {
       <CardContent className="space-y-4 text-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Clerk State */}
-          <div className="space-y-2 rounded-xl border border-border bg-surface-sunken p-3.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+          <div className="rounded-lg border border-border/70 p-3.5 bg-muted/30 space-y-2">
+            <div className="flex items-center gap-1.5 font-medium text-xs text-muted-foreground uppercase tracking-wide">
               <User className="size-3.5" /> Estado en Cliente (Clerk)
             </div>
-            <div className="space-y-1.5 text-sm">
+            <div className="space-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sesión:</span>
                 <span className="font-medium">{!isLoaded ? "Cargando..." : isSignedIn ? "Iniciada" : "Anónima"}</span>
@@ -128,11 +128,11 @@ export function ConvexAuthStatus() {
           </div>
 
           {/* Convex Backend State */}
-          <div className="space-y-2 rounded-xl border border-border bg-surface-sunken p-3.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+          <div className="rounded-lg border border-border/70 p-3.5 bg-muted/30 space-y-2">
+            <div className="flex items-center gap-1.5 font-medium text-xs text-muted-foreground uppercase tracking-wide">
               <ShieldCheck className="size-3.5" /> Identidad Backend (Convex)
             </div>
-            <div className="space-y-1.5 text-sm">
+            <div className="space-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Backend Auth:</span>
                 <span className="font-medium">
@@ -174,8 +174,8 @@ export function ConvexAuthStatus() {
         </div>
 
         {/* Action Test Section */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-          <div className="text-sm text-muted-foreground">
+        <div className="pt-2 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-muted-foreground">
             Prueba de mutación autenticada con control de acceso por Tenant.
           </div>
           <Button
@@ -196,16 +196,16 @@ export function ConvexAuthStatus() {
 
         {testResult && (
           <div
-            className={`flex items-start gap-2 rounded-xl p-3 text-sm ${
+            className={`p-3 rounded-md text-xs flex items-start gap-2 ${
               testResult.success
-                ? "border border-perf/25 bg-perf-tint text-perf-strong"
-                : "border border-destructive/25 bg-danger-tint text-destructive"
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                : "bg-destructive/10 text-destructive border border-destructive/20"
             }`}
           >
             {testResult.success ? (
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-perf" />
+              <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-600" />
             ) : (
-              <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+              <AlertCircle className="size-4 shrink-0 mt-0.5 text-destructive" />
             )}
             <div>
               <p className="font-medium">{testResult.success ? "Éxito" : "Error"}</p>

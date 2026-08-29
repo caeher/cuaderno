@@ -72,13 +72,13 @@ export function SharePopover({
         {showText && <span>Compartir</span>}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
           Compartir en redes
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem onClick={handleCopyLink} className="cursor-pointer">
-            {copied ? <Check className="size-4 text-perf" /> : <Copy className="size-4" />}
+            {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
             <span>{copied ? "¡Copiado!" : "Copiar enlace"}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleShareTwitter} className="cursor-pointer">

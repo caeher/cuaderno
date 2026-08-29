@@ -26,11 +26,11 @@ export function DashboardStatsGrid({ stats, className, ...props }: DashboardStat
 
   return (
     <div
-      className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-4", className)}
+      className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}
       {...props}
     >
       <StatCard
-        label="Visualizaciones"
+        label="Vistas totales"
         value={formatCompactNumber(stats.totalViews)}
         icon={Eye}
         delta={`~${formatCompactNumber(avgViewsPerPost)} vistas/post`}

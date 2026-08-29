@@ -43,11 +43,11 @@ export function LegalSettingsSection({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Scale className="size-4 text-text-tertiary" />
+          <h3 className="text-base font-medium text-foreground flex items-center gap-2">
+            <Scale className="size-4 text-primary" />
             Páginas Legales del Blog
           </h3>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Configura la titularidad, privacidad (RGPD/LOPD) y términos legales exclusivos de este blog o publicación.
           </p>
         </div>
@@ -56,7 +56,7 @@ export function LegalSettingsSection({
           type="button"
           variant="outline"
           size="sm"
-          className="cursor-pointer gap-1.5 rounded-lg border-border bg-card text-sm text-foreground"
+          className="text-xs gap-1.5 cursor-pointer bg-background"
           render={
             <a href={baseLegalUrl} target="_blank" rel="noreferrer">
               <ExternalLink className="size-3.5" />
@@ -67,19 +67,19 @@ export function LegalSettingsSection({
       </div>
 
       {/* 1. Datos Identificativos del Titular */}
-      <Card className="rounded-xl border border-border bg-card ring-0">
+      <Card className="border-border/80 bg-card shadow-xs">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Building2 className="size-4 text-text-tertiary" />
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Building2 className="size-4 text-primary" />
             Datos Identificativos del Titular / Responsable
           </CardTitle>
-          <CardDescription className="text-sm text-muted-foreground">
+          <CardDescription className="text-xs">
             Estos datos se utilizarán automáticamente en todas las políticas legales generadas para tu blog.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="legalCompanyName" className="text-sm font-medium text-foreground">
+            <Label htmlFor="legalCompanyName" className="text-xs font-medium">
               Razón Social o Nombre del Titular
             </Label>
             <Input
@@ -87,12 +87,12 @@ export function LegalSettingsSection({
               placeholder="ej: Acme Media S.L. o Tu Nombre"
               value={legalSettings.companyName ?? ""}
               onChange={(e) => updateField("companyName", e.target.value)}
-              className="text-sm"
+              className="text-xs"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="legalTaxId" className="text-sm font-medium text-foreground">
+            <Label htmlFor="legalTaxId" className="text-xs font-medium">
               NIF / CIF / Identificación Fiscal
             </Label>
             <Input
@@ -100,12 +100,12 @@ export function LegalSettingsSection({
               placeholder="ej: B12345678 o 12345678Z"
               value={legalSettings.taxId ?? ""}
               onChange={(e) => updateField("taxId", e.target.value)}
-              className="font-mono text-sm"
+              className="text-xs font-mono"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="legalContactEmail" className="text-sm font-medium text-foreground">
+            <Label htmlFor="legalContactEmail" className="text-xs font-medium">
               Correo Electrónico de Contacto Legal
             </Label>
             <Input
@@ -114,12 +114,12 @@ export function LegalSettingsSection({
               placeholder="ej: legal@tuempresa.com"
               value={legalSettings.contactEmail ?? ""}
               onChange={(e) => updateField("contactEmail", e.target.value)}
-              className="text-sm"
+              className="text-xs"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="legalDpoContact" className="text-sm font-medium text-foreground">
+            <Label htmlFor="legalDpoContact" className="text-xs font-medium">
               Contacto de Privacidad / DPO (Opcional)
             </Label>
             <Input
@@ -127,12 +127,12 @@ export function LegalSettingsSection({
               placeholder="ej: dpo@tuempresa.com"
               value={legalSettings.dpoContact ?? ""}
               onChange={(e) => updateField("dpoContact", e.target.value)}
-              className="text-sm"
+              className="text-xs"
             />
           </div>
 
           <div className="sm:col-span-2 flex flex-col gap-1.5">
-            <Label htmlFor="legalAddress" className="text-sm font-medium text-foreground">
+            <Label htmlFor="legalAddress" className="text-xs font-medium">
               Domicilio o Ubicación Social
             </Label>
             <Input
@@ -140,22 +140,22 @@ export function LegalSettingsSection({
               placeholder="ej: Calle Gran Vía 28, 28013 Madrid, España"
               value={legalSettings.address ?? ""}
               onChange={(e) => updateField("address", e.target.value)}
-              className="text-sm"
+              className="text-xs"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* 2. Textos Personalizados por Documento */}
-      <Card className="rounded-xl border border-border bg-card ring-0">
+      <Card className="border-border/80 bg-card shadow-xs">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-base font-semibold text-foreground">
-                <FileText className="size-4 text-text-tertiary" />
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="size-4 text-primary" />
                 Redacción Personalizada de Políticas (Opcional)
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-xs">
                 Si dejas estos campos vacíos, el sistema generará automáticamente las políticas con la plantilla estándar oficial.
               </CardDescription>
             </div>
@@ -163,20 +163,20 @@ export function LegalSettingsSection({
         </CardHeader>
         <CardContent className="pt-2">
           <Tabs value={legalDocTab} onValueChange={setLegalDocTab} className="w-full">
-            <TabsList className="h-auto w-full justify-start overflow-x-auto border border-border bg-surface-sunken p-1">
-              <TabsTrigger value="aviso" className="cursor-pointer gap-1.5 px-2.5 py-1.5 text-xs data-active:bg-card data-active:text-ia">
+            <TabsList className="w-full justify-start overflow-x-auto h-auto p-1 bg-muted/60 border border-border/60">
+              <TabsTrigger value="aviso" className="gap-1.5 text-xs py-1.5 px-2.5 cursor-pointer">
                 <Scale className="size-3" />
                 <span>Aviso Legal</span>
               </TabsTrigger>
-              <TabsTrigger value="privacidad" className="cursor-pointer gap-1.5 px-2.5 py-1.5 text-xs data-active:bg-card data-active:text-ia">
+              <TabsTrigger value="privacidad" className="gap-1.5 text-xs py-1.5 px-2.5 cursor-pointer">
                 <ShieldCheck className="size-3" />
                 <span>Privacidad</span>
               </TabsTrigger>
-              <TabsTrigger value="terminos" className="cursor-pointer gap-1.5 px-2.5 py-1.5 text-xs data-active:bg-card data-active:text-ia">
+              <TabsTrigger value="terminos" className="gap-1.5 text-xs py-1.5 px-2.5 cursor-pointer">
                 <FileText className="size-3" />
                 <span>Términos</span>
               </TabsTrigger>
-              <TabsTrigger value="cookies" className="cursor-pointer gap-1.5 px-2.5 py-1.5 text-xs data-active:bg-card data-active:text-ia">
+              <TabsTrigger value="cookies" className="gap-1.5 text-xs py-1.5 px-2.5 cursor-pointer">
                 <Cookie className="size-3" />
                 <span>Cookies</span>
               </TabsTrigger>
@@ -187,9 +187,9 @@ export function LegalSettingsSection({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Texto personalizado para el Aviso Legal:</span>
                 {legalSettings.customLegalNotice ? (
-                  <Badge variant="secondary" className="border-border bg-surface-sunken text-xs font-medium text-foreground">Personalizado</Badge>
+                  <Badge variant="secondary" className="text-[10px]">Personalizado</Badge>
                 ) : (
-                  <Badge variant="outline" className="border-border text-xs font-normal text-muted-foreground">Plantilla Automática</Badge>
+                  <Badge variant="outline" className="text-[10px]">Plantilla Automática</Badge>
                 )}
               </div>
               <Textarea
@@ -197,7 +197,7 @@ export function LegalSettingsSection({
                 value={legalSettings.customLegalNotice ?? ""}
                 onChange={(e) => updateField("customLegalNotice", e.target.value)}
                 rows={8}
-                className="rounded-lg font-mono text-sm"
+                className="text-xs font-mono"
               />
             </TabsContent>
 
@@ -206,9 +206,9 @@ export function LegalSettingsSection({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Texto personalizado para la Política de Privacidad:</span>
                 {legalSettings.customPrivacyPolicy ? (
-                  <Badge variant="secondary" className="border-border bg-surface-sunken text-xs font-medium text-foreground">Personalizado</Badge>
+                  <Badge variant="secondary" className="text-[10px]">Personalizado</Badge>
                 ) : (
-                  <Badge variant="outline" className="border-border text-xs font-normal text-muted-foreground">Plantilla Automática</Badge>
+                  <Badge variant="outline" className="text-[10px]">Plantilla Automática</Badge>
                 )}
               </div>
               <Textarea
@@ -216,7 +216,7 @@ export function LegalSettingsSection({
                 value={legalSettings.customPrivacyPolicy ?? ""}
                 onChange={(e) => updateField("customPrivacyPolicy", e.target.value)}
                 rows={8}
-                className="rounded-lg font-mono text-sm"
+                className="text-xs font-mono"
               />
             </TabsContent>
 
@@ -225,9 +225,9 @@ export function LegalSettingsSection({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Texto personalizado para los Términos de Servicio:</span>
                 {legalSettings.customTerms ? (
-                  <Badge variant="secondary" className="border-border bg-surface-sunken text-xs font-medium text-foreground">Personalizado</Badge>
+                  <Badge variant="secondary" className="text-[10px]">Personalizado</Badge>
                 ) : (
-                  <Badge variant="outline" className="border-border text-xs font-normal text-muted-foreground">Plantilla Automática</Badge>
+                  <Badge variant="outline" className="text-[10px]">Plantilla Automática</Badge>
                 )}
               </div>
               <Textarea
@@ -235,7 +235,7 @@ export function LegalSettingsSection({
                 value={legalSettings.customTerms ?? ""}
                 onChange={(e) => updateField("customTerms", e.target.value)}
                 rows={8}
-                className="rounded-lg font-mono text-sm"
+                className="text-xs font-mono"
               />
             </TabsContent>
 
@@ -244,9 +244,9 @@ export function LegalSettingsSection({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>Texto personalizado para la Política de Cookies:</span>
                 {legalSettings.customCookiePolicy ? (
-                  <Badge variant="secondary" className="border-border bg-surface-sunken text-xs font-medium text-foreground">Personalizado</Badge>
+                  <Badge variant="secondary" className="text-[10px]">Personalizado</Badge>
                 ) : (
-                  <Badge variant="outline" className="border-border text-xs font-normal text-muted-foreground">Plantilla Automática</Badge>
+                  <Badge variant="outline" className="text-[10px]">Plantilla Automática</Badge>
                 )}
               </div>
               <Textarea
@@ -254,7 +254,7 @@ export function LegalSettingsSection({
                 value={legalSettings.customCookiePolicy ?? ""}
                 onChange={(e) => updateField("customCookiePolicy", e.target.value)}
                 rows={8}
-                className="rounded-lg font-mono text-sm"
+                className="text-xs font-mono"
               />
             </TabsContent>
           </Tabs>

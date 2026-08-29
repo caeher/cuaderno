@@ -33,12 +33,7 @@ export function PostActionBar({
   }
 
   return (
-    <div
-      className={cn(
-        "mt-10 flex items-center justify-between border-t border-border pt-6",
-        className
-      )}
-    >
+    <div className={cn("mt-10 flex items-center justify-between", className)}>
       <div className="flex items-center gap-3">
         <Button
           variant={hasLiked ? "default" : "secondary"}
@@ -47,11 +42,11 @@ export function PostActionBar({
           className="gap-1.5 cursor-pointer"
         >
           <Heart className={cn("size-4", hasLiked && "fill-current")} />
-          <span className="tabular-nums">{likeCount}</span>
+          <span>{likeCount}</span>
         </Button>
         <Button variant="secondary" size="sm" className="gap-1.5 cursor-pointer">
           <MessageCircle className="size-4" />
-          <span className="tabular-nums">{commentsCount}</span>
+          <span>{commentsCount}</span>
         </Button>
       </div>
       <SharePopover title={postTitle} />

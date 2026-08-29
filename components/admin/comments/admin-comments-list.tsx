@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import type { Comment, Post } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -108,33 +108,33 @@ export function AdminCommentsList({
     <div className="flex flex-col gap-6">
       {/* Metric Cards Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="flex flex-row items-center gap-3 rounded-xl border-border p-4 shadow-none">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-ia-tint text-ia">
+        <Card className="p-4 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <MessageCircle className="size-5" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Total de comentarios</p>
-            <h3 className="text-2xl font-semibold tabular-nums text-foreground">{comments.length}</h3>
+            <p className="text-xs text-muted-foreground font-medium">Total de comentarios</p>
+            <h3 className="text-2xl font-bold text-foreground">{comments.length}</h3>
           </div>
         </Card>
 
-        <Card className="flex flex-row items-center gap-3 rounded-xl border-border p-4 shadow-none">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-neutral-tint text-neutral">
+        <Card className="p-4 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
             <FileText className="size-5" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Artículos comentados</p>
-            <h3 className="text-2xl font-semibold tabular-nums text-foreground">{postsWithCommentsCount}</h3>
+            <p className="text-xs text-muted-foreground font-medium">Artículos comentados</p>
+            <h3 className="text-2xl font-bold text-foreground">{postsWithCommentsCount}</h3>
           </div>
         </Card>
 
-        <Card className="flex flex-row items-center gap-3 rounded-xl border-border p-4 shadow-none">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-perf-tint text-perf-strong">
+        <Card className="p-4 flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <MessageSquare className="size-5" />
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Promedio por artículo</p>
-            <h3 className="text-2xl font-semibold tabular-nums text-foreground">
+            <p className="text-xs text-muted-foreground font-medium">Promedio por artículo</p>
+            <h3 className="text-2xl font-bold text-foreground">
               {postsWithCommentsCount > 0 ? (comments.length / postsWithCommentsCount).toFixed(1) : "0"}
             </h3>
           </div>
@@ -167,7 +167,7 @@ export function AdminCommentsList({
           <select
             value={selectedPostId}
             onChange={(e) => setSelectedPostId(e.target.value)}
-            className="w-full cursor-pointer truncate rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer truncate"
           >
             <option value="all">Todos los artículos ({comments.length})</option>
             {uniquePosts.map((post) => {
@@ -186,7 +186,7 @@ export function AdminCommentsList({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
-            className="w-full cursor-pointer rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 sm:w-auto"
+            className="w-full sm:w-auto rounded-md border border-border bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
           >
             <option value="newest">Más recientes</option>
             <option value="oldest">Más antiguos</option>
@@ -221,12 +221,12 @@ export function AdminCommentsList({
           }
         />
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex flex-col gap-3">
           {filteredComments.map((comment) => {
             const post = postMap.get(comment.postId)
             return (
-              <div key={comment.id} className="transition-colors hover:bg-muted/50">
-                <div className="flex items-start gap-3.5 px-5 py-4">
+              <Card key={comment.id} className="transition-all hover:border-border/80">
+                <CardContent className="flex items-start gap-3.5 pt-5 pb-5">
                   <Avatar className="size-10 shrink-0">
                     <AvatarImage
                       src={comment.authorAvatarUrl || "/placeholder.svg"}
@@ -237,15 +237,15 @@ export function AdminCommentsList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-semibold text-foreground">{comment.authorName}</p>
-                      <time className="shrink-0 text-sm tabular-nums text-text-tertiary">
+                      <time className="text-xs text-muted-foreground shrink-0">
                         {formatShortDate(comment.createdAt)}
                       </time>
                     </div>
-                    <p className="mt-1.5 break-words text-sm leading-relaxed text-muted-foreground">
+                    <p className="mt-1.5 text-sm text-foreground/90 leading-relaxed break-words">
                       {comment.content}
                     </p>
                     {post && (
-                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-2.5 text-sm text-text-tertiary">
+                      <div className="mt-3 flex flex-wrap items-center gap-2 pt-2 border-t border-border/40 text-xs text-muted-foreground">
                         <span>Artículo:</span>
                         <Link
                           href={`/panel/posts/${post.id}`}
@@ -258,7 +258,7 @@ export function AdminCommentsList({
                             href={`/post/${post.slug}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="ml-1 inline-flex items-center gap-1 font-medium text-ia hover:underline"
+                            className="inline-flex items-center gap-1 text-primary hover:underline ml-1"
                           >
                             <ExternalLink className="size-3" />
                             Ver post
@@ -270,14 +270,14 @@ export function AdminCommentsList({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    className="shrink-0 cursor-pointer text-muted-foreground hover:bg-danger-tint hover:text-destructive"
+                    className="shrink-0 cursor-pointer text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={() => setDeleteDialogComment(comment)}
                     title="Eliminar comentario"
                   >
                     <Trash2 className="size-4" />
                   </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             )
           })}
         </div>

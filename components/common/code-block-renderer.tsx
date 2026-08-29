@@ -30,23 +30,23 @@ export function CodeBlockRenderer({
 
   return (
     <div
-      className={cn("group relative my-4 overflow-hidden rounded-xl border border-border bg-surface-sunken", className)}
+      className={cn("group relative my-4 overflow-hidden rounded-xl border border-border bg-muted/70", className)}
       {...props}
     >
-      <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2 font-mono text-xs text-text-tertiary">
+      <div className="flex items-center justify-between border-b border-border/70 bg-card/60 px-4 py-2 text-xs font-mono text-muted-foreground">
         <span>{language || "code"}</span>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={handleCopy}
-          className="h-7 cursor-pointer gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground"
+          className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          {copied ? <Check className="size-3.5 text-perf" /> : <Copy className="size-3.5" />}
+          {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
           <span>{copied ? "¡Copiado!" : "Copiar"}</span>
         </Button>
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-sm leading-relaxed text-foreground">
+      <pre className="overflow-x-auto p-4 text-sm font-mono leading-relaxed text-foreground">
         <code>{code}</code>
       </pre>
     </div>

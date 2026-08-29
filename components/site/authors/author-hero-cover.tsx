@@ -14,7 +14,7 @@ export function AuthorHeroCover({
   className,
 }: AuthorHeroCoverProps) {
   return (
-    <div className={cn("relative h-48 w-full bg-surface-sunken sm:h-64", className)}>
+    <div className={cn("relative h-48 w-full bg-muted sm:h-64", className)}>
       <Image
         src={coverUrl || "/placeholder.svg"}
         alt={alt}

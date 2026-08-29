@@ -18,21 +18,17 @@ export function LandingCtaBanner({
   buttonHref = "/registro",
 }: LandingCtaBannerProps) {
   return (
-    <SectionContainer bordered={false} className="bg-primary">
+    <SectionContainer>
       <div className="mx-auto max-w-xl text-center">
-        <h2 className="text-3xl font-semibold leading-tight tracking-[-0.02em] text-balance text-primary-foreground sm:text-4xl">
+        <h2 className="font-serif text-3xl font-medium leading-tight text-balance sm:text-4xl">
           {title}
         </h2>
-        <p className="mx-auto mt-3 max-w-md text-base leading-relaxed text-primary-foreground/70">
+        <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
           {description}
         </p>
-        <Button
-          size="lg"
-          className="mt-8 h-12 bg-card px-6 text-base font-semibold text-foreground hover:bg-muted focus-visible:border-primary-foreground/50 focus-visible:ring-primary-foreground/35"
-          render={<Link href={buttonHref} />}
-        >
+        <Button size="lg" className="mt-8" render={<Link href={buttonHref} />}>
           {buttonText}
-          <ArrowRight data-icon="inline-end" strokeWidth={1.5} />
+          <ArrowRight data-icon="inline-end" />
         </Button>
       </div>
     </SectionContainer>

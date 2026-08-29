@@ -19,36 +19,26 @@ export function LandingHero({
   readerCountText = "Más de 10 mil lectores cada mes",
 }: LandingHeroProps) {
   return (
-    <section className="relative overflow-x-clip bg-background">
-      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-16 md:grid-cols-2 md:items-center md:py-24">
+    <section className="relative overflow-hidden border-b border-border/70">
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 md:grid-cols-2 md:items-center md:py-28">
         <div>
-          <span className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-muted px-4 text-[13px] font-medium text-muted-foreground">
-            <Sparkles className="size-3.5 text-text-tertiary" strokeWidth={1.5} />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 font-mono text-xs text-muted-foreground">
+            <Sparkles className="size-3 text-primary" />
             Ahora en beta abierta
           </span>
-          <h1 className="mt-6 text-[2rem] font-bold leading-[1.05] tracking-[-0.02em] text-balance text-foreground sm:text-5xl sm:tracking-[-0.03em] lg:text-6xl">
-            Tu blog, escrito para ser leído{" "}
-            <span className="text-muted-foreground">— no configurado</span>
+          <h1 className="mt-6 font-serif text-4xl font-medium leading-[1.08] text-balance sm:text-5xl lg:text-6xl">
+            Tu blog, escrito para ser leído — no configurado
           </h1>
-          <p className="mt-5 max-w-[46ch] text-base leading-relaxed text-muted-foreground">
-            Cuaderno te da un perfil de autor, un editor sin distracciones y un panel para publicar,{" "}
-            <span className="font-semibold text-foreground">sin tocar una sola línea de código</span>.
+          <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
+            Cuaderno te da un perfil de autor, un editor sin distracciones y un panel para publicar, sin tocar una
+            sola línea de código.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <Button
-              size="lg"
-              className="h-12 w-full px-6 text-base font-semibold sm:w-auto"
-              render={<Link href="/registro" />}
-            >
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <Button size="lg" render={<Link href="/registro" />}>
               Empieza a escribir gratis
-              <ArrowRight data-icon="inline-end" strokeWidth={1.5} />
+              <ArrowRight data-icon="inline-end" />
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="h-12 w-full border-border bg-card px-6 text-base font-medium text-foreground hover:bg-muted sm:w-auto"
-              render={<Link href="/explorar" />}
-            >
+            <Button size="lg" variant="outline" render={<Link href="/explorar" />}>
               Explorar blogs
             </Button>
           </div>
@@ -58,9 +48,7 @@ export function LandingHero({
                 {topAuthors.map((author) => (
                   <Avatar key={author.id} className="size-8 border-2 border-background">
                     <AvatarImage src={author.avatarUrl || "/placeholder.svg"} alt={author.name} />
-                    <AvatarFallback className="bg-surface-sunken text-[10px] text-muted-foreground">
-                      {getInitials(author.name)}
-                    </AvatarFallback>
+                    <AvatarFallback className="text-[10px]">{getInitials(author.name)}</AvatarFallback>
                   </Avatar>
                 ))}
               </div>
@@ -70,13 +58,18 @@ export function LandingHero({
         </div>
 
         <div className="relative">
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-            <div className="flex items-center gap-2 border-b border-border px-5 py-3">
-              <span className="text-[13px] text-text-tertiary">elena-marti.cuaderno.app</span>
+          <div className="relative rotate-1 rounded-xl border border-border bg-card p-5 shadow-[0_30px_60px_-30px_oklch(0.19_0.014_264/0.25)]">
+            <div className="flex items-center gap-2 border-b border-border/70 pb-4">
+              <div className="flex gap-1.5">
+                <span className="size-2.5 rounded-full bg-destructive/60" />
+                <span className="size-2.5 rounded-full bg-chart-3/60" />
+                <span className="size-2.5 rounded-full bg-chart-5/60" />
+              </div>
+              <span className="font-mono text-xs text-muted-foreground">elena-marti.cuaderno.app</span>
             </div>
             {featuredPost && (
-              <div className="p-5">
-                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-surface-sunken">
+              <div className="pt-5">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-lg bg-muted">
                   <Image
                     src={featuredPost.coverUrl || "/placeholder.svg"}
                     alt=""
@@ -85,7 +78,7 @@ export function LandingHero({
                     className="object-cover"
                   />
                 </div>
-                <h3 className="mt-4 text-base font-semibold leading-snug text-balance text-foreground">
+                <h3 className="mt-4 font-serif text-lg font-medium leading-snug text-balance">
                   {featuredPost.title}
                 </h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
@@ -94,12 +87,12 @@ export function LandingHero({
               </div>
             )}
           </div>
-          <div className="absolute -bottom-6 -left-6 hidden rounded-xl border border-border bg-card p-4 shadow-lg sm:block">
+          <div className="absolute -bottom-6 -left-6 hidden -rotate-2 rounded-xl border border-border bg-card p-4 shadow-lg sm:block">
             <div className="flex items-center gap-2">
-              <FileText className="size-4 text-muted-foreground" strokeWidth={1.5} />
-              <span className="text-[13px] font-medium text-muted-foreground">6 posts publicados</span>
+              <FileText className="size-4 text-primary" />
+              <span className="font-mono text-xs">6 posts publicados</span>
             </div>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">2.8k seguidores</p>
+            <p className="mt-1 font-serif text-2xl font-medium">2.8k seguidores</p>
           </div>
         </div>
       </div>

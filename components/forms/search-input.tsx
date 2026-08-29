@@ -30,7 +30,7 @@ export function SearchInput({
         {...props}
       />
       <InputGroupAddon>
-        <Search className="size-4 text-text-tertiary" />
+        <Search className="size-4 text-muted-foreground" />
       </InputGroupAddon>
     </InputGroup>
   )

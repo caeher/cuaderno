@@ -51,7 +51,7 @@ export const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandList
 
     if (items.length === 0) {
       return (
-        <div className="w-72 rounded-xl border border-border bg-popover p-3 text-sm text-muted-foreground shadow-lg">
+        <div className="w-72 rounded-xl border border-border bg-popover/95 p-3 text-xs text-muted-foreground shadow-2xl backdrop-blur-md">
           No se encontraron bloques
         </div>
       )
@@ -60,9 +60,9 @@ export const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandList
     return (
       <div
         ref={listRef}
-        className="max-h-80 w-72 overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-lg"
+        className="max-h-80 w-72 overflow-y-auto rounded-xl border border-border/80 bg-popover/95 p-1.5 shadow-2xl backdrop-blur-md transition-all"
       >
-        <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
+        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Bloques básicos y avanzados
         </div>
         <div className="flex flex-col gap-0.5">
@@ -75,23 +75,23 @@ export const SlashCommandList = forwardRef<SlashCommandListRef, SlashCommandList
                 type="button"
                 onClick={() => command(item)}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                  "flex w-full items-center gap-3 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
                   isSelected
-                    ? "bg-ia-tint text-foreground"
-                    : "text-foreground hover:bg-muted",
+                    ? "bg-accent text-accent-foreground shadow-xs"
+                    : "hover:bg-accent/60 text-foreground/90",
                 )}
               >
                 <span
                   className={cn(
-                    "flex size-8 flex-none items-center justify-center rounded-lg border border-border bg-card text-muted-foreground",
-                    isSelected && "border-ia-border bg-card text-ia",
+                    "flex size-8 flex-none items-center justify-center rounded-md border border-border/70 bg-background text-foreground/80 shadow-xs",
+                    isSelected && "border-accent-foreground/20 text-accent-foreground bg-accent/40",
                   )}
                 >
                   <item.icon className="size-4" />
                 </span>
                 <span className="flex flex-col overflow-hidden">
                   <span className="font-medium leading-tight truncate">{item.title}</span>
-                  <span className="truncate text-[13px] leading-tight text-text-tertiary">
+                  <span className="text-[11px] leading-tight text-muted-foreground truncate">
                     {item.description}
                   </span>
                 </span>

@@ -72,14 +72,14 @@ export function TimezoneSettingsSection({
   const selectedOption = TIMEZONE_OPTIONS.find((opt) => opt.value === timezone)
 
   return (
-    <FieldSet className="rounded-xl border border-border bg-card p-5">
+    <FieldSet>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <FieldLegend className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Globe className="size-4 text-text-tertiary" />
+          <FieldLegend className="flex items-center gap-2">
+            <Globe className="size-4 text-primary" />
             Zona Horaria y Región
           </FieldLegend>
-          <FieldDescription className="text-sm text-muted-foreground">
+          <FieldDescription>
             Configura la zona horaria del blog para la publicación programada y el cálculo de fechas.
           </FieldDescription>
         </div>
@@ -90,7 +90,7 @@ export function TimezoneSettingsSection({
           onClick={handleAutoDetect}
           className="cursor-pointer gap-1.5 text-xs"
         >
-          <Sparkles className="size-3.5 text-ia" />
+          <Sparkles className="size-3.5 text-amber-500" />
           Detectar mi zona horaria
         </Button>
       </div>
@@ -102,7 +102,7 @@ export function TimezoneSettingsSection({
             id="timezone-select"
             value={timezone || "UTC"}
             onChange={(e) => onTimezoneChange(e.target.value)}
-            className="w-full cursor-pointer rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer"
           >
             {/* If the current timezone is not in the predefined list (e.g. from browser auto-detect), show it at top */}
             {!TIMEZONE_OPTIONS.some((o) => o.value === timezone) && timezone && (
@@ -123,8 +123,8 @@ export function TimezoneSettingsSection({
           </select>
           <FieldDescription>
             {selectedOption ? (
-              <span className="mt-1 flex items-center gap-1.5 font-medium text-muted-foreground">
-                <MapPin className="size-3 text-text-tertiary" />
+              <span className="flex items-center gap-1.5 mt-1 font-medium text-foreground/80">
+                <MapPin className="size-3 text-primary" />
                 Desplazamiento actual: <strong>{selectedOption.offset}</strong> — {selectedOption.label}
               </span>
             ) : (
@@ -134,37 +134,37 @@ export function TimezoneSettingsSection({
         </Field>
 
         {/* Live Clock and Date Preview Card */}
-        <div className="rounded-xl border border-border bg-surface-sunken p-4">
+        <div className="rounded-lg border border-border/80 bg-muted/30 p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-muted-foreground">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Clock className="size-5" />
               </div>
               <div className="flex flex-col">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Hora en vivo en el blog
                 </span>
-                <span className="font-mono text-base font-bold capitalize tabular-nums text-foreground">
+                <span className="font-mono text-base font-bold text-foreground capitalize">
                   {currentTime || "Cargando..."}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-card px-2.5 py-1 font-mono text-xs">
+              <Badge variant="outline" className="font-mono text-xs bg-background/80 px-2.5 py-1">
                 {timezone || "UTC"}
               </Badge>
             </div>
           </div>
 
-          <div className="mt-3 grid gap-2 border-t border-border pt-3 text-xs text-muted-foreground sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 border-t border-border/50 pt-3 sm:grid-cols-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <CalendarDays className="size-3.5 text-text-tertiary" />
+              <CalendarDays className="size-3.5 text-muted-foreground" />
               <span>Ejemplo formato largo:</span>
               <strong className="text-foreground">{formatDate(new Date().toISOString(), timezone)}</strong>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="size-3.5 text-text-tertiary" />
+              <Clock className="size-3.5 text-muted-foreground" />
               <span>Ejemplo post / log:</span>
               <strong className="text-foreground">{formatDateTime(new Date().toISOString(), timezone)}</strong>
             </div>

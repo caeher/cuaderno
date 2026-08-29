@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, Sliders } from "lucide-react"
+import { PenLine, Sliders } from "lucide-react"
 
 const productLinks = [
   { href: "/explorar", label: "Explorar blogs" },
@@ -27,28 +27,30 @@ export function SiteFooter() {
   }
 
   return (
-    <footer className="border-t border-border bg-card">
+    <footer className="border-t border-border/70 bg-card/40">
       <div className="mx-auto max-w-6xl px-6 py-14">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 text-foreground">
-              <BookOpen className="size-5" />
-              <span className="text-[17px] font-semibold tracking-[-0.02em]">cuaderno</span>
+            <Link href="/" className="flex items-center gap-2">
+              <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                <PenLine className="size-4" />
+              </span>
+              <span className="font-serif text-xl font-medium tracking-tight">Cuaderno</span>
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
               La plataforma para escribir y publicar tu propio blog. Sin plantillas genéricas, sin fricción — solo
               tú, tus ideas y un panel simple para gestionarlas.
             </p>
             <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1">
-                <span className="size-1.5 rounded-full bg-perf" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-2.5 py-1">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
                 Cumplimiento RGPD & LSSI-CE
               </span>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">Producto</h3>
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">Producto</h3>
             <ul className="mt-4 flex flex-col gap-2.5">
               {productLinks.map((link) => (
                 <li key={link.href}>
@@ -61,7 +63,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">Legal & Privacidad</h3>
+            <h3 className="text-sm font-semibold tracking-tight text-foreground">Legal & Privacidad</h3>
             <ul className="mt-4 flex flex-col gap-2.5">
               {legalLinks.map((link) => (
                 <li key={link.href}>
@@ -74,7 +76,7 @@ export function SiteFooter() {
                 <button
                   type="button"
                   onClick={openCookiePreferences}
-                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary cursor-pointer"
                 >
                   <Sliders className="size-3" />
                   <span>Configuración de cookies</span>
@@ -84,7 +86,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-xs text-text-tertiary sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-border/70 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Cuaderno. Todos los derechos reservados.</p>
           <p>Hecho para quienes prefieren escribir antes que configurar.</p>
         </div>

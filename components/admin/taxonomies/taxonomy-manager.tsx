@@ -2,14 +2,17 @@
 
 import * as React from "react"
 import {
+  FolderTree,
   Tag as TagIcon,
   Plus,
   Pencil,
   Trash2,
   Folder,
   Hash,
-  TrendingUp,
+  Sparkles,
   Search,
+  BookOpen,
+  Check,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { Category, Tag } from "@/lib/domain/entities"
@@ -22,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -29,87 +33,16 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { EmptyState } from "@/components/common/empty-state"
 import { cn } from "@/lib/utils"
 
-/**
- * Rampa cerrada de ocho de `design-system/components/data-display/category-dot.md`.
- *
- * `value` es EL DATO que ya vive persistido en cada categoría/etiqueta y que viaja
- * intacto a las mutaciones — no se toca, cambiarlo sería una migración de datos.
- * `token` es la ranura `--cat-1 … --cat-8` con la que se PINTA. Ningún hex llega
- * nunca al DOM: el color se resuelve siempre por token.
- */
 const COLOR_PALETTE = [
-  { value: "#3b82f6", token: "bg-cat-2", label: "Azul" },
-  { value: "#8b5cf6", token: "bg-cat-1", label: "Índigo" },
-  { value: "#ec4899", token: "bg-cat-5", label: "Rosa" },
-  { value: "#f43f5e", token: "bg-cat-4", label: "Naranja" },
-  { value: "#f59e0b", token: "bg-cat-7", label: "Amarillo" },
-  { value: "#10b981", token: "bg-cat-3", label: "Verde" },
-  { value: "#06b6d4", token: "bg-cat-6", label: "Teal" },
-  { value: "#64748b", token: "bg-cat-8", label: "Gris" },
+  "#3b82f6", // Azul
+  "#8b5cf6", // Violeta
+  "#ec4899", // Rosa
+  "#f43f5e", // Carmesí
+  "#f59e0b", // Ámbar
+  "#10b981", // Esmeralda
+  "#06b6d4", // Cian
+  "#64748b", // Pizarra
 ]
-
-/** Ranura de la rampa con la que se pinta un color persistido. Gris por defecto. */
-function colorToken(color?: string | null) {
-  return COLOR_PALETTE.find((c) => c.value === color?.toLowerCase())?.token ?? "bg-cat-8"
-}
-
-/** Tinte del icono de una tarjeta de métrica. Clases literales: Tailwind no ve plantillas. */
-const METRIC_TONE = {
-  "cat-1": "bg-cat-1/10 text-cat-1",
-  "cat-3": "bg-cat-3/10 text-cat-3",
-  "cat-5": "bg-cat-5/10 text-cat-5",
-  "cat-8": "bg-cat-8/15 text-cat-8",
-} as const
-
-/**
- * Tarjeta de la fila de métricas: `bg-card`, hairline, sin sombra y cifra en
- * `tabular-nums`. `variant="text"` es la variante de `stat-card.md` para cuando el
- * valor es un nombre y no una cifra — baja de escala y trunca a una línea.
- */
-function MetricCard({
-  icon,
-  tone,
-  label,
-  value,
-  context,
-  variant = "number",
-}: {
-  icon: React.ReactNode
-  tone: keyof typeof METRIC_TONE
-  label: string
-  value: React.ReactNode
-  context?: string
-  variant?: "number" | "text"
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-xl border border-border bg-card p-5">
-      <span
-        aria-hidden
-        className={cn(
-          "flex size-11 shrink-0 items-center justify-center rounded-xl",
-          METRIC_TONE[tone]
-        )}
-      >
-        {icon}
-      </span>
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="truncate text-sm text-muted-foreground">{label}</span>
-        {variant === "text" ? (
-          <span className="truncate text-xl font-semibold leading-tight text-foreground">
-            {value}
-          </span>
-        ) : (
-          <span className="text-3xl font-semibold leading-none tabular-nums text-foreground">
-            {value}
-          </span>
-        )}
-        {context ? (
-          <span className="truncate text-xs tabular-nums text-text-tertiary">{context}</span>
-        ) : null}
-      </div>
-    </div>
-  )
-}
 
 export interface TaxonomyManagerProps {
   initialCategories: Category[]
@@ -303,40 +236,28 @@ export function TaxonomyManager({
       t.slug.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  // Métricas derivadas de los datos que ya están en pantalla — sin fetching nuevo.
-  const categoryPostTotal = categories.reduce((total, c) => total + (c.postCount ?? 0), 0)
-  const topCategory = categories.reduce<Category | null>(
-    (top, c) => ((c.postCount ?? 0) > (top?.postCount ?? -1) ? c : top),
-    null
-  )
-  const tagUseTotal = tags.reduce((total, t) => total + (t.postCount ?? 0), 0)
-  const topTag = tags.reduce<Tag | null>(
-    (top, t) => ((t.postCount ?? 0) > (top?.postCount ?? -1) ? t : top),
-    null
-  )
-  const unusedTags = tags.filter((t) => (t.postCount ?? 0) === 0).length
-
   return (
     <div className="flex flex-col gap-6">
-      {/* Page header */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Top Header Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h2 className="text-xl font-bold font-serif tracking-tight text-foreground flex items-center gap-2">
+            <FolderTree className="size-5 text-primary" />
             Taxonomías del Blog
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Organiza tus publicaciones mediante Categorías estructurales (1 por post) y Etiquetas temáticas libres.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {activeTab === "categories" ? (
-            <Button size="lg" onClick={() => openCategoryModal()} className="cursor-pointer gap-1.5">
+            <Button size="sm" onClick={() => openCategoryModal()} className="gap-1.5 cursor-pointer">
               <Plus className="size-4" />
               <span>Nueva categoría</span>
             </Button>
           ) : (
-            <Button size="lg" onClick={() => openTagModal()} className="cursor-pointer gap-1.5">
+            <Button size="sm" onClick={() => openTagModal()} className="gap-1.5 cursor-pointer">
               <Plus className="size-4" />
               <span>Nueva etiqueta</span>
             </Button>
@@ -345,73 +266,38 @@ export function TaxonomyManager({
       </div>
 
       {/* Tabs & Search */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full gap-0">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Categorías y etiquetas comparten ruta: la pestaña activa se marca con
-              subrayado índigo, que es como el panel señala navegación. */}
-          <TabsList variant="line" className="h-9 gap-5 p-0">
-            <TabsTrigger
-              value="categories"
-              className="cursor-pointer gap-2 px-1 text-sm text-muted-foreground after:bg-ia data-active:text-ia"
-            >
-              <Folder className="size-4" strokeWidth={1.75} />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-3">
+          <TabsList className="bg-muted/60 p-1">
+            <TabsTrigger value="categories" className="gap-2 text-xs cursor-pointer">
+              <Folder className="size-3.5" />
               <span>Categorías</span>
-              <span className="rounded-full bg-ia-tint px-1.5 text-[10px] font-semibold tabular-nums text-ia">
+              <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-semibold">
                 {categories.length}
               </span>
             </TabsTrigger>
-            <TabsTrigger
-              value="tags"
-              className="cursor-pointer gap-2 px-1 text-sm text-muted-foreground after:bg-ia data-active:text-ia"
-            >
-              <TagIcon className="size-4" strokeWidth={1.75} />
+            <TabsTrigger value="tags" className="gap-2 text-xs cursor-pointer">
+              <TagIcon className="size-3.5" />
               <span>Etiquetas</span>
-              <span className="rounded-full bg-ia-tint px-1.5 text-[10px] font-semibold tabular-nums text-ia">
+              <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-semibold">
                 {tags.length}
               </span>
             </TabsTrigger>
           </TabsList>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-tertiary" />
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={`Buscar ${activeTab === "categories" ? "categorías" : "etiquetas"}...`}
-              className="h-9 border-border bg-card pl-9 pr-3 text-sm"
+              className="h-8 text-xs pl-8 pr-3"
             />
           </div>
         </div>
 
         {/* Tab 1: Categories */}
-        <TabsContent value="categories" className="flex flex-col gap-6 pt-6">
-          {/* Métricas */}
-          {categories.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <MetricCard
-                tone="cat-1"
-                icon={<Folder className="size-5" strokeWidth={1.75} />}
-                label="Total de categorías"
-                value={categories.length}
-              />
-              <MetricCard
-                tone="cat-3"
-                icon={<TrendingUp className="size-5" strokeWidth={1.75} />}
-                label="Entradas en total"
-                value={categoryPostTotal}
-                context="En todas las categorías"
-              />
-              <MetricCard
-                tone="cat-5"
-                icon={<Hash className="size-5" strokeWidth={1.75} />}
-                label="Categoría más popular"
-                variant="text"
-                value={topCategory?.name ?? "—"}
-                context={`${topCategory?.postCount ?? 0} entradas`}
-              />
-            </div>
-          )}
-
+        <TabsContent value="categories" className="pt-4">
           {filteredCategories.length === 0 ? (
             <EmptyState
               preset="posts"
@@ -422,82 +308,69 @@ export function TaxonomyManager({
                   : "Crea tu primera categoría para organizar las temáticas clave de tu blog."
               }
               action={
-                <Button size="lg" onClick={() => openCategoryModal()} className="cursor-pointer">
+                <Button size="sm" onClick={() => openCategoryModal()}>
                   <Plus className="size-4" />
                   Crear categoría
                 </Button>
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="rounded-md border border-border bg-card overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="h-11 px-4 text-xs font-medium text-muted-foreground">
-                      Nombre
-                    </TableHead>
-                    <TableHead className="hidden h-11 px-4 text-xs font-medium text-muted-foreground lg:table-cell">
-                      Descripción
-                    </TableHead>
-                    <TableHead className="h-11 px-4 text-right text-xs font-medium text-muted-foreground">
-                      Entradas
-                    </TableHead>
-                    <TableHead className="h-11 w-24 px-4 text-right text-xs font-medium text-muted-foreground">
-                      Acciones
-                    </TableHead>
+                  <TableRow className="bg-muted/40 text-xs">
+                    <TableHead className="w-12 text-center">Color</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead className="hidden md:table-cell">Descripción</TableHead>
+                    <TableHead className="text-right">Posts asociados</TableHead>
+                    <TableHead className="w-24 text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map((cat) => (
-                    <TableRow key={cat.id} className="h-14 border-border">
-                      <TableCell className="px-4">
-                        <div className="flex items-center gap-3">
-                          <span
-                            aria-hidden
-                            className={cn("size-2 shrink-0 rounded-full", colorToken(cat.color))}
-                          />
-                          <div className="flex min-w-0 flex-col">
-                            <span className="truncate text-sm font-medium text-foreground">
-                              {cat.name}
-                            </span>
-                            <span className="truncate font-mono text-xs text-text-tertiary">
-                              /{cat.slug}
-                            </span>
-                          </div>
+                    <TableRow key={cat.id} className="text-xs">
+                      <TableCell className="text-center">
+                        <span
+                          className="inline-block size-3.5 rounded-full shadow-xs border border-border"
+                          style={{ backgroundColor: cat.color || "#3b82f6" }}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <span>{cat.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden max-w-xs truncate px-4 text-sm text-muted-foreground lg:table-cell">
+                      <TableCell className="font-mono text-muted-foreground">
+                        /{cat.slug}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground line-clamp-1 max-w-xs">
                         {cat.description || "—"}
                       </TableCell>
-                      <TableCell className="px-4 text-right">
-                        <span
-                          className={cn(
-                            "text-sm tabular-nums",
-                            (cat.postCount ?? 0) === 0 ? "text-text-tertiary" : "text-foreground"
-                          )}
-                        >
-                          {cat.postCount ?? 0}
-                        </span>
+                      <TableCell className="text-right">
+                        <Badge variant="secondary" className="text-[11px] font-normal">
+                          {cat.postCount ?? 0} {cat.postCount === 1 ? "post" : "posts"}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="px-4 text-right">
+                      <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             onClick={() => openCategoryModal(cat)}
-                            className="cursor-pointer text-text-tertiary hover:text-foreground"
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
                             title="Editar categoría"
                           >
-                            <Pencil className="size-4" />
+                            <Pencil className="size-3.5" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             onClick={() => setDeleteCatTarget(cat)}
-                            className="cursor-pointer text-text-tertiary hover:bg-danger-tint hover:text-destructive"
+                            className="cursor-pointer text-muted-foreground hover:text-destructive"
                             title="Eliminar categoría"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </Button>
                         </div>
                       </TableCell>
@@ -510,41 +383,7 @@ export function TaxonomyManager({
         </TabsContent>
 
         {/* Tab 2: Tags */}
-        <TabsContent value="tags" className="flex flex-col gap-6 pt-6">
-          {/* Métricas */}
-          {tags.length > 0 && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <MetricCard
-                tone="cat-1"
-                icon={<TagIcon className="size-5" strokeWidth={1.75} />}
-                label="Total de etiquetas"
-                value={tags.length}
-              />
-              <MetricCard
-                tone="cat-3"
-                icon={<TrendingUp className="size-5" strokeWidth={1.75} />}
-                label="Usos en total"
-                value={tagUseTotal}
-                context="En todas las entradas"
-              />
-              <MetricCard
-                tone="cat-5"
-                icon={<Hash className="size-5" strokeWidth={1.75} />}
-                label="Etiqueta más usada"
-                variant="text"
-                value={topTag ? `#${topTag.name}` : "—"}
-                context={`${topTag?.postCount ?? 0} entradas`}
-              />
-              <MetricCard
-                tone="cat-8"
-                icon={<TagIcon className="size-5" strokeWidth={1.75} />}
-                label="Sin usar"
-                value={unusedTags}
-                context="Etiquetas sin entradas"
-              />
-            </div>
-          )}
-
+        <TabsContent value="tags" className="pt-4">
           {filteredTags.length === 0 ? (
             <EmptyState
               preset="posts"
@@ -555,77 +394,64 @@ export function TaxonomyManager({
                   : "Crea etiquetas para añadir palabras clave y temas secundarios a tus artículos."
               }
               action={
-                <Button size="lg" onClick={() => openTagModal()} className="cursor-pointer">
+                <Button size="sm" onClick={() => openTagModal()}>
                   <Plus className="size-4" />
                   Crear etiqueta
                 </Button>
               }
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <div className="rounded-md border border-border bg-card overflow-hidden">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border hover:bg-transparent">
-                    <TableHead className="h-11 px-4 text-xs font-medium text-muted-foreground">
-                      Etiqueta
-                    </TableHead>
-                    <TableHead className="hidden h-11 px-4 text-xs font-medium text-muted-foreground sm:table-cell">
-                      Slug
-                    </TableHead>
-                    <TableHead className="h-11 px-4 text-right text-xs font-medium text-muted-foreground">
-                      Entradas
-                    </TableHead>
-                    <TableHead className="h-11 w-24 px-4 text-right text-xs font-medium text-muted-foreground">
-                      Acciones
-                    </TableHead>
+                  <TableRow className="bg-muted/40 text-xs">
+                    <TableHead>Etiqueta</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead className="text-right">Posts asociados</TableHead>
+                    <TableHead className="w-24 text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredTags.map((tag) => (
-                    <TableRow key={tag.id} className="h-14 border-border">
-                      <TableCell className="px-4">
-                        <div className="flex items-center gap-3">
+                    <TableRow key={tag.id} className="text-xs">
+                      <TableCell className="font-medium text-foreground">
+                        <div className="flex items-center gap-2">
                           <span
-                            aria-hidden
-                            className={cn("size-2 shrink-0 rounded-full", colorToken(tag.color))}
+                            className="size-2 rounded-full"
+                            style={{ backgroundColor: tag.color || "#64748b" }}
                           />
-                          <span className="truncate text-sm font-medium text-foreground">
+                          <Badge variant="outline" className="font-mono text-xs">
                             #{tag.name}
-                          </span>
+                          </Badge>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden px-4 font-mono text-xs text-text-tertiary sm:table-cell">
+                      <TableCell className="font-mono text-muted-foreground">
                         {tag.slug}
                       </TableCell>
-                      <TableCell className="px-4 text-right">
-                        <span
-                          className={cn(
-                            "text-sm tabular-nums",
-                            (tag.postCount ?? 0) === 0 ? "text-text-tertiary" : "text-foreground"
-                          )}
-                        >
-                          {tag.postCount ?? 0}
-                        </span>
+                      <TableCell className="text-right">
+                        <Badge variant="secondary" className="text-[11px] font-normal">
+                          {tag.postCount ?? 0} {tag.postCount === 1 ? "post" : "posts"}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="px-4 text-right">
+                      <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <Button
                             variant="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             onClick={() => openTagModal(tag)}
-                            className="cursor-pointer text-text-tertiary hover:text-foreground"
+                            className="cursor-pointer text-muted-foreground hover:text-foreground"
                             title="Editar etiqueta"
                           >
-                            <Pencil className="size-4" />
+                            <Pencil className="size-3.5" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="icon-sm"
+                            size="icon-xs"
                             onClick={() => setDeleteTagTarget(tag)}
-                            className="cursor-pointer text-text-tertiary hover:bg-danger-tint hover:text-destructive"
+                            className="cursor-pointer text-muted-foreground hover:text-destructive"
                             title="Eliminar etiqueta"
                           >
-                            <Trash2 className="size-4" />
+                            <Trash2 className="size-3.5" />
                           </Button>
                         </div>
                       </TableCell>
@@ -640,95 +466,81 @@ export function TaxonomyManager({
 
       {/* Category Modal / Drawer */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4 animate-in fade-in">
-          <Card className="w-full max-w-md border border-border bg-card ring-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
+          <Card className="w-full max-w-md bg-background border border-border shadow-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">
-                {editingCategory ? "Editar categoría" : "Nueva categoría"}
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Folder className="size-4 text-primary" />
+                {editingCategory ? "Editar Categoría" : "Nueva Categoría"}
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-xs">
                 Las categorías representan las divisiones principales del contenido de tu organización.
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSaveCategory}>
               <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Nombre</label>
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Nombre</label>
                   <Input
                     value={catName}
                     onChange={(e) => setCatName(e.target.value)}
                     placeholder="Ej. Inteligencia Artificial"
-                    className="h-9 border-border text-sm"
+                    className="mt-1 text-xs"
                     required
                     autoFocus
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Slug (URL)</label>
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Slug (URL)</label>
                   <Input
                     value={catSlug}
                     onChange={(e) => setCatSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
                     placeholder="inteligencia-artificial (autogenerado si se deja en blanco)"
-                    className="h-9 border-border font-mono text-sm"
+                    className="mt-1 text-xs font-mono"
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Descripción (opcional)</label>
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Descripción (opcional)</label>
                   <Textarea
                     value={catDesc}
                     onChange={(e) => setCatDesc(e.target.value)}
                     placeholder="Breve explicación del tipo de contenido en esta categoría..."
                     rows={2}
-                    className="border-border text-sm"
+                    className="mt-1 text-xs"
                   />
-                  <p className="text-xs text-text-tertiary">
-                    Se muestra bajo el nombre en el listado y en el blog público.
-                  </p>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Color distintivo</label>
-                  <div className="flex items-center gap-2.5">
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Color distintivo</label>
+                  <div className="flex items-center gap-2 mt-1.5">
                     {COLOR_PALETTE.map((color) => (
                       <button
-                        key={color.value}
+                        key={color}
                         type="button"
-                        aria-label={color.label}
-                        aria-pressed={catColor === color.value}
-                        onClick={() => setCatColor(color.value)}
+                        onClick={() => setCatColor(color)}
                         className={cn(
-                          "size-6 cursor-pointer rounded-full transition-transform",
-                          color.token,
-                          catColor === color.value &&
-                            "scale-110 ring-2 ring-ia ring-offset-2 ring-offset-card"
+                          "size-5 rounded-full border border-background transition-transform cursor-pointer",
+                          catColor === color && "ring-2 ring-primary ring-offset-2 scale-110"
                         )}
+                        style={{ backgroundColor: color }}
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-text-tertiary">
-                    Paleta cerrada de ocho: el color identifica, no significa.
-                  </p>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/80">
                   <Button
                     type="button"
                     variant="outline"
-                    size="lg"
+                    size="sm"
                     onClick={() => setIsCategoryModalOpen(false)}
                     disabled={isSubmitting}
-                    className="cursor-pointer"
                   >
                     Cancelar
                   </Button>
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={!catName.trim() || isSubmitting}
-                    className="min-w-[9.5rem] cursor-pointer"
-                  >
+                  <Button type="submit" size="sm" disabled={!catName.trim() || isSubmitting}>
                     {isSubmitting ? "Guardando..." : "Guardar categoría"}
                   </Button>
                 </div>
@@ -740,78 +552,70 @@ export function TaxonomyManager({
 
       {/* Tag Modal */}
       {isTagModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4 animate-in fade-in">
-          <Card className="w-full max-w-md border border-border bg-card ring-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in">
+          <Card className="w-full max-w-md bg-background border border-border shadow-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-base font-semibold">
-                {editingTag ? "Editar etiqueta" : "Nueva etiqueta"}
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Hash className="size-4 text-primary" />
+                {editingTag ? "Editar Etiqueta" : "Nueva Etiqueta"}
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-xs">
                 Las etiquetas permiten asociar palabras clave temáticas y transversales a los artículos.
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSaveTag}>
               <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Nombre de la etiqueta</label>
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Nombre de la etiqueta</label>
                   <Input
                     value={tagName}
                     onChange={(e) => setTagName(e.target.value)}
                     placeholder="Ej. react, tutorial, opinion"
-                    className="h-9 border-border text-sm"
+                    className="mt-1 text-xs"
                     required
                     autoFocus
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Slug (URL)</label>
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Slug (URL)</label>
                   <Input
                     value={tagSlug}
                     onChange={(e) => setTagSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
                     placeholder="slug-etiqueta"
-                    className="h-9 border-border font-mono text-sm"
+                    className="mt-1 text-xs font-mono"
                   />
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium text-foreground">Color de acento</label>
-                  <div className="flex items-center gap-2.5">
+                <div>
+                  <label className="text-xs font-semibold text-foreground">Color de acento</label>
+                  <div className="flex items-center gap-2 mt-1.5">
                     {COLOR_PALETTE.map((color) => (
                       <button
-                        key={color.value}
+                        key={color}
                         type="button"
-                        aria-label={color.label}
-                        aria-pressed={tagColor === color.value}
-                        onClick={() => setTagColor(color.value)}
+                        onClick={() => setTagColor(color)}
                         className={cn(
-                          "size-6 cursor-pointer rounded-full transition-transform",
-                          color.token,
-                          tagColor === color.value &&
-                            "scale-110 ring-2 ring-ia ring-offset-2 ring-offset-card"
+                          "size-5 rounded-full border border-background transition-transform cursor-pointer",
+                          tagColor === color && "ring-2 ring-primary ring-offset-2 scale-110"
                         )}
+                        style={{ backgroundColor: color }}
                       />
                     ))}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-border/80">
                   <Button
                     type="button"
                     variant="outline"
-                    size="lg"
+                    size="sm"
                     onClick={() => setIsTagModalOpen(false)}
                     disabled={isSubmitting}
-                    className="cursor-pointer"
                   >
                     Cancelar
                   </Button>
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={!tagName.trim() || isSubmitting}
-                    className="min-w-[9.5rem] cursor-pointer"
-                  >
+                  <Button type="submit" size="sm" disabled={!tagName.trim() || isSubmitting}>
                     {isSubmitting ? "Guardando..." : "Guardar etiqueta"}
                   </Button>
                 </div>
