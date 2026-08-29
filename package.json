@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "convex:dev": "convex dev",
+    "convex:deploy": "convex deploy",
+    "convex:codegen": "convex codegen",
+    "convex:export": "convex export"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -39,6 +43,7 @@
     "@tiptap/suggestion": "^3.30.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "convex": "^1.45.0",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "lowlight": "^3.3.0",
@@ -63,6 +68,7 @@
     "drizzle-kit": "^0.31.10",
     "postcss": "^8.5",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.12",
     "typescript": "5.7.3"
   },
   "overrides": {

@@ -8,6 +8,7 @@ import { AuthProvider } from '@/lib/infrastructure/auth-store'
 import { JsonLdScript } from '@/components/seo/json-ld-script'
 import { generateOrganizationJsonLd, generateWebSiteJsonLd } from '@/lib/seo/json-ld'
 import { SITE_CONFIG } from '@/lib/seo/config'
+import { ConvexClientProvider } from '@/components/providers/convex-client-provider'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -123,10 +124,12 @@ export default function RootLayout({
         className={`${fraunces.variable} ${workSans.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <ClerkProvider appearance={{ theme: shadcn }}>
-          <AuthProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-            <Toaster />
-          </AuthProvider>
+          <ConvexClientProvider>
+            <AuthProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+              <Toaster />
+            </AuthProvider>
+          </ConvexClientProvider>
         </ClerkProvider>
       </body>
     </html>
