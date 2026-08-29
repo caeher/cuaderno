@@ -33,9 +33,20 @@ export type BlockType =
   | "callout"
   // Blog & Dynamic
   | "post_grid"
+  | "blog_post_grid"
   | "author_box"
   | "newsletter_box"
   | "social_share"
+  | "post_content"
+  | "post_title"
+  | "post_meta"
+  | "post_cover"
+  | "post_takeaways"
+  | "post_action_bar"
+  | "comments_section"
+  | "category_filter"
+  | "site_navbar"
+  | "site_footer"
 
 export interface SpacingValue {
   top?: string

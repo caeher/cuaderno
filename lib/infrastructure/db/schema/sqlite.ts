@@ -74,3 +74,31 @@ export const commentsTable = sqliteTable("comments", {
   createdAt: text("created_at").notNull(),
 })
 
+export const tenantTemplatesTable = sqliteTable("tenant_templates", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().unique(),
+  tenantType: text("tenant_type").notNull().default("user"),
+  name: text("name").notNull().default("Plantilla Predeterminada"),
+  schemaVersion: text("schema_version").notNull().default("1.0"),
+  version: integer("version").notNull().default(1),
+  draftSlots: text("draft_slots").notNull().default("{}"), // JSON string
+  publishedSlots: text("published_slots").notNull().default("{}"), // JSON string
+  settings: text("settings").notNull().default("{}"), // JSON string
+  isPublished: integer("is_published", { mode: "boolean" }).notNull().default(false),
+  publishedAt: text("published_at"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+})
+
+export const tenantTemplateRevisionsTable = sqliteTable("tenant_template_revisions", {
+  id: text("id").primaryKey(),
+  templateId: text("template_id").notNull().references(() => tenantTemplatesTable.id, { onDelete: "cascade" }),
+  tenantId: text("tenant_id").notNull(),
+  version: integer("version").notNull(),
+  slotsSnapshot: text("slots_snapshot").notNull().default("{}"), // JSON string
+  settingsSnapshot: text("settings_snapshot").notNull().default("{}"), // JSON string
+  publishedBy: text("published_by"),
+  createdAt: text("created_at").notNull(),
+  changeSummary: text("change_summary"),
+})
+

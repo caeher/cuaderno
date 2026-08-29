@@ -1,3 +1,4 @@
 export * from "./entities"
 export * from "./repositories"
 export * from "./block-schema"
+export * from "./template-schema"

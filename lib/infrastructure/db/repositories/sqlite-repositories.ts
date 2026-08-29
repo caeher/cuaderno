@@ -20,11 +20,28 @@ import type {
   CommentRepository,
   PostRepository,
   TagRepository,
+  TemplateRepository,
   UserRepository,
 } from "@/lib/domain/repositories"
+import type {
+  CreateTemplateInput,
+  TemplateRevision,
+  TenantTemplate,
+  TenantTemplateSettings,
+  UpdateTemplateDraftInput,
+} from "@/lib/domain/template-schema"
+import { deserializeSlotMap, serializeSlotMap } from "@/lib/domain/template-schema"
 import { ensureDatabaseInitialized } from "../auto-init"
 import { getSqliteDb } from "../client"
-import { categoriesTable, commentsTable, postsTable, tagsTable, usersTable } from "../schema/sqlite"
+import {
+  categoriesTable,
+  commentsTable,
+  postsTable,
+  tagsTable,
+  tenantTemplateRevisionsTable,
+  tenantTemplatesTable,
+  usersTable,
+} from "../schema/sqlite"
 
 function rowToUser(row: typeof usersTable.$inferSelect): User {
   let socials = {}
@@ -609,5 +626,219 @@ export class SqliteCommentRepository implements CommentRepository {
       }
     }
     return true
+  }
+}
+
+function rowToTenantTemplate(row: typeof tenantTemplatesTable.$inferSelect): TenantTemplate {
+  let settings: TenantTemplateSettings = {}
+  try {
+    settings = typeof row.settings === "string" ? JSON.parse(row.settings) : (row.settings ?? {})
+  } catch {
+    settings = {}
+  }
+
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    tenantType: (row.tenantType as "organization" | "user") || "user",
+    schemaVersion: "1.0",
+    version: row.version ?? 1,
+    name: row.name || "Plantilla Predeterminada",
+    draftSlots: deserializeSlotMap(row.draftSlots),
+    publishedSlots: deserializeSlotMap(row.publishedSlots),
+    settings,
+    isPublished: Boolean(row.isPublished),
+    publishedAt: row.publishedAt ?? null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }
+}
+
+function rowToTemplateRevision(row: typeof tenantTemplateRevisionsTable.$inferSelect): TemplateRevision {
+  let settingsSnapshot: TenantTemplateSettings = {}
+  try {
+    settingsSnapshot = typeof row.settingsSnapshot === "string" ? JSON.parse(row.settingsSnapshot) : (row.settingsSnapshot ?? {})
+  } catch {
+    settingsSnapshot = {}
+  }
+
+  return {
+    id: row.id,
+    templateId: row.templateId,
+    tenantId: row.tenantId,
+    version: row.version,
+    slotsSnapshot: deserializeSlotMap(row.slotsSnapshot),
+    settingsSnapshot,
+    publishedBy: row.publishedBy ?? null,
+    createdAt: row.createdAt,
+    changeSummary: row.changeSummary ?? undefined,
+  }
+}
+
+export class SqliteTemplateRepository implements TemplateRepository {
+  async findByTenantId(tenantId: string): Promise<TenantTemplate | null> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const rows = await db
+      .select()
+      .from(tenantTemplatesTable)
+      .where(eq(tenantTemplatesTable.tenantId, tenantId))
+      .limit(1)
+    return rows[0] ? rowToTenantTemplate(rows[0]) : null
+  }
+
+  async create(input: CreateTemplateInput): Promise<TenantTemplate> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const now = new Date().toISOString()
+    const id = "tpl_" + Math.random().toString(36).substring(2, 9)
+
+    const template: TenantTemplate = {
+      id,
+      tenantId: input.tenantId,
+      tenantType: input.tenantType,
+      schemaVersion: "1.0",
+      version: 1,
+      name: input.name || "Plantilla Predeterminada",
+      draftSlots: input.draftSlots || {},
+      publishedSlots: {},
+      settings: input.settings || {},
+      isPublished: false,
+      publishedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    await db.insert(tenantTemplatesTable).values({
+      id: template.id,
+      tenantId: template.tenantId,
+      tenantType: template.tenantType,
+      schemaVersion: template.schemaVersion,
+      version: template.version,
+      name: template.name,
+      draftSlots: serializeSlotMap(template.draftSlots),
+      publishedSlots: serializeSlotMap(template.publishedSlots),
+      settings: JSON.stringify(template.settings),
+      isPublished: false,
+      publishedAt: null,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+    })
+
+    return template
+  }
+
+  async saveDraft(tenantId: string, input: UpdateTemplateDraftInput): Promise<TenantTemplate> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const now = new Date().toISOString()
+
+    let current = await this.findByTenantId(tenantId)
+    if (!current) {
+      const isOrg = tenantId.startsWith("org_")
+      current = await this.create({
+        tenantId,
+        tenantType: isOrg ? "organization" : "user",
+        name: input.name,
+        draftSlots: input.draftSlots,
+        settings: input.settings,
+      })
+    }
+
+    const updates: Partial<typeof tenantTemplatesTable.$inferInsert> = {
+      updatedAt: now,
+    }
+
+    if (input.name !== undefined) updates.name = input.name
+    if (input.draftSlots !== undefined) updates.draftSlots = serializeSlotMap(input.draftSlots)
+    if (input.settings !== undefined) updates.settings = JSON.stringify(input.settings)
+
+    await db.update(tenantTemplatesTable).set(updates).where(eq(tenantTemplatesTable.tenantId, tenantId))
+    const updated = await this.findByTenantId(tenantId)
+    return updated!
+  }
+
+  async publish(tenantId: string, publishedBy?: string, changeSummary?: string): Promise<TenantTemplate> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const now = new Date().toISOString()
+
+    let current = await this.findByTenantId(tenantId)
+    if (!current) {
+      const isOrg = tenantId.startsWith("org_")
+      current = await this.create({
+        tenantId,
+        tenantType: isOrg ? "organization" : "user",
+      })
+    }
+
+    const nextVersion = current.version + 1
+    const publishedSlots = { ...current.draftSlots }
+
+    // 1. Update template
+    await db
+      .update(tenantTemplatesTable)
+      .set({
+        publishedSlots: serializeSlotMap(publishedSlots),
+        isPublished: true,
+        publishedAt: now,
+        version: nextVersion,
+        updatedAt: now,
+      })
+      .where(eq(tenantTemplatesTable.tenantId, tenantId))
+
+    // 2. Insert revision record
+    const revId = "rev_" + Math.random().toString(36).substring(2, 9)
+    await db.insert(tenantTemplateRevisionsTable).values({
+      id: revId,
+      templateId: current.id,
+      tenantId,
+      version: nextVersion,
+      slotsSnapshot: serializeSlotMap(publishedSlots),
+      settingsSnapshot: JSON.stringify(current.settings),
+      publishedBy: publishedBy || null,
+      createdAt: now,
+      changeSummary: changeSummary || `Publicación de versión ${nextVersion}`,
+    })
+
+    const updated = await this.findByTenantId(tenantId)
+    return updated!
+  }
+
+  async getRevisions(tenantId: string): Promise<TemplateRevision[]> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const rows = await db
+      .select()
+      .from(tenantTemplateRevisionsTable)
+      .where(eq(tenantTemplateRevisionsTable.tenantId, tenantId))
+      .orderBy(desc(tenantTemplateRevisionsTable.version))
+
+    return rows.map(rowToTemplateRevision)
+  }
+
+  async rollback(tenantId: string, revisionId: string): Promise<TenantTemplate | null> {
+    await ensureDatabaseInitialized()
+    const db = getSqliteDb()
+    const revRow = await db
+      .select()
+      .from(tenantTemplateRevisionsTable)
+      .where(eq(tenantTemplateRevisionsTable.id, revisionId))
+      .limit(1)
+
+    if (!revRow[0]) return null
+    const rev = rowToTemplateRevision(revRow[0])
+    const now = new Date().toISOString()
+
+    await db
+      .update(tenantTemplatesTable)
+      .set({
+        draftSlots: serializeSlotMap(rev.slotsSnapshot),
+        settings: JSON.stringify(rev.settingsSnapshot),
+        updatedAt: now,
+      })
+      .where(eq(tenantTemplatesTable.tenantId, tenantId))
+
+    return this.findByTenantId(tenantId)
   }
 }

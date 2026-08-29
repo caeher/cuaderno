@@ -11,6 +11,7 @@ import type {
   CommentRepository,
   PostRepository,
   TagRepository,
+  TemplateRepository,
   UserRepository,
 } from "@/lib/domain/repositories"
 import { isPostgresDatabase } from "./db/client"
@@ -19,6 +20,7 @@ import {
   PgCommentRepository,
   PgPostRepository,
   PgTagRepository,
+  PgTemplateRepository,
   PgUserRepository,
 } from "./db/repositories/pg-repositories"
 import {
@@ -26,6 +28,7 @@ import {
   SqliteCommentRepository,
   SqlitePostRepository,
   SqliteTagRepository,
+  SqliteTemplateRepository,
   SqliteUserRepository,
 } from "./db/repositories/sqlite-repositories"
 
@@ -36,4 +39,5 @@ export const categoryRepository: CategoryRepository = isPg ? new PgCategoryRepos
 export const postRepository: PostRepository = isPg ? new PgPostRepository() : new SqlitePostRepository()
 export const tagRepository: TagRepository = isPg ? new PgTagRepository() : new SqliteTagRepository()
 export const commentRepository: CommentRepository = isPg ? new PgCommentRepository() : new SqliteCommentRepository()
+export const templateRepository: TemplateRepository = isPg ? new PgTemplateRepository() : new SqliteTemplateRepository()
 

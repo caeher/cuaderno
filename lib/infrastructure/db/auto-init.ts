@@ -93,6 +93,34 @@ export async function ensureDatabaseInitialized(): Promise<void> {
         content TEXT NOT NULL,
         created_at TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS tenant_templates (
+        id TEXT PRIMARY KEY,
+        tenant_id TEXT NOT NULL UNIQUE,
+        tenant_type TEXT NOT NULL DEFAULT 'user',
+        name TEXT NOT NULL DEFAULT 'Plantilla Predeterminada',
+        schema_version TEXT NOT NULL DEFAULT '1.0',
+        version INTEGER NOT NULL DEFAULT 1,
+        draft_slots TEXT NOT NULL DEFAULT '{}',
+        published_slots TEXT NOT NULL DEFAULT '{}',
+        settings TEXT NOT NULL DEFAULT '{}',
+        is_published INTEGER NOT NULL DEFAULT 0,
+        published_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS tenant_template_revisions (
+        id TEXT PRIMARY KEY,
+        template_id TEXT NOT NULL REFERENCES tenant_templates(id) ON DELETE CASCADE,
+        tenant_id TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        slots_snapshot TEXT NOT NULL DEFAULT '{}',
+        settings_snapshot TEXT NOT NULL DEFAULT '{}',
+        published_by TEXT,
+        created_at TEXT NOT NULL,
+        change_summary TEXT
+      );
     `)
 
     // Safe migration: Add missing columns if tables already existed previously
