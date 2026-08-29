@@ -42,6 +42,60 @@ export const getByClerkUserId = query({
   },
 })
 
+/**
+ * Normaliza un dominio personalizado a su forma canónica de almacenamiento.
+ *
+ * Se aplica en la ESCRITURA además de en la lectura: si el usuario guarda
+ * "https://www.blog.com/" y el middleware busca por el host "blog.com", el índice
+ * `by_custom_domain` no encuentra nada. Normalizar solo al leer no alcanza porque
+ * el índice se construye sobre el valor almacenado.
+ */
+function normalizeCustomDomainValue(value: string | undefined | null): string | undefined {
+  if (value === undefined || value === null) return undefined
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "")
+    .split("/")[0]
+    .split(":")[0]
+    .replace(/^www\./, "")
+
+  if (!normalized || !normalized.includes(".")) return undefined
+
+  return normalized
+}
+
+/**
+ * Resuelve el tenant dueño de un dominio personalizado (issue #12).
+ *
+ * La consume el middleware (`proxy.ts`) para mapear host -> tenant cuando el blog
+ * no vive en un subdominio de la plataforma sino en su propio dominio.
+ *
+ * Devuelve una proyección mínima a propósito: la llamada llega sin sesión desde el
+ * borde, así que no debe exponer el documento completo del usuario.
+ */
+export const getByCustomDomain = query({
+  args: { customDomain: v.string() },
+  handler: async (ctx, args) => {
+    const domain = normalizeCustomDomainValue(args.customDomain)
+    if (!domain) return null
+
+    const owner = await ctx.db
+      .query("users")
+      .withIndex("by_custom_domain", (q) => q.eq("customDomain", domain))
+      .first()
+
+    if (!owner) return null
+
+    return {
+      username: owner.username,
+      customDomain: owner.customDomain ?? null,
+    }
+  },
+})
+
 export const create = mutation({
   args: {
     id: v.optional(v.string()),
@@ -101,7 +155,7 @@ export const create = mutation({
       followerCount: args.followerCount || 0,
       timezone: args.timezone || "UTC",
       subdomainEnabled: args.subdomainEnabled ?? true,
-      customDomain: args.customDomain,
+      customDomain: normalizeCustomDomainValue(args.customDomain),
       legalSettings: args.legalSettings,
       seoSettings: args.seoSettings,
     })
@@ -155,7 +209,8 @@ export const update = mutation({
     if (args.socials !== undefined) updates.socials = args.socials
     if (args.timezone !== undefined) updates.timezone = args.timezone
     if (args.subdomainEnabled !== undefined) updates.subdomainEnabled = args.subdomainEnabled
-    if (args.customDomain !== undefined) updates.customDomain = args.customDomain
+    if (args.customDomain !== undefined)
+      updates.customDomain = normalizeCustomDomainValue(args.customDomain)
     if (args.legalSettings !== undefined) updates.legalSettings = args.legalSettings
     if (args.seoSettings !== undefined) updates.seoSettings = args.seoSettings
 

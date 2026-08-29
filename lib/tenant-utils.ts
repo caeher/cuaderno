@@ -134,6 +134,57 @@ export function extractTenantFromHost(hostHeader: string | null | undefined): st
   return null
 }
 
+/**
+ * Normaliza un host o dominio personalizado a su forma canónica de almacenamiento:
+ * sin protocolo, sin puerto, sin barra final, en minúsculas y sin el `www.` inicial.
+ *
+ * `www.blog.com` y `blog.com` son el mismo dominio para efectos de resolución de
+ * tenant; guardarlos como dos valores distintos parte el índice `by_custom_domain`.
+ */
+export function normalizeCustomDomain(value: string | null | undefined): string | null {
+  if (!value) return null
+
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/+$/, "")
+    .split("/")[0]
+    .split(":")[0]
+    .replace(/^www\./, "")
+
+  if (!normalized || !normalized.includes(".")) return null
+
+  return normalized
+}
+
+/**
+ * Indica si un host pertenece a la propia plataforma — el dominio raíz, cualquiera
+ * de sus subdominios, o localhost.
+ *
+ * Es la guarda que evita salir a buscar un dominio personalizado en la base de datos
+ * en cada request del sitio principal.
+ */
+export function isPlatformHost(hostHeader: string | null | undefined): boolean {
+  if (!hostHeader) return true
+
+  const host = hostHeader.split(":")[0].toLowerCase().trim()
+  const rootDomain = getRootDomain().split(":")[0].toLowerCase().trim()
+
+  if (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".lvh.me")
+  ) {
+    return true
+  }
+
+  if (!rootDomain) return false
+
+  return host === rootDomain || host.endsWith(`.${rootDomain}`)
+}
+
 export interface BuildTenantUrlOptions {
   tenantSlug: string
   path?: string
