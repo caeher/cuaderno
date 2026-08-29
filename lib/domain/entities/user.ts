@@ -35,6 +35,8 @@ export interface TenantSeoSettings {
 
 export interface User {
   id: string
+  clerkUserId?: string
+  legacyId?: string
   username: string
   name: string
   email: string

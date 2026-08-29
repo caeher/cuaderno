@@ -14,7 +14,9 @@ import type {
 
 export function convexDocToUser(doc: any): User {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
+    clerkUserId: doc.clerkUserId || undefined,
+    legacyId: doc.legacyId || undefined,
     username: doc.username,
     name: doc.name,
     email: doc.email,
@@ -38,7 +40,7 @@ export function convexDocToUser(doc: any): User {
 
 export function convexDocToCategory(doc: any): Category {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     organizationId: doc.organizationId || undefined,
     authorId: doc.authorId || undefined,
     name: doc.name,
@@ -52,7 +54,7 @@ export function convexDocToCategory(doc: any): Category {
 
 export function convexDocToTag(doc: any): Tag {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     organizationId: doc.organizationId || undefined,
     authorId: doc.authorId || undefined,
     name: doc.name,
@@ -64,7 +66,7 @@ export function convexDocToTag(doc: any): Tag {
 
 export function convexDocToPost(doc: any): Post {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     authorId: doc.authorId,
     organizationId: doc.organizationId || undefined,
     categoryId: doc.categoryId || null,
@@ -89,7 +91,7 @@ export function convexDocToPost(doc: any): Post {
 
 export function convexDocToComment(doc: any): Comment {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     postId: doc.postId,
     authorName: doc.authorName,
     authorAvatarUrl: doc.authorAvatarUrl || "/placeholder.svg?height=200&width=200",
@@ -100,7 +102,7 @@ export function convexDocToComment(doc: any): Comment {
 
 export function convexDocToTenantTemplate(doc: any): TenantTemplate {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     tenantId: doc.tenantId,
     tenantType: doc.tenantType || "user",
     schemaVersion: "1.0",
@@ -118,7 +120,7 @@ export function convexDocToTenantTemplate(doc: any): TenantTemplate {
 
 export function convexDocToTemplateRevision(doc: any): TemplateRevision {
   return {
-    id: doc.legacyId || doc._id,
+    id: doc._id,
     templateId: doc.templateId,
     tenantId: doc.tenantId,
     version: doc.version,

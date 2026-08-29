@@ -49,8 +49,8 @@ export const create = mutation({
     const post = await findDocById(ctx.db, "posts", args.postId)
 
     const docId = await ctx.db.insert("comments", {
-      legacyId: args.id || "c_" + Math.random().toString(36).substring(2, 9),
-      postId: args.postId,
+      legacyId: args.id,
+      postId: post ? (post.legacyId || (post._id as string)) : args.postId,
       postDocId: post ? post._id : undefined,
       authorName: args.authorName,
       authorAvatarUrl:

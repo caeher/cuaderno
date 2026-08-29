@@ -86,7 +86,7 @@ export const create = mutation({
     const effectiveAuthorId = args.authorId || identity.userId || undefined
 
     const docId = await ctx.db.insert("tags", {
-      legacyId: args.id || "t_" + Math.random().toString(36).substring(2, 9),
+      legacyId: args.id,
       tenantId: effectiveTenantId,
       organizationId: args.organizationId || (identity.tenantType === "organization" ? identity.orgId ?? undefined : undefined),
       authorId: effectiveAuthorId,

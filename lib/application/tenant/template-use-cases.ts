@@ -28,6 +28,7 @@ export async function getOrCreateTenantTemplate(
     id: `tpl_${tenantId}`,
     tenantId,
     tenantType,
+    schemaVersion: "1.0",
     name: "Plantilla del Blog",
     draftSlots: {},
     publishedSlots: {},
@@ -37,6 +38,7 @@ export async function getOrCreateTenantTemplate(
     },
     version: 1,
     isPublished: false,
+    createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }
 

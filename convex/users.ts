@@ -32,6 +32,16 @@ export const getByUsername = query({
   },
 })
 
+export const getByClerkUserId = query({
+  args: { clerkUserId: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("users")
+      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+      .first()
+  },
+})
+
 export const create = mutation({
   args: {
     id: v.optional(v.string()),
@@ -56,6 +66,12 @@ export const create = mutation({
     seoSettings: v.optional(tenantSeoSettingsValidator),
   },
   handler: async (ctx, args) => {
+    const identity = await requireTenantAuth(ctx)
+
+    if (args.clerkUserId && args.clerkUserId !== identity.userId) {
+      throw new Error("Acceso denegado: No puedes crear un usuario para otro perfil de Clerk.")
+    }
+
     const existing = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", args.username))
@@ -68,7 +84,8 @@ export const create = mutation({
     const now = getCurrentIsoDate()
     const docId = await ctx.db.insert("users", {
       legacyId: args.id,
-      clerkUserId: args.clerkUserId,
+      clerkUserId: args.clerkUserId ?? identity.userId,
+      tokenIdentifier: identity.tokenIdentifier ?? undefined,
       username: args.username,
       name: args.name,
       email: args.email,
@@ -172,6 +189,7 @@ export const syncFromClerk = mutation({
         email: args.email,
         avatarUrl: args.avatarUrl || existing.avatarUrl,
         username: args.username || existing.username,
+        tokenIdentifier: identity.tokenIdentifier ?? existing.tokenIdentifier,
       })
       return await ctx.db.get(existing._id)
     }
@@ -183,6 +201,7 @@ export const syncFromClerk = mutation({
 
     const docId = await ctx.db.insert("users", {
       clerkUserId: args.clerkUserId,
+      tokenIdentifier: identity.tokenIdentifier ?? undefined,
       username: fallbackUsername,
       name: args.name,
       email: args.email,

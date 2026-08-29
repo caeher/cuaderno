@@ -1,5 +1,6 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
+import type { Doc } from "./_generated/dataModel"
 import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
 import { calculateReadingTime, findDocById, getCurrentIsoDate } from "./lib/helpers"
 
@@ -36,21 +37,47 @@ export const getByAuthorId = query({
     ),
   },
   handler: async (ctx, args) => {
-    let posts
-    if (args.status) {
-      posts = await ctx.db
-        .query("posts")
-        .withIndex("by_author_and_status", (q) =>
-          q.eq("authorId", args.authorId).eq("status", args.status!)
-        )
-        .collect()
-    } else {
-      posts = await ctx.db
-        .query("posts")
-        .withIndex("by_author", (q) => q.eq("authorId", args.authorId))
-        .collect()
+    const author = await findDocById(ctx.db, "users", args.authorId)
+    const authorKeys = new Set<string>([args.authorId])
+    if (author?.legacyId) authorKeys.add(author.legacyId)
+    if (author?.clerkUserId) authorKeys.add(author.clerkUserId)
+    if (author?._id) authorKeys.add(author._id as string)
+
+    const postsById = new Map<string, Doc<"posts">>()
+
+    const collectPosts = (batch: Doc<"posts">[]) => {
+      for (const post of batch) {
+        postsById.set(post._id, post)
+      }
     }
 
+    for (const authorKey of authorKeys) {
+      if (args.status) {
+        const batch = await ctx.db
+          .query("posts")
+          .withIndex("by_author_and_status", (q) =>
+            q.eq("authorId", authorKey).eq("status", args.status!)
+          )
+          .collect()
+        collectPosts(batch)
+      } else {
+        const batch = await ctx.db
+          .query("posts")
+          .withIndex("by_author", (q) => q.eq("authorId", authorKey))
+          .collect()
+        collectPosts(batch)
+      }
+    }
+
+    if (author?._id) {
+      const byDoc = await ctx.db
+        .query("posts")
+        .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
+        .collect()
+      await collectPosts(byDoc)
+    }
+
+    const posts = Array.from(postsById.values()).filter(Boolean)
     return posts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
   },
 })
@@ -215,12 +242,27 @@ export const create = mutation({
     const readingTime = args.readingTimeMinutes || calculateReadingTime(args.content)
     const effectiveTenantId = args.tenantId || args.organizationId || identity.tenantId || undefined
 
+    const authorDoc = await findDocById(ctx.db, "users", args.authorId)
+    const resolvedAuthorId =
+      authorDoc?.clerkUserId || authorDoc?.legacyId || args.authorId
+    const authorDocId = authorDoc?._id
+
+    let categoryDocId = undefined
+    if (args.categoryId) {
+      const category = await findDocById(ctx.db, "categories", args.categoryId)
+      if (category) {
+        categoryDocId = category._id
+      }
+    }
+
     const docId = await ctx.db.insert("posts", {
-      legacyId: args.id || "p_" + Math.random().toString(36).substring(2, 9),
-      authorId: args.authorId,
+      legacyId: args.id,
+      authorId: resolvedAuthorId,
+      authorDocId,
       organizationId: args.organizationId,
       tenantId: effectiveTenantId,
       categoryId: args.categoryId || undefined,
+      categoryDocId,
       title: args.title,
       slug: args.slug,
       excerpt: args.excerpt,
@@ -241,10 +283,9 @@ export const create = mutation({
     })
 
     // Actualizar atómicamente el contador postCount del autor en users
-    const author = await findDocById(ctx.db, "users", args.authorId)
-    if (author) {
-      await ctx.db.patch(author._id, {
-        postCount: (author.postCount || 0) + 1,
+    if (authorDoc) {
+      await ctx.db.patch(authorDoc._id, {
+        postCount: (authorDoc.postCount || 0) + 1,
       })
     }
 

@@ -87,11 +87,18 @@ export async function getPostForReadingByTenant(tenantSlug: string, postSlug: st
   if (!author) return null
 
   const post = await postRepository.findBySlug(postSlug)
-  if (!post || post.status !== "published" || post.authorId !== author.id) return null
+  const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
+  const postBelongsToAuthor =
+    post &&
+    (post.authorId === authorKey ||
+      post.authorId === author.id ||
+      post.authorId === author.legacyId)
+
+  if (!post || post.status !== "published" || !postBelongsToAuthor) return null
 
   const [comments, allAuthorPosts, postCategory] = await Promise.all([
     commentRepository.findByPostId(post.id),
-    postRepository.findByAuthorId(author.id, "published"),
+    postRepository.findByAuthorId(authorKey, "published"),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
   ])
 

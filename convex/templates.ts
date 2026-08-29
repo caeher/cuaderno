@@ -90,7 +90,7 @@ export const create = mutation({
     const tenantType = args.tenantType || (isOrg ? "organization" : "user")
 
     const docId = await ctx.db.insert("tenantTemplates", {
-      legacyId: args.id || "tpl_" + Math.random().toString(36).substring(2, 9),
+      legacyId: args.id,
       tenantId: args.tenantId,
       tenantType,
       name: args.name || "Plantilla Predeterminada",
@@ -129,7 +129,6 @@ export const saveDraft = mutation({
     if (!template) {
       const isOrg = args.tenantId.startsWith("org_")
       const docId = await ctx.db.insert("tenantTemplates", {
-        legacyId: "tpl_" + Math.random().toString(36).substring(2, 9),
         tenantId: args.tenantId,
         tenantType: isOrg ? "organization" : "user",
         name: args.name || "Plantilla Predeterminada",
@@ -178,7 +177,6 @@ export const publish = mutation({
     if (!template) {
       const isOrg = args.tenantId.startsWith("org_")
       const docId = await ctx.db.insert("tenantTemplates", {
-        legacyId: "tpl_" + Math.random().toString(36).substring(2, 9),
         tenantId: args.tenantId,
         tenantType: isOrg ? "organization" : "user",
         name: "Plantilla Predeterminada",
@@ -208,7 +206,6 @@ export const publish = mutation({
 
     // 2. Insertar revisión inmutable
     await ctx.db.insert("tenantTemplateRevisions", {
-      legacyId: "rev_" + Math.random().toString(36).substring(2, 9),
       templateId: template.legacyId || (template._id as string),
       templateDocId: template._id,
       tenantId: args.tenantId,

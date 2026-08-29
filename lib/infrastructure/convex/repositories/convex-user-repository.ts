@@ -1,6 +1,6 @@
 import { api } from "@/convex/_generated/api"
 import type { UpdateUserInput, User } from "@/lib/domain/entities"
-import type { UserRepository } from "@/lib/domain/repositories"
+import type { SyncFromClerkInput, UserRepository } from "@/lib/domain/repositories"
 import { convexMutation, convexQuery } from "../client"
 import { convexDocToUser } from "../mappers"
 
@@ -20,10 +20,23 @@ export class ConvexUserRepository implements UserRepository {
     return doc ? convexDocToUser(doc) : null
   }
 
+  async findByClerkUserId(clerkUserId: string): Promise<User | null> {
+    const doc = await convexQuery(api.users.getByClerkUserId, { clerkUserId })
+    return doc ? convexDocToUser(doc) : null
+  }
+
+  async syncFromClerk(input: SyncFromClerkInput): Promise<User> {
+    const doc = await convexMutation(api.users.syncFromClerk, input)
+    if (!doc) {
+      throw new Error("No se pudo sincronizar el usuario desde Clerk.")
+    }
+    return convexDocToUser(doc)
+  }
+
   async create(user: User): Promise<User> {
     const doc = await convexMutation(api.users.create, {
-      id: user.id,
-      clerkUserId: user.id?.startsWith("user_") ? user.id : undefined,
+      id: user.legacyId,
+      clerkUserId: user.clerkUserId,
       username: user.username,
       name: user.name,
       email: user.email,
@@ -43,6 +56,9 @@ export class ConvexUserRepository implements UserRepository {
       legalSettings: user.legalSettings,
       seoSettings: user.seoSettings,
     })
+    if (!doc) {
+      throw new Error("No se pudo crear el usuario.")
+    }
     return convexDocToUser(doc)
   }
 

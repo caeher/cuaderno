@@ -166,6 +166,7 @@ export default defineSchema({
     .index("by_status_and_featured", ["status", "featured", "publishedAt"])
     .index("by_author", ["authorId"])
     .index("by_author_and_status", ["authorId", "status", "updatedAt"])
+    .index("by_author_doc", ["authorDocId"])
     .index("by_org_and_status", ["organizationId", "status", "updatedAt"])
     .index("by_tenant_and_status", ["tenantId", "status", "publishedAt"])
     .index("by_category_and_status", ["categoryId", "status"])
