@@ -61,7 +61,9 @@ export const postsTable = sqliteTable("posts", {
   likes: integer("likes").notNull().default(0),
   comments: integer("comments").notNull().default(0),
   featured: integer("featured", { mode: "boolean" }).notNull().default(false),
+  // @deprecated - Kept for audit/backwards compatibility only; templates are now tenant-level
   designData: text("design_data"),
+  // @deprecated - Kept for audit/backwards compatibility only; posts use standard editor
   editorMode: text("editor_mode").notNull().default("notion"),
 })
 

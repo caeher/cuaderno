@@ -30,7 +30,8 @@ import type {
   TenantTemplateSettings,
   UpdateTemplateDraftInput,
 } from "@/lib/domain/template-schema"
-import { deserializeSlotMap, serializeSlotMap } from "@/lib/domain/template-schema"
+import { deserializeSlotMap, serializeSlotMap, CURRENT_TEMPLATE_SCHEMA_VERSION } from "@/lib/domain/template-schema"
+import { validateAndNormalizeSlotMap } from "@/lib/domain/template-validator"
 import { ensureDatabaseInitialized } from "../auto-init"
 import { getSqliteDb } from "../client"
 import {
@@ -693,14 +694,16 @@ export class SqliteTemplateRepository implements TemplateRepository {
     const now = new Date().toISOString()
     const id = "tpl_" + Math.random().toString(36).substring(2, 9)
 
+    const normalizedDraftSlots = input.draftSlots ? validateAndNormalizeSlotMap(input.draftSlots).normalized : {}
+
     const template: TenantTemplate = {
       id,
       tenantId: input.tenantId,
       tenantType: input.tenantType,
-      schemaVersion: "1.0",
+      schemaVersion: CURRENT_TEMPLATE_SCHEMA_VERSION,
       version: 1,
       name: input.name || "Plantilla Predeterminada",
-      draftSlots: input.draftSlots || {},
+      draftSlots: normalizedDraftSlots,
       publishedSlots: {},
       settings: input.settings || {},
       isPublished: false,
@@ -750,7 +753,10 @@ export class SqliteTemplateRepository implements TemplateRepository {
     }
 
     if (input.name !== undefined) updates.name = input.name
-    if (input.draftSlots !== undefined) updates.draftSlots = serializeSlotMap(input.draftSlots)
+    if (input.draftSlots !== undefined) {
+      const { normalized } = validateAndNormalizeSlotMap(input.draftSlots)
+      updates.draftSlots = serializeSlotMap(normalized)
+    }
     if (input.settings !== undefined) updates.settings = JSON.stringify(input.settings)
 
     await db.update(tenantTemplatesTable).set(updates).where(eq(tenantTemplatesTable.tenantId, tenantId))

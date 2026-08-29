@@ -23,6 +23,7 @@ import type {
   TemplateRepository,
   UserRepository,
 } from "@/lib/domain/repositories"
+import { CURRENT_TEMPLATE_SCHEMA_VERSION } from "@/lib/domain/template-schema"
 import type {
   CreateTemplateInput,
   TemplateRevision,
@@ -30,6 +31,7 @@ import type {
   TenantTemplateSettings,
   UpdateTemplateDraftInput,
 } from "@/lib/domain/template-schema"
+import { validateAndNormalizeSlotMap } from "@/lib/domain/template-validator"
 import { getPgDb } from "../client"
 import {
   pgCategoriesTable,
@@ -616,14 +618,16 @@ export class PgTemplateRepository implements TemplateRepository {
     const now = new Date().toISOString()
     const id = "tpl_" + Math.random().toString(36).substring(2, 9)
 
+    const normalizedDraftSlots = input.draftSlots ? validateAndNormalizeSlotMap(input.draftSlots).normalized : {}
+
     const template: TenantTemplate = {
       id,
       tenantId: input.tenantId,
       tenantType: input.tenantType,
-      schemaVersion: "1.0",
+      schemaVersion: CURRENT_TEMPLATE_SCHEMA_VERSION,
       version: 1,
       name: input.name || "Plantilla Predeterminada",
-      draftSlots: input.draftSlots || {},
+      draftSlots: normalizedDraftSlots,
       publishedSlots: {},
       settings: input.settings || {},
       isPublished: false,
@@ -672,7 +676,10 @@ export class PgTemplateRepository implements TemplateRepository {
     }
 
     if (input.name !== undefined) updates.name = input.name
-    if (input.draftSlots !== undefined) updates.draftSlots = input.draftSlots
+    if (input.draftSlots !== undefined) {
+      const { normalized } = validateAndNormalizeSlotMap(input.draftSlots)
+      updates.draftSlots = normalized
+    }
     if (input.settings !== undefined) updates.settings = input.settings
 
     await db.update(pgTenantTemplatesTable).set(updates).where(eq(pgTenantTemplatesTable.tenantId, tenantId))
