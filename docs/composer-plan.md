@@ -170,7 +170,7 @@ Estas no las puede resolver quien implemente; son de producto o de cuenta.
 
 1. **Proveedor de búsqueda web** para el research de #16. No hay ninguno en el repo.
 2. **Presupuesto mensual** y el límite duro a configurar en OpenAI.
-3. **Qué pasa con un artículo generado que el usuario abandona** — ¿se borra la sesión a los N días? Hay costo de storage en las imágenes.
+3. ~~**Qué pasa con un artículo generado que el usuario abandona**~~ → **DECIDIDO:** retención de 90 días, y la purga borra **solo sesiones en estado terminal**. Una sesión activa no se borra sola por vieja que sea. El post generado no se toca: es del usuario y vive por su cuenta. Implementado en `purgeExpiredSessions` + `convex/crons.ts`.
 4. **Idiomas soportados** en la primera versión. El producto es español; el research útil suele ser en inglés.
 5. **`gpt-5.6-luna` y `gpt-image-1-mini`** son los valores que documenta el epic. Confirmar que están disponibles en la cuenta antes de fijarlos como default.
 

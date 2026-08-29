@@ -162,6 +162,7 @@ export const createSession = mutation({
       status: "collecting",
       createdAt: now,
       updatedAt: now,
+      expiresAt: retentionDeadline(),
     })
   },
 })
@@ -634,5 +635,94 @@ export const createDraftFromSession = mutation({
     await ctx.db.patch(args.sessionId, { postId, updatedAt: now })
 
     return postId
+  },
+})
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Retención — issue #15
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Ventana de retención de una sesión de Composer.
+ *
+ * 90 días es deliberadamente generoso: el costo de guardar texto es despreciable
+ * frente al de borrarle a alguien una investigación que pensaba retomar. Lo que sí
+ * cuesta son las imágenes generadas, y por eso la purga borra los blobs de storage
+ * además de los documentos.
+ */
+const RETENTION_DAYS = 90
+
+function retentionDeadline(): string {
+  return new Date(Date.now() + RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString()
+}
+
+/**
+ * Borra sesiones vencidas y todo lo que cuelga de ellas.
+ *
+ * **Solo purga sesiones en estado terminal** (`awaiting_review`, `failed`, `cancelled`).
+ * Una sesión activa nunca se borra sola por más vieja que sea: perder trabajo en curso
+ * es peor que pagar unos megabytes.
+ *
+ * El post que la sesión haya generado NO se toca — es del usuario y vive por su cuenta
+ * en `posts`. Lo que se borra es la conversación, los jobs, las fuentes, los artefactos
+ * y los archivos generados.
+ */
+export const purgeExpiredSessions = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const now = new Date().toISOString()
+    const limite = args.limit ?? 50
+
+    const candidatas = await ctx.db
+      .query("composerSessions")
+      .filter((q) => q.lt(q.field("expiresAt"), now))
+      .take(limite)
+
+    let borradas = 0
+
+    for (const session of candidatas) {
+      if (!isTerminalStatus(session.status as ComposerSessionStatus)) continue
+
+      const mensajes = await ctx.db
+        .query("composerMessages")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect()
+      for (const m of mensajes) await ctx.db.delete(m._id)
+
+      const jobs = await ctx.db
+        .query("composerJobs")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect()
+      for (const j of jobs) await ctx.db.delete(j._id)
+
+      const fuentes = await ctx.db
+        .query("composerSources")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect()
+      for (const f of fuentes) await ctx.db.delete(f._id)
+
+      const artefactos = await ctx.db
+        .query("composerArtifacts")
+        .withIndex("by_session", (q) => q.eq("sessionId", session._id))
+        .collect()
+      for (const a of artefactos) {
+        // Borrar el blob antes que el documento: si se hace al revés y falla, el
+        // archivo queda huérfano sin nadie que lo referencie y sigue costando.
+        if (a.storageId) {
+          try {
+            await ctx.storage.delete(a.storageId)
+          } catch {
+            // El archivo ya no existe: seguir con el documento.
+          }
+        }
+        await ctx.db.delete(a._id)
+      }
+
+      await ctx.db.delete(session._id)
+      borradas += 1
+    }
+
+    return { revisadas: candidatas.length, borradas }
   },
 })
