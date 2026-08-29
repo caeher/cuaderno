@@ -49,6 +49,39 @@ export const tenantTemplateSettingsValidator = v.object({
   containerMaxWidth: v.optional(v.string()),
 });
 
+/**
+ * Estados de una sesión de Composer (issue #15).
+ *
+ * El orden feliz es collecting -> awaiting_confirmation -> researching -> drafting
+ * -> imaging -> awaiting_review. `imaging` se salta si el usuario no pidió portada.
+ * Las transiciones legales viven en lib/domain/composer/state-machine.ts y se validan
+ * en la mutation, nunca en la action: así dos jobs que terminan a destiempo no pueden
+ * dejar la sesión en un estado imposible.
+ */
+export const composerSessionStatusValidator = v.union(
+  v.literal("collecting"),
+  v.literal("awaiting_confirmation"),
+  v.literal("researching"),
+  v.literal("drafting"),
+  v.literal("imaging"),
+  v.literal("awaiting_review"),
+  v.literal("failed"),
+  v.literal("cancelled")
+);
+
+/** Preferencias editoriales que el usuario fija en la conversación. */
+export const composerBriefValidator = v.object({
+  topic: v.optional(v.string()),
+  audience: v.optional(v.string()),
+  tone: v.optional(v.string()),
+  language: v.optional(v.string()),
+  targetLength: v.optional(v.number()),
+  seoKeywords: v.optional(v.array(v.string())),
+  constraints: v.optional(v.string()),
+  wantsCoverImage: v.optional(v.boolean()),
+  wantsExtraImages: v.optional(v.boolean()),
+});
+
 export default defineSchema({
   /**
    * Colección: Users (Autores, Perfiles y Tenants individuales)
@@ -277,5 +310,147 @@ export default defineSchema({
     .index("by_author", ["authorId"])
     .index("by_tenant_and_status", ["tenantId", "status"])
     .index("by_legacy_id", ["legacyId"]),
+
+  /**
+   * Colección: ComposerSessions (una conversación de Composer por tenant)
+   *
+   * `tenantId` NUNCA se acepta del cliente: se deriva de la identidad de Clerk en cada
+   * mutation. Es el criterio de aceptación de #15 — dos tenants no pueden verse entre sí.
+   */
+  composerSessions: defineTable({
+    tenantId: v.string(),
+    authorId: v.string(),
+    title: v.optional(v.string()),
+    brief: composerBriefValidator,
+    status: composerSessionStatusValidator,
+    failureReason: v.optional(v.string()),
+    postId: v.optional(v.id("posts")),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    expiresAt: v.optional(v.string()),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_tenant_and_status", ["tenantId", "status"])
+    .index("by_tenant_and_updated", ["tenantId", "updatedAt"]),
+
+  /**
+   * Colección: ComposerMessages (turnos de la conversación)
+   */
+  composerMessages: defineTable({
+    sessionId: v.id("composerSessions"),
+    tenantId: v.string(),
+    role: v.union(v.literal("user"), v.literal("assistant"), v.literal("system")),
+    content: v.string(),
+    createdAt: v.string(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_and_created", ["sessionId", "createdAt"]),
+
+  /**
+   * Colección: ComposerJobs (unidad de trabajo asíncrono, reanudable y cancelable)
+   *
+   * Existe separada de la sesión porque research e imágenes tardan decenas de segundos:
+   * sin una tabla de jobs, cerrar la pestaña pierde el trabajo y no hay dónde registrar
+   * reintentos. `idempotencyKey` es lo que impide que un refresh pague dos veces la misma
+   * llamada o cree dos posts.
+   */
+  composerJobs: defineTable({
+    sessionId: v.id("composerSessions"),
+    tenantId: v.string(),
+    kind: v.union(
+      v.literal("research"),
+      v.literal("outline"),
+      v.literal("article"),
+      v.literal("image"),
+      v.literal("moderation")
+    ),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("running"),
+      v.literal("succeeded"),
+      v.literal("failed"),
+      v.literal("cancelled")
+    ),
+    idempotencyKey: v.string(),
+    progress: v.optional(v.number()),
+    attempt: v.number(),
+    error: v.optional(v.string()),
+    startedAt: v.optional(v.string()),
+    finishedAt: v.optional(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_tenant_and_status", ["tenantId", "status"])
+    .index("by_tenant_and_idempotency_key", ["tenantId", "idempotencyKey"]),
+
+  /**
+   * Colección: ComposerSources (trazabilidad de la investigación)
+   *
+   * Es tabla y no un campo JSON dentro del artefacto porque el criterio de aceptación
+   * del epic exige rastrear cada afirmación a su fuente: embebidas no se pueden consultar,
+   * deduplicar ni mostrar sin parsear texto.
+   */
+  composerSources: defineTable({
+    sessionId: v.id("composerSessions"),
+    tenantId: v.string(),
+    url: v.string(),
+    title: v.optional(v.string()),
+    publisher: v.optional(v.string()),
+    publishedAt: v.optional(v.string()),
+    fetchedAt: v.string(),
+    snippet: v.optional(v.string()),
+    claims: v.array(v.object({ text: v.string(), offset: v.optional(v.number()) })),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_and_url", ["sessionId", "url"]),
+
+  /**
+   * Colección: ComposerArtifacts (toda salida del modelo, versionada)
+   */
+  composerArtifacts: defineTable({
+    sessionId: v.id("composerSessions"),
+    tenantId: v.string(),
+    kind: v.union(
+      v.literal("outline"),
+      v.literal("article"),
+      v.literal("excerpt"),
+      v.literal("taxonomy"),
+      v.literal("altText"),
+      v.literal("cover")
+    ),
+    content: v.optional(v.string()),
+    storageId: v.optional(v.id("_storage")),
+    version: v.number(),
+    supersededBy: v.optional(v.id("composerArtifacts")),
+    createdAt: v.string(),
+  })
+    .index("by_session", ["sessionId"])
+    .index("by_session_and_kind", ["sessionId", "kind"]),
+
+  /**
+   * Colección: AiUsageEvents (observabilidad de consumo)
+   *
+   * Solo observabilidad: en esta fase NO hay cuotas, presupuestos ni límites por tenant
+   * (#14 y #15 lo dicen explícitamente). Los campos de modelo y coste los llena #14.
+   */
+  aiUsageEvents: defineTable({
+    tenantId: v.string(),
+    sessionId: v.optional(v.id("composerSessions")),
+    jobId: v.optional(v.id("composerJobs")),
+    phase: v.string(),
+    model: v.optional(v.string()),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    imageCount: v.optional(v.number()),
+    toolCalls: v.optional(v.number()),
+    estimatedCostUsd: v.optional(v.number()),
+    actualCostUsd: v.optional(v.number()),
+    status: v.string(),
+    requestId: v.optional(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_tenant", ["tenantId"])
+    .index("by_session", ["sessionId"])
+    .index("by_tenant_and_created", ["tenantId", "createdAt"]),
 });
 
