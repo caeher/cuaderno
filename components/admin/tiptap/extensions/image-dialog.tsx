@@ -70,7 +70,7 @@ export function ImageDialog({ editor, open, onOpenChange }: ImageDialogProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ImageIcon className="size-5 text-primary" />
+            <ImageIcon className="size-5 text-ia" />
             Insertar Imagen
           </DialogTitle>
           <DialogDescription>
@@ -115,17 +115,17 @@ export function ImageDialog({ editor, open, onOpenChange }: ImageDialogProps) {
           </Field>
 
           <div>
-            <span className="text-xs font-medium text-muted-foreground">Imágenes sugeridas:</span>
+            <span className="text-sm font-medium text-muted-foreground">Imágenes sugeridas:</span>
             <div className="mt-1.5 grid grid-cols-3 gap-2">
               {SAMPLE_IMAGES.map((img) => (
                 <button
                   key={img.name}
                   type="button"
                   onClick={() => handleSelectSample(img.url)}
-                  className="group relative aspect-video overflow-hidden rounded-md border border-border/80 text-left transition-all hover:border-primary focus:outline-none"
+                  className="group relative aspect-video overflow-hidden rounded-lg border border-border text-left transition-colors hover:border-ia focus:outline-none"
                 >
                   <img src={img.url} alt={img.name} className="size-full object-cover transition-transform group-hover:scale-105" />
-                  <span className="absolute inset-x-0 bottom-0 bg-background/80 px-1 py-0.5 text-[10px] font-medium backdrop-blur-sm">
+                  <span className="absolute inset-x-0 bottom-0 bg-card/85 px-1.5 py-0.5 text-[11px] font-medium text-foreground backdrop-blur-sm">
                     {img.name}
                   </span>
                 </button>

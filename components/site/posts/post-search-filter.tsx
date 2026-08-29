@@ -30,7 +30,7 @@ export function PostSearchFilter({
       <SearchInput
         action={actionUrl}
         name="q"
-        placeholder="Buscar por título o descripción..."
+        placeholder="Buscar por título o descripción…"
         defaultValue={searchQuery ?? ""}
         hiddenParams={{ tag: activeTag, category: activeCategory }}
       />
@@ -38,7 +38,7 @@ export function PostSearchFilter({
       {/* Categories Row */}
       {categories.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
             Categorías
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -53,7 +53,12 @@ export function PostSearchFilter({
             >
               <Badge
                 variant={!activeCategory ? "default" : "outline"}
-                className="cursor-pointer text-xs"
+                className={cn(
+                  "cursor-pointer text-xs",
+                  !activeCategory
+                    ? "border-ia-border bg-ia-tint font-medium text-ia"
+                    : "border-border bg-card text-muted-foreground hover:bg-surface-sunken"
+                )}
               >
                 Todas las categorías
               </Badge>
@@ -73,15 +78,15 @@ export function PostSearchFilter({
                   <Badge
                     variant={isActive ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer text-xs gap-1.5",
+                      "cursor-pointer gap-1.5 text-xs",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-muted text-foreground"
+                        ? "border-ia-border bg-ia-tint font-medium text-ia"
+                        : "border-border bg-card text-muted-foreground hover:bg-surface-sunken"
                     )}
                   >
                     <span
-                      className="size-2 rounded-full shrink-0"
-                      style={{ backgroundColor: c.color || "#3b82f6" }}
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: c.color || "var(--cat-2)" }}
                     />
                     <span>{c.name}</span>
                   </Badge>
@@ -95,7 +100,7 @@ export function PostSearchFilter({
       {/* Tags Row */}
       {tags.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <span className="text-xs font-semibold uppercase tracking-[0.06em] text-text-tertiary">
             Etiquetas temáticas
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -110,7 +115,12 @@ export function PostSearchFilter({
             >
               <Badge
                 variant={!activeTag ? "default" : "outline"}
-                className="cursor-pointer text-xs"
+                className={cn(
+                  "cursor-pointer text-xs",
+                  !activeTag
+                    ? "border-ia-border bg-ia-tint font-medium text-ia"
+                    : "border-border bg-card text-muted-foreground hover:bg-surface-sunken"
+                )}
               >
                 Todas
               </Badge>
@@ -130,8 +140,10 @@ export function PostSearchFilter({
                   <Badge
                     variant={isActive ? "default" : "secondary"}
                     className={cn(
-                      "cursor-pointer text-xs font-mono font-normal",
-                      isActive && "bg-primary text-primary-foreground font-medium"
+                      "cursor-pointer text-xs font-normal",
+                      isActive
+                        ? "border-ia-border bg-ia-tint font-medium text-ia"
+                        : "border-border bg-card text-muted-foreground hover:bg-surface-sunken"
                     )}
                   >
                     #{t.name}
@@ -145,4 +157,3 @@ export function PostSearchFilter({
     </div>
   )
 }
-

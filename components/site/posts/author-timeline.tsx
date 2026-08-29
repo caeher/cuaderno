@@ -31,7 +31,7 @@ export function AuthorTimeline({
 
   return (
     <div className={cn("py-10", className)}>
-      <div className="flex flex-col divide-y divide-border/70">
+      <div className="flex flex-col divide-y divide-border">
         {posts.map((post) => {
           const postHref = tenantSlug ? `/${tenantSlug}/posts/${post.slug}` : `/posts/${post.slug}`
 
@@ -40,14 +40,14 @@ export function AuthorTimeline({
               {post.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge key={tag} variant="secondary" className="text-muted-foreground">
                       {tag}
                     </Badge>
                   ))}
                 </div>
               )}
               <Link href={postHref} className="mt-2 block">
-                <h2 className="font-serif text-2xl font-medium leading-snug text-balance group-hover:text-primary">
+                <h2 className="text-xl font-semibold leading-snug tracking-tight text-balance text-foreground transition-colors group-hover:text-ia">
                   {post.title}
                 </h2>
               </Link>
@@ -56,7 +56,7 @@ export function AuthorTimeline({
                   {post.excerpt}
                 </p>
               )}
-              <p className="mt-3 text-xs text-muted-foreground">
+              <p className="mt-3 text-xs tabular-nums text-text-tertiary">
                 {formatDate(post.publishedAt)} · {post.readingTimeMinutes} min de lectura ·{" "}
                 {formatCompactNumber(post.views)} vistas
               </p>

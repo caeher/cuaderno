@@ -62,17 +62,17 @@ export function ColorPicker({ editor }: ColorPickerProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-          (activeColor !== "inherit" || activeHighlight !== "transparent") && "bg-accent text-accent-foreground",
+          "flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+          (activeColor !== "inherit" || activeHighlight !== "transparent") && "bg-muted text-foreground",
         )}
         aria-label="Color de texto y resaltado"
       >
-        <Palette className="size-3.5" />
+        <Palette className="size-4" />
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-2 text-xs" align="start">
+      <PopoverContent className="w-56 rounded-xl p-2 text-sm" align="start">
         <div className="flex flex-col gap-3">
           <div>
-            <span className="px-2 font-medium text-muted-foreground uppercase tracking-wider text-[10px]">
+            <span className="px-2 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
               Color de texto
             </span>
             <div className="mt-1 flex flex-col gap-0.5">
@@ -84,7 +84,7 @@ export function ColorPicker({ editor }: ColorPickerProps) {
                     setTextColor(item.value)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center justify-between rounded px-2 py-1 text-left transition-colors hover:bg-accent"
+                  className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
                 >
                   <span className="flex items-center gap-2">
                     <span
@@ -99,8 +99,8 @@ export function ColorPicker({ editor }: ColorPickerProps) {
             </div>
           </div>
 
-          <div className="border-t border-border pt-2">
-            <span className="px-2 font-medium text-muted-foreground uppercase tracking-wider text-[10px]">
+          <div className="border-t border-border pt-2.5">
+            <span className="px-2 text-[11px] font-semibold uppercase tracking-wider text-text-tertiary">
               Fondo de resaltado
             </span>
             <div className="mt-1 flex flex-col gap-0.5">
@@ -112,7 +112,7 @@ export function ColorPicker({ editor }: ColorPickerProps) {
                     setBgColor(item.value)
                     setOpen(false)
                   }}
-                  className="flex w-full items-center justify-between rounded px-2 py-1 text-left transition-colors hover:bg-accent"
+                  className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-foreground transition-colors hover:bg-muted"
                 >
                   <span className="flex items-center gap-2">
                     <span

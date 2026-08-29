@@ -18,9 +18,9 @@ export function AuthorShowcaseSection({
   description = "Cada uno con su propio espacio, su propio tono y su propia comunidad de lectores.",
 }: AuthorShowcaseSectionProps) {
   return (
-    <SectionContainer id="autores">
+    <SectionContainer id="autores" className="bg-card">
       <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
         {authors.map((author) => (
           <AuthorCard key={author.id} author={author} />
         ))}

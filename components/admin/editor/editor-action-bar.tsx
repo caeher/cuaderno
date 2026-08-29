@@ -40,9 +40,9 @@ export function EditorActionBar({
           size="sm"
           onClick={onToggleFeatured}
           title={isFeatured ? "Post destacado" : "Marcar como destacado"}
-          className={`cursor-pointer ${isFeatured ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground"}`}
+          className={`cursor-pointer ${isFeatured ? "text-warn hover:text-warn-ink" : "text-muted-foreground hover:text-foreground"}`}
         >
-          <Star className={`size-4 ${isFeatured ? "fill-amber-400 text-amber-500" : ""}`} />
+          <Star className={`size-4 ${isFeatured ? "fill-warn text-warn" : ""}`} />
         </Button>
       )}
 
@@ -50,7 +50,7 @@ export function EditorActionBar({
       <select
         value={status}
         onChange={(e) => onStatusChange(e.target.value as PostStatus)}
-        className="h-8 rounded-md border border-border bg-background px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer font-medium"
+        className="h-9 cursor-pointer rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
       >
         <option value="draft">Borrador</option>
         <option value="published">Publicado</option>
@@ -62,6 +62,7 @@ export function EditorActionBar({
         <Button
           variant="ghost"
           size="sm"
+          className="cursor-pointer border border-border bg-card text-foreground hover:bg-muted"
           render={<a href={`/post/${publishedSlug}`} target="_blank" rel="noreferrer" />}
         >
           <Eye data-icon="inline-start" />
@@ -74,7 +75,7 @@ export function EditorActionBar({
         size="sm"
         onClick={onSave}
         disabled={isSaving}
-        className="cursor-pointer"
+        className="cursor-pointer font-medium"
       >
         {isSaving ? (
           <Spinner className="size-3.5" />

@@ -20,14 +20,16 @@ export function EditorHeaderFields({
   className,
 }: EditorHeaderFieldsProps) {
   return (
-    <FieldGroup className={cn("gap-3", className)}>
+    <FieldGroup className={cn("gap-4", className)}>
       <Field>
-        <Input
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Título del post..."
-          className="h-auto border-none px-0 font-serif text-3xl font-semibold tracking-tight shadow-none placeholder:text-muted-foreground/50 focus-visible:ring-0 md:text-4xl"
-        />
+        <div className="rounded-xl border border-border bg-card px-5 py-4">
+          <Input
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder="Título del post..."
+            className="h-auto border-none bg-transparent p-0 text-2xl font-semibold leading-snug tracking-tight text-foreground shadow-none placeholder:text-text-tertiary focus-visible:ring-0 md:text-3xl"
+          />
+        </div>
       </Field>
       <Field>
         <Textarea
@@ -35,7 +37,7 @@ export function EditorHeaderFields({
           onChange={(e) => onExcerptChange(e.target.value)}
           placeholder="Escribe un resumen breve o bajada para las tarjetas y el SEO..."
           rows={2}
-          className="resize-none border-none px-0 text-base leading-relaxed text-muted-foreground shadow-none placeholder:text-muted-foreground/40 focus-visible:ring-0"
+          className="resize-none border-none bg-transparent px-0 text-base leading-relaxed text-muted-foreground shadow-none placeholder:text-text-tertiary focus-visible:ring-0"
         />
       </Field>
     </FieldGroup>

@@ -28,7 +28,7 @@ export function TableToolbar({ editor }: TableToolbarProps) {
     <BubbleMenu
       editor={editor}
       shouldShow={shouldShow}
-      className="flex items-center gap-0.5 rounded-lg border border-border bg-popover p-1 shadow-xl backdrop-blur-md"
+      className="flex items-center gap-1 rounded-xl border border-border bg-popover p-1 shadow-lg"
       options={{
         placement: "top",
         offset: 8,
@@ -39,20 +39,20 @@ export function TableToolbar({ editor }: TableToolbarProps) {
           onClick={() => editor.chain().focus().addRowBefore().run()}
           label="Insertar fila arriba"
         >
-          <BetweenHorizontalStart className="size-3.5" />
+          <BetweenHorizontalStart className="size-4" />
         </TableButton>
         <TableButton
           onClick={() => editor.chain().focus().addRowAfter().run()}
           label="Insertar fila abajo"
         >
-          <BetweenHorizontalEnd className="size-3.5" />
+          <BetweenHorizontalEnd className="size-4" />
         </TableButton>
         <TableButton
           onClick={() => editor.chain().focus().deleteRow().run()}
           label="Eliminar fila"
           destructive
         >
-          <Rows className="size-3.5" />
+          <Rows className="size-4" />
         </TableButton>
       </div>
 
@@ -61,20 +61,20 @@ export function TableToolbar({ editor }: TableToolbarProps) {
           onClick={() => editor.chain().focus().addColumnBefore().run()}
           label="Insertar columna a la izquierda"
         >
-          <BetweenVerticalStart className="size-3.5" />
+          <BetweenVerticalStart className="size-4" />
         </TableButton>
         <TableButton
           onClick={() => editor.chain().focus().addColumnAfter().run()}
           label="Insertar columna a la derecha"
         >
-          <BetweenVerticalEnd className="size-3.5" />
+          <BetweenVerticalEnd className="size-4" />
         </TableButton>
         <TableButton
           onClick={() => editor.chain().focus().deleteColumn().run()}
           label="Eliminar columna"
           destructive
         >
-          <Columns className="size-3.5" />
+          <Columns className="size-4" />
         </TableButton>
       </div>
 
@@ -83,14 +83,14 @@ export function TableToolbar({ editor }: TableToolbarProps) {
           onClick={() => editor.chain().focus().toggleHeaderRow().run()}
           label="Alternar fila de encabezado"
         >
-          <TableIcon className="size-3.5" />
+          <TableIcon className="size-4" />
         </TableButton>
         <TableButton
           onClick={() => editor.chain().focus().deleteTable().run()}
           label="Eliminar tabla"
           destructive
         >
-          <Trash2 className="size-3.5" />
+          <Trash2 className="size-4" />
         </TableButton>
       </div>
     </BubbleMenu>
@@ -115,8 +115,8 @@ function TableButton({
       aria-label={label}
       onClick={onClick}
       className={cn(
-        "flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
-        destructive && "hover:bg-destructive/15 hover:text-destructive",
+        "flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+        destructive && "hover:bg-danger-tint hover:text-destructive",
       )}
     >
       {children}

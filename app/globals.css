@@ -532,3 +532,126 @@ span[data-color] {
   border-radius: 0.2em;
   padding: 0.1em 0.2em;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM CUADERNO — capa puente
+   Fuente: design-system/tokens/ · pantallas: design-system/ui-ux-panels/
+
+   Es un bloque de OVERRIDE al final del archivo, no una reescritura: la paleta
+   oklch de arriba sigue intacta y revertir esto es borrar de aquí al final.
+
+   LA REGLA DE LOS TRES COLORES:
+     negro  #111111  = acción del usuario. Todo CTA primario.
+     índigo #6366F1  = navegación y IA. Item activo, destello, enlaces "Ver todas".
+     verde  #10B981  = rendimiento y éxito. Scores, "Publicado", deltas positivos.
+
+   OJO CON --accent: shadcn y Base UI lo usan como SUPERFICIE DE HOVER DE MENÚ
+   (focus:bg-accent en dropdown-menu, select, command). Si se le pone el índigo,
+   cada item resaltado de un menú se pinta índigo sólido. Por eso --accent sigue
+   siendo una superficie neutra y el índigo vive en --ia, con su propio namespace.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Superficies y borde */
+  --background: #FAFAF9;
+  --foreground: #0A0A0A;
+  --card: #FFFFFF;
+  --card-foreground: #0A0A0A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A0A0A;
+  --border: #EAEAE8;
+  --input: #EAEAE8;
+
+  /* Acción del usuario — el CTA negro de las pantallas */
+  --primary: #111111;
+  --primary-foreground: #FFFFFF;
+
+  /* Superficies secundarias y de hover. NO índigo, a propósito. */
+  --secondary: #F5F5F4;
+  --secondary-foreground: #0A0A0A;
+  --muted: #F5F5F4;
+  --muted-foreground: #6B6B70;
+  --accent: #F5F5F4;
+  --accent-foreground: #0A0A0A;
+
+  --destructive: #EF4444;
+  --ring: #6366F1;
+  --radius: 0.625rem;
+
+  /* Chrome del panel */
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0A0A0A;
+  --sidebar-border: #EAEAE8;
+  --sidebar-accent: #EEF0FE;
+  --sidebar-accent-foreground: #4F46E5;
+  --sidebar-primary: #6366F1;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-ring: #6366F1;
+
+  /* ── Tokens propios de Cuaderno, en su propio namespace ── */
+  --ia: #6366F1;
+  --ia-hover: #4F46E5;
+  --ia-tint: #EEF0FE;
+  --ia-border: #DDDCFB;
+
+  --perf: #10B981;
+  --perf-strong: #059669;
+  --perf-tint: #DCFCE7;
+
+  --warn: #F59E0B;
+  --warn-tint: #FEF3C7;
+  --warn-ink: #854D0E;        /* ámbar legible sobre --warn-tint (AA) */
+
+  --danger-tint: #FEF2F2;
+  --neutral: #6B7280;
+  --neutral-tint: #F3F4F6;
+
+  --text-tertiary: #9C9CA3;
+  --surface-sunken: #F5F5F4;
+
+  /* Rampa categórica — contenido, no marca */
+  --cat-1: #6366F1;
+  --cat-2: #3B82F6;
+  --cat-3: #10B981;
+  --cat-4: #F97316;
+  --cat-5: #EC4899;
+  --cat-6: #14B8A6;
+  --cat-7: #EAB308;
+  --cat-8: #9CA3AF;
+}
+
+@theme inline {
+  /* Familia del sistema. Fraunces sigue disponible como --font-serif hasta que se
+     decida que hacer con los 35 archivos que usan font-serif. */
+  --font-sans: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-ia: var(--ia);
+  --color-ia-hover: var(--ia-hover);
+  --color-ia-tint: var(--ia-tint);
+  --color-ia-border: var(--ia-border);
+  --color-perf: var(--perf);
+  --color-perf-strong: var(--perf-strong);
+  --color-perf-tint: var(--perf-tint);
+  --color-warn: var(--warn);
+  --color-warn-tint: var(--warn-tint);
+  --color-warn-ink: var(--warn-ink);
+  --color-danger-tint: var(--danger-tint);
+  --color-neutral: var(--neutral);
+  --color-neutral-tint: var(--neutral-tint);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-cat-1: var(--cat-1);
+  --color-cat-2: var(--cat-2);
+  --color-cat-3: var(--cat-3);
+  --color-cat-4: var(--cat-4);
+  --color-cat-5: var(--cat-5);
+  --color-cat-6: var(--cat-6);
+  --color-cat-7: var(--cat-7);
+  --color-cat-8: var(--cat-8);
+}
+
+/* Números tabulares donde las pantallas alinean cifras */
+table,
+[data-metric],
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

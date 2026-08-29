@@ -11,7 +11,7 @@ const sizeClasses = {
   md: "max-w-3xl",
   lg: "max-w-4xl",
   xl: "max-w-6xl",
-  full: "max-w-full",
+  full: "max-w-[90rem]",
 }
 
 export function PageContainer({
@@ -22,7 +22,12 @@ export function PageContainer({
 }: PageContainerProps) {
   return (
     <div
-      className={cn("mx-auto w-full px-6 py-12 sm:py-14", sizeClasses[size], className)}
+      className={cn(
+        // Gutter del panel: 16px en móvil, 24px desde md, 40px desde xl.
+        "mx-auto w-full px-4 py-6 md:p-6 xl:p-10",
+        sizeClasses[size],
+        className
+      )}
       {...props}
     >
       {children}

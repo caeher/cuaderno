@@ -26,10 +26,10 @@ export function PostCard({ post, author, variant = "default", className }: PostC
   if (variant === "compact") {
     return (
       <article className={cn("group flex gap-4 py-5", className)}>
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <PostCardMeta post={post} author={author} />
           <Link href={postUrl} className="mt-1.5 block">
-            <h3 className="font-serif text-lg font-medium leading-snug text-balance group-hover:text-primary">
+            <h3 className="text-base font-semibold leading-snug text-balance text-foreground transition-colors group-hover:text-ia">
               {post.title}
             </h3>
           </Link>
@@ -40,7 +40,7 @@ export function PostCard({ post, author, variant = "default", className }: PostC
         {post.coverUrl && (
           <Link
             href={postUrl}
-            className="relative hidden size-24 flex-none overflow-hidden rounded-md sm:block"
+            className="relative hidden size-24 flex-none overflow-hidden rounded-lg border border-border bg-surface-sunken sm:block"
           >
             <Image src={post.coverUrl || "/placeholder.svg"} alt="" fill className="object-cover" />
           </Link>
@@ -54,7 +54,7 @@ export function PostCard({ post, author, variant = "default", className }: PostC
       {post.coverUrl && (
         <Link
           href={postUrl}
-          className="relative mb-4 block aspect-[16/10] overflow-hidden rounded-lg bg-muted"
+          className="relative mb-4 block aspect-[16/10] overflow-hidden rounded-xl border border-border bg-surface-sunken"
         >
           <Image
             src={post.coverUrl || "/placeholder.svg"}
@@ -66,7 +66,7 @@ export function PostCard({ post, author, variant = "default", className }: PostC
       )}
       <PostCardMeta post={post} author={author} />
       <Link href={postUrl} className="mt-2 block">
-        <h3 className="font-serif text-xl font-medium leading-snug text-balance group-hover:text-primary">
+        <h3 className="text-xl font-semibold leading-snug tracking-tight text-balance text-foreground transition-colors group-hover:text-ia">
           {post.title}
         </h3>
       </Link>
@@ -93,20 +93,22 @@ export function PostCardMeta({ post, author }: { post: Post; author: User }) {
           <AvatarImage src={author.avatarUrl || "/placeholder.svg"} alt={author.name} />
           <AvatarFallback className="text-[9px]">{getInitials(author.name)}</AvatarFallback>
         </Avatar>
-        <span className="text-xs font-medium text-foreground/90 hover:text-foreground">
+        <span className="text-xs font-medium text-foreground transition-colors hover:text-ia">
           {author.name}
         </span>
       </Link>
-      <span className="text-muted-foreground text-xs">·</span>
-      <time className="text-xs text-muted-foreground">{formatShortDate(post.publishedAt)}</time>
+      <span className="text-xs text-text-tertiary">·</span>
+      <time className="text-xs tabular-nums text-text-tertiary">
+        {formatShortDate(post.publishedAt)}
+      </time>
 
       {post.category && (
         <>
-          <span className="text-muted-foreground text-xs">·</span>
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-primary">
+          <span className="text-xs text-text-tertiary">·</span>
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
             <span
-              className="size-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: post.category.color || "#3b82f6" }}
+              className="size-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: post.category.color || "var(--cat-2)" }}
             />
             {post.category.name}
           </span>
@@ -115,4 +117,3 @@ export function PostCardMeta({ post, author }: { post: Post; author: User }) {
     </div>
   )
 }
-

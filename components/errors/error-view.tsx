@@ -77,22 +77,21 @@ export function ErrorView({
     >
       <div className="mx-auto flex max-w-xl flex-col items-center">
         {/* Subtle Decorative Warning Icon Container */}
-        <div className="relative mb-6 flex size-20 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/5 shadow-xs backdrop-blur-xs">
-          <div className="absolute inset-0 rounded-2xl bg-radial from-destructive/10 to-transparent" />
-          <AlertTriangle className="relative size-10 text-destructive stroke-[1.5]" />
-          <span className="absolute -bottom-2 -right-2 flex size-6 items-center justify-center rounded-full border border-destructive/30 bg-background text-[11px] font-mono font-medium text-destructive shadow-xs">
+        <div className="relative mb-6 flex size-20 items-center justify-center rounded-xl border border-border bg-danger-tint">
+          <AlertTriangle className="size-10 stroke-[1.5] text-destructive" />
+          <span className="absolute -bottom-2 -right-2 flex size-6 items-center justify-center rounded-full border border-border bg-card font-mono text-[11px] font-medium tabular-nums text-destructive">
             500
           </span>
         </div>
 
         {/* Badge */}
-        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-destructive/20 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-          <span className="size-1.5 rounded-full bg-destructive animate-ping" />
+        <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-danger-tint px-3 py-1 text-xs font-medium text-destructive">
+          <span className="size-1.5 rounded-full bg-destructive" />
           {badge}
         </div>
 
         {/* Title */}
-        <h1 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        <h1 className="text-3xl font-bold tracking-[-0.02em] text-foreground sm:text-4xl">
           {title}
         </h1>
 
@@ -103,16 +102,16 @@ export function ErrorView({
 
         {/* Digest identifier if present */}
         {error.digest && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border/80 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
+          <div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-border bg-surface-sunken px-3 py-1.5 text-xs text-muted-foreground">
             <span className="font-mono text-[11px]">ID de error: {error.digest}</span>
             <button
               type="button"
               onClick={handleCopyDigest}
-              className="inline-flex items-center gap-1 text-primary hover:underline cursor-pointer"
+              className="inline-flex cursor-pointer items-center gap-1 font-medium text-ia hover:underline"
               title="Copiar código de error"
             >
               {copiedDigest ? (
-                <Check className="size-3 text-emerald-600" />
+                <Check className="size-3 text-perf" />
               ) : (
                 <Copy className="size-3" />
               )}
@@ -129,7 +128,7 @@ export function ErrorView({
             variant="default"
             size="default"
             onClick={handleRetry}
-            className="gap-2 cursor-pointer"
+            className="h-10 cursor-pointer gap-2 rounded-lg px-5 font-semibold"
           >
             <RotateCcw className="size-4" />
             <span>Reintentar</span>
@@ -139,7 +138,7 @@ export function ErrorView({
             <Button
               variant="outline"
               size="default"
-              className="gap-2 cursor-pointer"
+              className="h-10 cursor-pointer gap-2 rounded-lg border-border px-5 font-medium"
               render={<Link href={homeUrl} />}
             >
               <Home className="size-4" />
@@ -155,7 +154,7 @@ export function ErrorView({
           <button
             type="button"
             onClick={() => setShowDetails(!showDetails)}
-            className="mx-auto flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+            className="mx-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <Bug className="size-3.5" />
             <span>{showDetails ? "Ocultar detalles técnicos" : "Ver detalles técnicos del error"}</span>
@@ -163,20 +162,20 @@ export function ErrorView({
           </button>
 
           {showDetails && (
-            <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card p-4 text-left shadow-xs transition-all">
-              <div className="flex items-center justify-between pb-2 border-b border-border text-xs font-semibold text-foreground">
+            <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card p-4 text-left">
+              <div className="flex items-center justify-between border-b border-border pb-2 text-xs font-semibold text-foreground">
                 <span>Mensaje de la excepción:</span>
-                {error.name && <span className="font-mono text-[11px] text-muted-foreground">{error.name}</span>}
+                {error.name && <span className="font-mono text-[11px] text-text-tertiary">{error.name}</span>}
               </div>
-              <p className="mt-2 font-mono text-xs text-destructive break-words">
+              <p className="mt-2 break-words rounded-lg bg-danger-tint p-2.5 font-mono text-xs text-destructive">
                 {error.message || "Error desconocido sin mensaje provisto."}
               </p>
               {error.stack && (
                 <div className="mt-3">
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-tertiary">
                     Pila de llamadas (Stack trace):
                   </span>
-                  <pre className="mt-1 max-h-44 overflow-x-auto overflow-y-auto rounded-lg bg-muted p-2.5 font-mono text-[11px] text-muted-foreground leading-relaxed">
+                  <pre className="mt-1 max-h-44 overflow-x-auto overflow-y-auto rounded-lg border border-border bg-surface-sunken p-2.5 font-mono text-[11px] leading-relaxed text-muted-foreground">
                     {error.stack}
                   </pre>
                 </div>

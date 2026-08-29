@@ -25,19 +25,22 @@ const DEFAULT_STEPS = [
 
 export function LandingFeatures() {
   return (
-    <SectionContainer id="como-funciona" bordered={false}>
+    <SectionContainer id="como-funciona" className="rounded-t-xl bg-card">
       <SectionHeading
         eyebrow="Cómo funciona"
         title="Tres pasos entre tu idea y tu primer lector"
         description="Sin plantillas que configurar ni plugins que mantener. Solo lo esencial para escribir y publicar."
       />
-      <div className="mt-12 grid gap-8 sm:grid-cols-3">
-        {DEFAULT_STEPS.map((step, index) => (
-          <div key={step.title} className="relative border-t border-border pt-6">
-            <span className="font-mono text-xs text-muted-foreground">0{index + 1}</span>
-            <step.icon className="mt-4 size-5 text-primary" />
-            <h3 className="mt-4 font-serif text-lg font-medium">{step.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+      <div className="mt-12 grid gap-10 sm:grid-cols-3 sm:gap-8">
+        {DEFAULT_STEPS.map((step) => (
+          <div key={step.title} className="grid grid-cols-[3rem_1fr] items-start gap-x-4 gap-y-0 sm:block">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-surface-sunken">
+              <step.icon className="size-6 text-muted-foreground" strokeWidth={1.5} />
+            </span>
+            <div className="sm:mt-4">
+              <h3 className="text-base font-semibold text-foreground">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">{step.description}</p>
+            </div>
           </div>
         ))}
       </div>

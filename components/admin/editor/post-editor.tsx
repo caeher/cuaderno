@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Clock, FileText, Globe, Sparkles, Hash, Folder } from "lucide-react"
+import { Clock, FileText, Globe, Sparkles, Hash, Folder, Lightbulb } from "lucide-react"
 import type { Category, Post, PostStatus, Tag } from "@/lib/domain/entities"
 import { savePostAction } from "@/app/actions/blog-actions"
 import { AdminTopbar } from "@/components/admin/admin-topbar"
@@ -118,25 +118,25 @@ export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: P
         />
 
         {/* Slug Customization Bar */}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground bg-muted/40 p-2.5 rounded-md border border-border/50">
-          <Globe className="size-3.5 text-primary shrink-0" />
-          <span className="font-mono">URL: /post/</span>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          <Globe className="size-4 shrink-0 text-text-tertiary" />
+          <span>Enlace permanente: /post/</span>
           {isCustomSlug ? (
             <Input
               value={slug}
               onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
               placeholder={initialPost?.slug || "slug-del-articulo"}
-              className="h-6 w-48 text-xs font-mono px-1.5 py-0"
+              className="h-7 w-56 rounded-lg px-2 py-0 text-sm"
             />
           ) : (
-            <span className="font-mono text-foreground font-medium">
+            <span className="font-medium text-ia">
               {slug || initialPost?.slug || (title ? title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40) : "tu-articulo")}
             </span>
           )}
           <button
             type="button"
             onClick={() => setIsCustomSlug(!isCustomSlug)}
-            className="text-[11px] text-primary hover:underline cursor-pointer ml-auto"
+            className="ml-auto cursor-pointer text-sm font-medium text-ia hover:underline"
           >
             {isCustomSlug ? "Listo" : "Personalizar enlace"}
           </button>
@@ -149,20 +149,24 @@ export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: P
             onChange={setContent}
             placeholder="Escribe tu historia, o pulsa '/' para ver bloques y comandos..."
           />
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-border/40 text-[11px] text-muted-foreground">
-            <span>
-              💡 <strong>Consejos de Notion</strong>: Escribe{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono">/</code> para insertar bloques,
-              arrastra con el icono <code className="rounded bg-muted px-1 py-0.5 font-mono">::</code>{" "}
-              en el margen para reordenar.
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3 text-sm text-text-tertiary">
+            <span className="flex items-start gap-2">
+              <Lightbulb className="mt-0.5 size-4 shrink-0" />
+              <span>
+                <strong className="font-medium text-muted-foreground">Consejos de Notion</strong>: Escribe{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">/</code> para insertar
+                bloques, arrastra con el icono{" "}
+                <code className="rounded bg-muted px-1 py-0.5 font-mono text-foreground">::</code> en el margen
+                para reordenar.
+              </span>
             </span>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 font-medium text-foreground/80">
-                <FileText className="size-3" />
+            <div className="flex items-center gap-4 tabular-nums">
+              <span className="flex items-center gap-1.5">
+                <FileText className="size-4" />
                 {wordCount} palabras
               </span>
-              <span className="flex items-center gap-1">
-                <Clock className="size-3" />
+              <span className="flex items-center gap-1.5">
+                <Clock className="size-4" />
                 ~{readingTimeMinutes} min de lectura
               </span>
             </div>
@@ -170,7 +174,7 @@ export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: P
         </div>
 
         {/* Taxonomies Section: Category (1) and Tags (N) */}
-        <div className="grid gap-5 border-t border-border/70 pt-6 sm:grid-cols-2 bg-card p-4 rounded-lg border">
+        <div className="grid gap-6 rounded-xl border border-border bg-card p-5 sm:grid-cols-2">
           <div>
             <CategorySelect
               allCategories={categoriesList}

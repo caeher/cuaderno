@@ -14,22 +14,22 @@ export function EditorStatusBar({ editor }: EditorStatusBarProps) {
   const readingTime = Math.max(1, Math.ceil(words / 200))
 
   return (
-    <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
-      <div className="flex items-center gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5 text-sm text-text-tertiary">
+      <div className="flex flex-wrap items-center gap-4 tabular-nums">
         <span className="flex items-center gap-1.5">
-          <FileText className="size-3.5 opacity-70" />
+          <FileText className="size-4" />
           <span>
             {words} {words === 1 ? "palabra" : "palabras"} · {characters} caracteres
           </span>
         </span>
         <span className="flex items-center gap-1.5">
-          <Clock className="size-3.5 opacity-70" />
+          <Clock className="size-4" />
           <span>~{readingTime} min de lectura</span>
         </span>
       </div>
 
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-        <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-500" />
+      <div className="flex items-center gap-1.5">
+        <CheckCircle2 className="size-4 text-perf" />
         <span>Bloques sincronizados</span>
       </div>
     </div>
