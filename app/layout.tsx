@@ -4,7 +4,6 @@ import type { Metadata, Viewport } from 'next'
 import { Fraunces, JetBrains_Mono, Work_Sans } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { AuthProvider } from '@/lib/infrastructure/auth-store'
 import { JsonLdScript } from '@/components/seo/json-ld-script'
 import { generateOrganizationJsonLd, generateWebSiteJsonLd } from '@/lib/seo/json-ld'
 import { SITE_CONFIG } from '@/lib/seo/config'
@@ -125,10 +124,8 @@ export default function RootLayout({
       >
         <ClerkProvider appearance={{ theme: shadcn }}>
           <ConvexClientProvider>
-            <AuthProvider>
-              <TooltipProvider>{children}</TooltipProvider>
-              <Toaster />
-            </AuthProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+            <Toaster />
           </ConvexClientProvider>
         </ClerkProvider>
       </body>

@@ -20,14 +20,22 @@ export interface AuthenticatedTenantContext {
  * Resolves the active tenant for the currently authenticated session.
  */
 export async function resolveActiveTenantContext(): Promise<AuthenticatedTenantContext> {
-  const [currentUser, clerkAuth] = await Promise.all([
-    getCurrentUser().catch(() => null),
-    auth().catch(() => null),
-  ])
+  const clerkAuth = await auth().catch(() => null)
+  const currentUser = await getCurrentUser()
 
-  const userId = clerkAuth?.userId || currentUser?.id || "u_anonymous"
-  const userName = currentUser?.name || currentUser?.username || "Usuario"
-  const orgId = clerkAuth?.orgId
+  if (!clerkAuth?.userId || !currentUser) {
+    return {
+      authorized: false,
+      tenantId: "",
+      tenantType: "user",
+      userId: "",
+      userName: "",
+    }
+  }
+
+  const userId = clerkAuth.userId
+  const userName = currentUser.name || currentUser.username || "Usuario"
+  const orgId = clerkAuth.orgId
 
   if (orgId) {
     return {
@@ -39,11 +47,9 @@ export async function resolveActiveTenantContext(): Promise<AuthenticatedTenantC
     }
   }
 
-  // Fallback to personal user blog
-  const tenantId = currentUser?.id || userId
   return {
     authorized: true,
-    tenantId,
+    tenantId: userId,
     tenantType: "user",
     userId,
     userName,
@@ -59,13 +65,23 @@ export async function resolveAndAuthorizeTenant(
 ): Promise<AuthenticatedTenantContext> {
   const context = await resolveActiveTenantContext()
 
+  if (!context.authorized) {
+    throw new Error("No autenticado")
+  }
+
   if (requestedTenantId && requestedTenantId !== context.tenantId) {
-    // Check if the requestedTenantId corresponds to the user's username or direct user ID
-    const currentUser = await getCurrentUser().catch(() => null)
-    const isOwnerMatch = currentUser && (currentUser.id === requestedTenantId || currentUser.username === requestedTenantId)
+    const currentUser = await getCurrentUser()
+    const isOwnerMatch =
+      currentUser &&
+      (currentUser.clerkUserId === requestedTenantId ||
+        currentUser.id === requestedTenantId ||
+        currentUser.legacyId === requestedTenantId ||
+        currentUser.username === requestedTenantId)
 
     if (!isOwnerMatch) {
-      throw new Error(`Acceso denegado: No tienes autorización para gestionar el template del tenant "${requestedTenantId}".`)
+      throw new Error(
+        `Acceso denegado: No tienes autorización para gestionar el template del tenant "${requestedTenantId}".`
+      )
     }
   }
 

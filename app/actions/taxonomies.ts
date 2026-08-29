@@ -6,7 +6,7 @@ import {
   createTag,
   deleteCategory,
   deleteTag,
-  getCurrentUser,
+  requireCurrentUser,
   updateCategory,
   updateTag,
 } from "@/lib/application"
@@ -21,7 +21,8 @@ export async function saveCategoryAction(data: {
   color?: string
   icon?: string
 }) {
-  const user = await getCurrentUser()
+  const user = await requireCurrentUser()
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
   const generatedSlug = data.slug ? slugify(data.slug) : slugify(data.name) || `cat-${Date.now()}`
 
   if (data.id) {
@@ -40,7 +41,7 @@ export async function saveCategoryAction(data: {
   } else {
     const newCat = await createCategory({
       organizationId: data.organizationId,
-      authorId: user.id,
+      authorId,
       name: data.name,
       slug: generatedSlug,
       description: data.description,
@@ -70,7 +71,8 @@ export async function saveTagAction(data: {
   slug?: string
   color?: string
 }) {
-  const user = await getCurrentUser()
+  const user = await requireCurrentUser()
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
   const generatedSlug = data.slug ? slugify(data.slug) : slugify(data.name) || `tag-${Date.now()}`
 
   if (data.id) {
@@ -86,7 +88,7 @@ export async function saveTagAction(data: {
   } else {
     const newTag = await createTag({
       organizationId: data.organizationId,
-      authorId: user.id,
+      authorId,
       name: data.name,
       slug: generatedSlug,
       color: data.color || "#64748b",
@@ -107,11 +109,12 @@ export async function deleteTagAction(id: string) {
 }
 
 export async function quickCreateCategoryAction(name: string, organizationId?: string, color: string = "#3b82f6") {
-  const user = await getCurrentUser()
+  const user = await requireCurrentUser()
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
   const slug = slugify(name) || `cat-${Date.now()}`
   const cat = await createCategory({
     organizationId,
-    authorId: user.id,
+    authorId,
     name,
     slug,
     color,
@@ -123,12 +126,13 @@ export async function quickCreateCategoryAction(name: string, organizationId?: s
 }
 
 export async function quickCreateTagAction(name: string, organizationId?: string, color: string = "#64748b") {
-  const user = await getCurrentUser()
+  const user = await requireCurrentUser()
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
   const cleanName = name.replace(/^#/, "").trim()
   const slug = slugify(cleanName) || `tag-${Date.now()}`
   const tag = await createTag({
     organizationId,
-    authorId: user.id,
+    authorId,
     name: cleanName,
     slug,
     color,

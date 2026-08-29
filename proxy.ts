@@ -1,8 +1,14 @@
-import { clerkMiddleware } from "@clerk/nextjs/server"
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 import { NextResponse } from "next/server"
 import { extractTenantFromHost } from "@/lib/tenant-utils"
 
-export default clerkMiddleware(async (_auth, req) => {
+const isProtectedRoute = createRouteMatcher(["/panel(.*)"])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect()
+  }
+
   const url = req.nextUrl
   const hostname = req.headers.get("host")
   const tenantSlug = extractTenantFromHost(hostname)

@@ -11,9 +11,15 @@ import { resolveActiveTenantContext } from "./tenant-auth"
 export async function resolvePanelTenantScope(): Promise<PanelTenantScope> {
   const [user, tenant] = await Promise.all([getCurrentUser(), resolveActiveTenantContext()])
 
+  if (!user || !tenant.authorized) {
+    throw new Error("No autenticado")
+  }
+
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
+
   return {
     tenantId: tenant.tenantId,
-    authorId: user.id,
+    authorId,
     tenantType: tenant.tenantType,
   }
 }

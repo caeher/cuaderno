@@ -7,7 +7,7 @@ import {
   createPost,
   deletePost,
   duplicatePost,
-  getCurrentUser,
+  requireCurrentUser,
   togglePostFeatured,
   togglePostStatus,
   updatePost,
@@ -29,7 +29,8 @@ export async function savePostAction(data: {
   designData?: string | null
   editorMode?: "notion" | "elementor"
 }) {
-  const user = await getCurrentUser()
+  const user = await requireCurrentUser()
+  const authorId = user.clerkUserId ?? user.legacyId ?? user.id
   const generatedSlug = data.slug ? slugify(data.slug) : slugify(data.title) || `post-${Date.now()}`
 
   if (data.id) {
@@ -51,7 +52,7 @@ export async function savePostAction(data: {
     return { success: true, post: updated }
   } else {
     const newPost = await createPost({
-      authorId: user.id,
+      authorId,
       organizationId: data.organizationId,
       categoryId: data.categoryId || null,
       title: data.title || "Sin título",
