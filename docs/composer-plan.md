@@ -44,7 +44,8 @@ Cuatro tablas nuevas en `convex/schema.ts`. Todas llevan `tenantId` y su índice
 composerSessions
   tenantId, authorId, title
   brief: { tema, audiencia, tono, idioma, longitud, seo, restricciones }
-  status: draft_brief | researching | writing | imaging | ready | failed | discarded
+  status: collecting | awaiting_confirmation | researching | drafting | imaging
+          | awaiting_review | failed | cancelled
   createdAt, updatedAt
   índices: by_tenant, by_tenant_and_status
 
@@ -77,15 +78,19 @@ composerSources         // la trazabilidad de la que depende el criterio de acep
 
 ## 4. Máquina de estados
 
+Los nombres de estado los fija el issue #15 y son los que manda:
+
 ```
-draft_brief ──(usuario confirma brief)──> researching
-researching ──(fuentes suficientes)─────> writing
-researching ──(sin fuentes útiles)──────> failed
-writing ─────(artículo + extracto)──────> imaging      [si el usuario pidió portada]
-writing ─────(sin imágenes)─────────────> ready
-imaging ─────(portada generada)─────────> ready
-ready ───────(usuario acepta)───────────> handoff: crea post en `draft`
-cualquiera ──(usuario cancela)──────────> discarded
+collecting ───────────(brief completo)────────> awaiting_confirmation
+awaiting_confirmation ─(usuario confirma)─────> researching
+awaiting_confirmation ─(usuario corrige)──────> collecting
+researching ──────────(fuentes suficientes)──> drafting
+researching ──────────(sin fuentes útiles)───> failed
+drafting ─────────────(pidió portada)────────> imaging
+drafting ─────────────(sin imágenes)─────────> awaiting_review
+imaging ──────────────(portada generada)─────> awaiting_review
+awaiting_review ──────(usuario acepta)───────> handoff: crea post en `draft`
+cualquiera ───────────(usuario cancela)──────> cancelled
 ```
 
 Transiciones solo por mutation, nunca por action. La action reporta su resultado; la mutation decide si la transición es legal. Eso mantiene la máquina auditable y evita estados imposibles cuando dos jobs terminan a destiempo.
@@ -185,7 +190,9 @@ Estas no las puede resolver quien implemente; son de producto o de cuenta.
 
 ## 11. Estado
 
-**Nada de esta épica está implementado.** Prerrequisitos que hoy no se cumplen:
+**#15 está implementado** (`convex/schema.ts`, `convex/lib/composer-state.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y el registro de uso.
+
+El resto de la épica NO está implementado. Prerrequisitos que hoy no se cumplen:
 
 - No hay SDK de OpenAI en `package.json`.
 - No existen las tablas de Composer en `convex/schema.ts`.
