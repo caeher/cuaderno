@@ -480,4 +480,196 @@ export const WIDGET_DEFINITIONS: Record<BlockType, WidgetMeta> = {
       margin: { top: "24px", right: "0px", bottom: "24px", left: "0px" },
     },
   },
+
+  post_content: {
+    type: "post_content",
+    name: "Cuerpo del Artículo (Dinámico)",
+    description: "Espacio donde se renderiza el contenido editorial redactado del post",
+    category: "blog",
+    icon: "FileText",
+    defaultProps: {
+      placeholderText: "El contenido editorial del artículo se inyectará automáticamente aquí en tiempo de render.",
+    },
+    defaultStyle: {
+      fontSize: "17px",
+      lineHeight: "1.75",
+      margin: { top: "16px", right: "0px", bottom: "24px", left: "0px" },
+    },
+  },
+
+  post_title: {
+    type: "post_title",
+    name: "Título del Post (Dinámico)",
+    description: "Muestra el título del artículo actual con jerarquía visual",
+    category: "blog",
+    icon: "Heading1",
+    defaultProps: {
+      level: 1,
+    },
+    defaultStyle: {
+      fontFamily: "var(--font-serif)",
+      fontSize: "40px",
+      fontWeight: 700,
+      lineHeight: "1.15",
+      textAlign: "left",
+      margin: { top: "12px", right: "0px", bottom: "16px", left: "0px" },
+    },
+  },
+
+  post_meta: {
+    type: "post_meta",
+    name: "Metadatos del Post (Dinámico)",
+    description: "Fecha de publicación, autor, tiempo de lectura y categoría",
+    category: "blog",
+    icon: "Calendar",
+    defaultProps: {
+      showAuthor: true,
+      showDate: true,
+      showReadingTime: true,
+      showCategory: true,
+    },
+    defaultStyle: {
+      padding: { top: "8px", right: "0px", bottom: "12px", left: "0px" },
+      margin: { top: "4px", right: "0px", bottom: "16px", left: "0px" },
+    },
+  },
+
+  post_cover: {
+    type: "post_cover",
+    name: "Imagen de Portada (Dinámica)",
+    description: "Muestra la fotografía destacada asociada al artículo",
+    category: "blog",
+    icon: "ImagePlus",
+    defaultProps: {
+      aspectRatio: "16/9",
+      rounded: true,
+    },
+    defaultStyle: {
+      borderRadius: "16px",
+      margin: { top: "16px", right: "0px", bottom: "24px", left: "0px" },
+      width: "100%",
+    },
+  },
+
+  post_takeaways: {
+    type: "post_takeaways",
+    name: "Puntos Clave / Resumen (Dinámico)",
+    description: "Caja de resumen ejecutivo para lectores rápidos y motores de IA",
+    category: "blog",
+    icon: "Sparkles",
+    defaultProps: {
+      title: "Resumen ejecutivo",
+    },
+    defaultStyle: {
+      padding: { top: "20px", right: "24px", bottom: "20px", left: "24px" },
+      backgroundColor: "rgba(59, 130, 246, 0.05)",
+      borderRadius: "14px",
+      borderWidth: "1px",
+      borderColor: "rgba(59, 130, 246, 0.2)",
+      margin: { top: "20px", right: "0px", bottom: "20px", left: "0px" },
+    },
+  },
+
+  post_action_bar: {
+    type: "post_action_bar",
+    name: "Barra de Acciones / Likes (Dinámica)",
+    description: "Botón de Me Gusta, contador de comentarios y compartir",
+    category: "blog",
+    icon: "Heart",
+    defaultProps: {
+      showLikes: true,
+      showCommentsCount: true,
+      showShare: true,
+    },
+    defaultStyle: {
+      padding: { top: "16px", right: "0px", bottom: "16px", left: "0px" },
+      margin: { top: "24px", right: "0px", bottom: "24px", left: "0px" },
+    },
+  },
+
+  comments_section: {
+    type: "comments_section",
+    name: "Sección de Comentarios (Dinámica)",
+    description: "Lista de comentarios del artículo y formulario interactivo",
+    category: "blog",
+    icon: "MessageSquare",
+    defaultProps: {
+      title: "Comentarios",
+    },
+    defaultStyle: {
+      padding: { top: "28px", right: "0px", bottom: "28px", left: "0px" },
+      margin: { top: "32px", right: "0px", bottom: "32px", left: "0px" },
+    },
+  },
+
+  blog_post_grid: {
+    type: "blog_post_grid",
+    name: "Listado de Posts del Blog (Dinámico)",
+    description: "Cuadrícula o feed de artículos publicados del tenant",
+    category: "blog",
+    icon: "LayoutList",
+    defaultProps: {
+      columns: 2,
+      showExcerpt: true,
+      showDate: true,
+      limit: 10,
+    },
+    defaultStyle: {
+      margin: { top: "24px", right: "0px", bottom: "32px", left: "0px" },
+    },
+  },
+
+  category_filter: {
+    type: "category_filter",
+    name: "Filtro de Categorías (Dinámico)",
+    description: "Barra de navegación de etiquetas y categorías del blog",
+    category: "blog",
+    icon: "Tags",
+    defaultProps: {
+      showCount: true,
+    },
+    defaultStyle: {
+      padding: { top: "12px", right: "0px", bottom: "12px", left: "0px" },
+      margin: { top: "12px", right: "0px", bottom: "20px", left: "0px" },
+    },
+  },
+
+  site_navbar: {
+    type: "site_navbar",
+    name: "Barra de Navegación (Header)",
+    description: "Logo del tenant, enlaces principales y selector de tema",
+    category: "layout",
+    icon: "Compass",
+    defaultProps: {
+      showSearch: true,
+      showThemeToggle: true,
+    },
+    defaultStyle: {
+      padding: { top: "16px", right: "24px", bottom: "16px", left: "24px" },
+      backgroundColor: "var(--background)",
+      borderWidth: "0px 0px 1px 0px",
+      borderColor: "var(--border)",
+      borderStyle: "solid",
+    },
+  },
+
+  site_footer: {
+    type: "site_footer",
+    name: "Pie de Página (Footer)",
+    description: "Derechos reservados, enlaces legales y redes sociales del blog",
+    category: "layout",
+    icon: "PanelBottom",
+    defaultProps: {
+      copyrightText: "Todos los derechos reservados",
+      showLegalLinks: true,
+    },
+    defaultStyle: {
+      padding: { top: "36px", right: "24px", bottom: "36px", left: "24px" },
+      backgroundColor: "rgba(0, 0, 0, 0.02)",
+      borderWidth: "1px 0px 0px 0px",
+      borderColor: "var(--border)",
+      borderStyle: "solid",
+      margin: { top: "48px", right: "0px", bottom: "0px", left: "0px" },
+    },
+  },
 }

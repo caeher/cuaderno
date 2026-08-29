@@ -6,8 +6,108 @@ export interface TemplateKit {
   name: string
   description: string
   thumbnailUrl?: string
-  category: "hero" | "features" | "content" | "cta" | "faq"
+  category: "hero" | "features" | "content" | "cta" | "faq" | "home" | "post"
   createBlocks: () => BlockNode[]
+}
+
+export function getDefaultHomeSlotBlocks(): BlockNode[] {
+  return [
+    createBlockNode(
+      "banner",
+      {
+        title: "Historias, Diseño y Tecnología",
+        subtitle: "Un espacio de exploración y artículos de fondo publicados por nuestro equipo.",
+        buttonText: "Explorar artículos",
+        buttonUrl: "#articulos",
+        overlayColor: "rgba(0, 0, 0, 0.55)",
+      },
+      {
+        padding: { top: "64px", right: "32px", bottom: "64px", left: "32px" },
+        borderRadius: "16px",
+      }
+    ),
+    createBlockNode(
+      "section",
+      {},
+      {
+        maxWidth: "1100px",
+        margin: { top: "32px", right: "auto", bottom: "32px", left: "auto" },
+        padding: { top: "0px", right: "20px", bottom: "0px", left: "20px" },
+      },
+      [
+        createBlockNode("category_filter", { showCount: true }),
+        createBlockNode("blog_post_grid", {
+          columns: 2,
+          showExcerpt: true,
+          showDate: true,
+          limit: 8,
+        }),
+      ]
+    ),
+    createBlockNode(
+      "section",
+      {},
+      {
+        maxWidth: "900px",
+        margin: { top: "16px", right: "auto", bottom: "48px", left: "auto" },
+        padding: { top: "0px", right: "20px", bottom: "0px", left: "20px" },
+      },
+      [
+        createBlockNode("author_box", {}),
+        createBlockNode("newsletter_box", {}),
+      ]
+    ),
+  ]
+}
+
+export function getDefaultPostSlotBlocks(): BlockNode[] {
+  return [
+    createBlockNode(
+      "section",
+      {},
+      {
+        maxWidth: "800px",
+        margin: { top: "32px", right: "auto", bottom: "48px", left: "auto" },
+        padding: { top: "0px", right: "24px", bottom: "0px", left: "24px" },
+        display: "flex",
+        flexDirection: "column",
+        gap: "16px",
+      },
+      [
+        createBlockNode("post_title", { level: 1 }),
+        createBlockNode("post_meta", {
+          showAuthor: true,
+          showDate: true,
+          showReadingTime: true,
+          showCategory: true,
+        }),
+        createBlockNode("post_cover", { aspectRatio: "16/9", rounded: true }),
+        createBlockNode("post_takeaways", { title: "Resumen ejecutivo" }),
+        createBlockNode("post_content", {}),
+        createBlockNode("post_action_bar", {
+          showLikes: true,
+          showCommentsCount: true,
+          showShare: true,
+        }),
+        createBlockNode("divider", {}),
+        createBlockNode("author_box", {}),
+        createBlockNode("comments_section", { title: "Comentarios" }),
+        createBlockNode("post_grid", {
+          count: 3,
+          showExcerpt: true,
+          title: "Artículos recomendados para seguir leyendo",
+        }),
+      ]
+    ),
+  ]
+}
+
+export function getDefaultHeaderSlotBlocks(): BlockNode[] {
+  return [createBlockNode("site_navbar", { showSearch: true, showThemeToggle: true })]
+}
+
+export function getDefaultFooterSlotBlocks(): BlockNode[] {
+  return [createBlockNode("site_footer", { showLegalLinks: true })]
 }
 
 export const TEMPLATE_KITS: TemplateKit[] = [
