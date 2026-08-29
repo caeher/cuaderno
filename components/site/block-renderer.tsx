@@ -164,6 +164,40 @@ export function RenderNode({ node }: { node: BlockNode }) {
     case "social_share":
       return <SocialShareBlock node={node} />
 
+    case "post_content":
+      return <PostContentBlock node={node} />
+
+    case "post_title":
+      return <PostTitleBlock node={node} />
+
+    case "post_meta":
+      return <PostMetaBlock node={node} />
+
+    case "post_cover":
+      return <PostCoverBlock node={node} />
+
+    case "post_takeaways":
+      return <PostTakeawaysBlock node={node} />
+
+    case "post_action_bar":
+      return <PostActionBarBlock node={node} />
+
+    case "comments_section":
+      return <CommentsSectionBlock node={node} />
+
+    case "post_grid":
+    case "blog_post_grid":
+      return <BlogPostGridBlock node={node} />
+
+    case "category_filter":
+      return <CategoryFilterBlock node={node} />
+
+    case "site_navbar":
+      return <SiteNavbarBlock node={node} />
+
+    case "site_footer":
+      return <SiteFooterBlock node={node} />
+
     default:
       return null
   }
