@@ -1,0 +1,306 @@
+/* ============================================================================
+   Cuaderno — Design System · colors.css
+   ----------------------------------------------------------------------------
+   LA REGLA QUE GOBIERNA TODO EL PRODUCTO — TRES COLORES, TRES SIGNIFICADOS.
+   Esto no es una paleta: es una gramática. Cada color quiere decir una cosa y
+   sólo una. Si se rompe, el usuario deja de poder leer la interfaz de un
+   vistazo y el sistema se convierte en decoración.
+
+     NEGRO  #111111  = LA ACCIÓN DEL USUARIO.
+       Todo CTA primario: «Nueva entrada», «Publicar», «Analizar»,
+       «Guardar cambios», «Comenzar gratis». Es lo que el usuario hace.
+
+     ÍNDIGO #6366F1  = EL PRODUCTO PENSANDO, Y LA NAVEGACIÓN.
+       Item activo del sidebar, tarjeta «Cuaderno Pro», el destello ✦ de IA,
+       enlaces «Ver todas», badge «Programado», subrayado de tab activo, línea
+       del gráfico, paginación activa. Es dónde estás y qué piensa la máquina.
+
+     VERDE  #10B981  = RENDIMIENTO Y ÉXITO.
+       Anillos de SEO Score, badge «Publicado», deltas positivos ↑, checks de
+       factores en orden. Es cómo va lo que ya hiciste.
+
+   LA PRUEBA DE QUE ESTÁ MAL PUESTO:
+     · Índigo donde no hay ni navegación ni IA  → está mal puesto.
+     · Verde donde no se está midiendo rendimiento → está mal puesto.
+     · Un CTA primario que no sea negro → está mal puesto.
+   ----------------------------------------------------------------------------
+   TRES BLOQUES DE TEMA, y siempre los tres:
+     1. :root                                        → claro (el canon)
+     2. @media (prefers-color-scheme: dark)
+        con :root:not([data-theme="light"])           → oscuro del sistema
+     3. :root[data-theme="dark"]                      → oscuro elegido a mano
+
+   REGLA DURA: ningún color se define SÓLO dentro de un bloque oscuro. Todo
+   nombre existe primero en :root claro; los bloques oscuros únicamente
+   REDEFINEN valores. Los bloques 2 y 3 son idénticos en contenido y deben
+   editarse juntos — si tocás uno y no el otro, el toggle de tema se rompe.
+   ========================================================================== */
+
+/* ============================================================================
+   1 · TEMA CLARO — el canon. Papel, tinta y hairline.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  /* --------------------------------------------------------------------------
+     SUPERFICIES Y BORDE
+     El sistema se sostiene con BORDE Y AIRE, no con profundidad. El papel
+     #FAFAF9 es el lienzo; el blanco puro se reserva para lo que se levanta del
+     papel (sidebar y tarjetas); el hairline de 1px está SIEMPRE visible y es
+     quien dibuja la estructura. Si una tarjeta se ve sin borde, falta el token.
+     -------------------------------------------------------------------------- */
+  --bg-page: #FAFAF9;         /* papel: fondo de toda la aplicación */
+  --bg-sidebar: #FFFFFF;      /* sidebar: se levanta del papel */
+  --surface: #FFFFFF;         /* tarjetas, tablas, popovers, modales */
+  --surface-sunken: #F5F5F4;  /* hundido: inputs, cabecera de tabla, cuadro tintado de icono */
+  --border-hairline: #EAEAE8; /* el 1px que dibuja TODO el sistema */
+  --border-strong: #D6D6D3;   /* borde de énfasis: input enfocado, divisor duro */
+
+  /* --------------------------------------------------------------------------
+     TEXTO
+     Tres niveles de jerarquía y nada más. Primario para el contenido,
+     secundario para el apoyo, terciario para metadatos y placeholders.
+     -------------------------------------------------------------------------- */
+  --text-primary: #0A0A0A;    /* títulos y contenido */
+  --text-secondary: #6B6B70;  /* subtítulos, descripciones, labels de formulario */
+  --text-tertiary: #9C9CA3;   /* metadatos, fechas, placeholders, texto deshabilitado */
+  --text-on-dark: #FFFFFF;    /* texto encima de un relleno de --action (ver nota en el bloque oscuro) */
+
+  /* --------------------------------------------------------------------------
+     ACCIÓN DEL USUARIO — NEGRO
+     Reservado al CTA primario. Un solo botón negro por zona de decisión: si hay
+     dos negros compitiendo en la misma pantalla, uno de los dos no era primario.
+     -------------------------------------------------------------------------- */
+  --action: #111111;
+  --action-hover: #262626;
+  --action-pressed: #000000;
+
+  /* --------------------------------------------------------------------------
+     ACENTO IA Y NAVEGACIÓN — ÍNDIGO
+     Dónde estás (navegación) y qué está pensando el producto (IA). El tint es
+     el fondo del item activo del sidebar y de los badges «Programado»; el
+     border acompaña al tint cuando la superficie tintada necesita contorno.
+     -------------------------------------------------------------------------- */
+  --accent: #6366F1;
+  --accent-hover: #4F46E5;
+  --accent-pressed: #4338CA;
+  --accent-tint: #EEF0FE;     /* fondo del item activo del sidebar, chips de IA */
+  --accent-border: #DDDCFB;   /* contorno de superficies tintadas de índigo */
+
+  /* --------------------------------------------------------------------------
+     RENDIMIENTO Y ÉXITO — VERDE
+     Sólo cuando hay una MEDICIÓN detrás: score de SEO, delta contra el período
+     anterior, estado «Publicado», factor evaluado en orden.
+     -------------------------------------------------------------------------- */
+  --perf: #10B981;
+  --perf-strong: #059669;     /* texto verde sobre tint, para que el contraste aguante */
+  --perf-tint: #DCFCE7;       /* fondo del badge «Publicado» y de los deltas positivos */
+
+  /* --------------------------------------------------------------------------
+     ADVERTENCIA — ÁMBAR
+     Estado «Borrador» y avisos que no bloquean.
+     -------------------------------------------------------------------------- */
+  --warn: #F59E0B;
+  --warn-tint: #FEF3C7;
+
+  /* --------------------------------------------------------------------------
+     DESTRUCTIVO — ROJO
+     «Mover a la papelera», «Eliminar mi sitio», zona de peligro de Ajustes.
+     Nunca se usa para un error de validación menor: eso es advertencia.
+     -------------------------------------------------------------------------- */
+  --danger: #EF4444;
+  --danger-tint: #FEF2F2;
+
+  /* --------------------------------------------------------------------------
+     ESTADO NEUTRO — GRIS
+     Estados sin carga semántica: «Privada», «Archivado», contadores apagados.
+     -------------------------------------------------------------------------- */
+  --neutral: #6B7280;
+  --neutral-tint: #F3F4F6;
+
+  /* --------------------------------------------------------------------------
+     PUNTOS DE CATEGORÍA — CONTENIDO, NO MARCA
+     Estos ocho colores identifican categorías que crea el usuario. NO
+     significan estado ni marca: son etiquetas de contenido. Por eso --cat-1
+     coincide con el índigo y --cat-3 con el verde sin heredar su significado —
+     un punto de categoría nunca comunica navegación ni rendimiento.
+     -------------------------------------------------------------------------- */
+  --cat-1: #6366F1;
+  --cat-2: #3B82F6;
+  --cat-3: #10B981;
+  --cat-4: #F97316;
+  --cat-5: #EC4899;
+  --cat-6: #14B8A6;
+  --cat-7: #EAB308;
+  --cat-8: #9CA3AF;
+
+  /* --------------------------------------------------------------------------
+     FOCO
+     Un anillo de 3px índigo translúcido, idéntico en todo control enfocable.
+     La navegación por teclado tiene que ser visible siempre: nunca
+     `outline: none` sin reemplazarlo por este anillo.
+     -------------------------------------------------------------------------- */
+  --focus-ring: 0 0 0 3px rgba(99, 102, 241, .25);
+}
+
+/* ============================================================================
+   2 · TEMA OSCURO DEL SISTEMA
+   Se aplica cuando el sistema operativo pide oscuro Y el usuario no eligió
+   claro a mano. Idéntico en contenido al bloque 3.
+   ----------------------------------------------------------------------------
+   CÓMO SE TRADUCE LA GRAMÁTICA AL OSCURO:
+     · El índigo y el verde SUBEN luminosidad para sobrevivir sobre negro.
+     · El NEGRO DE ACCIÓN SE INVIERTE: un botón negro sobre un fondo casi negro
+       no existe. En oscuro, «la acción del usuario» es la superficie de máximo
+       contraste disponible, que ahora es casi blanca — y por eso --text-on-dark
+       pasa a ser tinta oscura: sigue significando «el texto que va ENCIMA del
+       relleno de --action», y ese relleno cambió de lado. El componente no
+       cambia una línea: `background: var(--action); color: var(--text-on-dark)`
+       funciona en los dos temas.
+     · Lo HUNDIDO sube en luminancia en vez de bajar: bajarlo lo fundiría con el
+       fondo de página, que ya es casi negro.
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    /* Superficies y borde */
+    --bg-page: #0C0C0D;
+    --bg-sidebar: #151517;      /* igual que --surface, como el blanco en claro */
+    --surface: #151517;
+    --surface-sunken: #1C1C1F;  /* el hundido SUBE: bajarlo lo fundiría con la página */
+    --border-hairline: #26262A;
+    --border-strong: #3A3A40;
+
+    /* Texto */
+    --text-primary: #F5F5F4;
+    --text-secondary: #A1A1A6;
+    --text-tertiary: #6E6E76;
+    --text-on-dark: #0A0A0A;    /* invertido: el relleno de --action ahora es claro */
+
+    /* Acción del usuario — el negro se invierte a tinta clara */
+    --action: #F5F5F4;
+    --action-hover: #FFFFFF;
+    --action-pressed: #D6D6D3;
+
+    /* Acento IA y navegación — índigo con más luz */
+    --accent: #818CF8;
+    --accent-hover: #A5B4FC;    /* en oscuro el hover ACLARA en vez de oscurecer */
+    --accent-pressed: #C7D2FE;
+    --accent-tint: #1E1B3A;     /* fondo del item activo del sidebar en oscuro */
+    --accent-border: #33306B;
+
+    /* Rendimiento y éxito — verde con más luz */
+    --perf: #34D399;
+    --perf-strong: #6EE7B7;
+    --perf-tint: #0F2E24;
+
+    /* Advertencia */
+    --warn: #FBBF24;
+    --warn-tint: #3A2C0A;
+
+    /* Destructivo */
+    --danger: #F87171;
+    --danger-tint: #3A1618;
+
+    /* Estado neutro */
+    --neutral: #9CA3AF;
+    --neutral-tint: #1F2023;
+
+    /* Puntos de categoría — mismos ocho, con luminosidad para fondo oscuro */
+    --cat-1: #818CF8;
+    --cat-2: #60A5FA;
+    --cat-3: #34D399;
+    --cat-4: #FB923C;
+    --cat-5: #F472B6;
+    --cat-6: #2DD4BF;
+    --cat-7: #FACC15;
+    --cat-8: #9CA3AF;
+
+    /* Foco — el anillo también sube opacidad para verse sobre negro */
+    --focus-ring: 0 0 0 3px rgba(129, 140, 248, .35);
+  }
+}
+
+/* ============================================================================
+   3 · TEMA OSCURO ELEGIDO A MANO
+   El toggle del sidebar y del topbar escribe data-theme="dark" en <html>. Gana
+   sobre la preferencia del sistema en las dos direcciones.
+   CONTENIDO IDÉNTICO AL BLOQUE 2: si editás uno, editá el otro.
+   ========================================================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Superficies y borde */
+  --bg-page: #0C0C0D;
+  --bg-sidebar: #151517;
+  --surface: #151517;
+  --surface-sunken: #1C1C1F;
+  --border-hairline: #26262A;
+  --border-strong: #3A3A40;
+
+  /* Texto */
+  --text-primary: #F5F5F4;
+  --text-secondary: #A1A1A6;
+  --text-tertiary: #6E6E76;
+  --text-on-dark: #0A0A0A;
+
+  /* Acción del usuario */
+  --action: #F5F5F4;
+  --action-hover: #FFFFFF;
+  --action-pressed: #D6D6D3;
+
+  /* Acento IA y navegación */
+  --accent: #818CF8;
+  --accent-hover: #A5B4FC;
+  --accent-pressed: #C7D2FE;
+  --accent-tint: #1E1B3A;
+  --accent-border: #33306B;
+
+  /* Rendimiento y éxito */
+  --perf: #34D399;
+  --perf-strong: #6EE7B7;
+  --perf-tint: #0F2E24;
+
+  /* Advertencia */
+  --warn: #FBBF24;
+  --warn-tint: #3A2C0A;
+
+  /* Destructivo */
+  --danger: #F87171;
+  --danger-tint: #3A1618;
+
+  /* Estado neutro */
+  --neutral: #9CA3AF;
+  --neutral-tint: #1F2023;
+
+  /* Puntos de categoría */
+  --cat-1: #818CF8;
+  --cat-2: #60A5FA;
+  --cat-3: #34D399;
+  --cat-4: #FB923C;
+  --cat-5: #F472B6;
+  --cat-6: #2DD4BF;
+  --cat-7: #FACC15;
+  --cat-8: #9CA3AF;
+
+  /* Foco */
+  --focus-ring: 0 0 0 3px rgba(129, 140, 248, .35);
+}
+
+/* ============================================================================
+   APLICACIÓN BASE
+   El papel y la tinta se aplican una sola vez, acá. Ningún layout vuelve a
+   pintar el fondo de página.
+   ========================================================================== */
+html,
+body {
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* Un solo anillo de foco para todo el sistema, visible en los dos temas. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}

@@ -1,0 +1,811 @@
+{
+  "nombre": "Cuaderno Design System",
+  "producto": "Cuaderno — plataforma de publicación multi-tenant",
+  "idioma": "es",
+  "version": "1.0.0",
+  "generado": "2026-08-29",
+  "raiz": "design-system/",
+  "entrada_css": "design-system/styles.css",
+  "fuente_oficial": "design-system/ui-ux-panels/",
+  "regla_maestra": "Las pantallas mandan: donde el código y una pantalla no coincidan, gana la pantalla y el código se adapta.",
+  "regla_de_color": {
+    "--action": {
+      "hex": "#111111",
+      "significa": "la acción del usuario — todo CTA primario"
+    },
+    "--accent": {
+      "hex": "#6366F1",
+      "significa": "el producto pensando, y la navegación"
+    },
+    "--perf": {
+      "hex": "#10B981",
+      "significa": "rendimiento y éxito"
+    }
+  },
+  "orden_de_importacion_tokens": [
+    "tokens/fonts.css",
+    "tokens/colors.css",
+    "tokens/typography.css",
+    "tokens/spacing.css",
+    "tokens/effects.css"
+  ],
+  "categorias": {
+    "raiz": "Archivos raíz del sistema",
+    "pantallas": "Fuente oficial — las 9 pantallas. Mandan sobre el código",
+    "tokens": "El contrato de valores. Nada fuera de aquí lleva un hexadecimal",
+    "guidelines": "Reglas transversales del sistema",
+    "components/core": "Componentes base",
+    "components/layout": "Chasis y composición de página",
+    "components/navigation": "Navegación",
+    "components/data-display": "Presentación de datos",
+    "components/feedback": "Estados y respuesta del sistema",
+    "components/forms": "Controles de formulario",
+    "ui_kits/landing": "UI kit de la landing — una sección por archivo",
+    "ui_kits/panel": "UI kit del panel — una pantalla por archivo"
+  },
+  "resumen": {
+    "archivos_totales": 91,
+    "por_categoria": {
+      "components/core": 9,
+      "components/data-display": 9,
+      "components/feedback": 6,
+      "components/forms": 9,
+      "components/layout": 4,
+      "components/navigation": 7,
+      "guidelines": 7,
+      "pantallas": 10,
+      "raiz": 4,
+      "tokens": 5,
+      "ui_kits/landing": 10,
+      "ui_kits/panel": 11
+    }
+  },
+  "archivos": [
+    {
+      "ruta": "SKILL.md",
+      "categoria": "raiz",
+      "formato": "md",
+      "titulo": "Instrucciones para un agente que va a escribir código con este sistema",
+      "lineas": 284
+    },
+    {
+      "ruta": "_ds_manifest.json",
+      "categoria": "raiz",
+      "formato": "json",
+      "titulo": "Este inventario",
+      "bytes": 23203
+    },
+    {
+      "ruta": "readme.md",
+      "categoria": "raiz",
+      "formato": "md",
+      "titulo": "Qué es el sistema, cómo se usa, la regla de los tres colores y el índice completo",
+      "lineas": 238
+    },
+    {
+      "ruta": "styles.css",
+      "categoria": "raiz",
+      "formato": "css",
+      "titulo": "Única puerta de entrada: importa los cinco archivos de tokens en el orden válido",
+      "lineas": 53
+    },
+    {
+      "ruta": "components/core/avatar.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Avatar — retrato de persona",
+      "lineas": 238
+    },
+    {
+      "ruta": "components/core/badge.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Badge — insignia de estado",
+      "lineas": 246
+    },
+    {
+      "ruta": "components/core/button.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Button — botón",
+      "lineas": 285
+    },
+    {
+      "ruta": "components/core/card.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Card — tarjeta",
+      "lineas": 234
+    },
+    {
+      "ruta": "components/core/chip.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Chip — etiqueta manipulable",
+      "lineas": 251
+    },
+    {
+      "ruta": "components/core/divider.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Divider — divisor",
+      "lineas": 185
+    },
+    {
+      "ruta": "components/core/dropdown-menu.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Dropdown Menu — menú desplegable",
+      "lineas": 250
+    },
+    {
+      "ruta": "components/core/icon-button.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Icon Button — botón de solo icono",
+      "lineas": 220
+    },
+    {
+      "ruta": "components/core/tooltip.md",
+      "categoria": "components/core",
+      "formato": "md",
+      "titulo": "Tooltip — etiqueta emergente",
+      "lineas": 195
+    },
+    {
+      "ruta": "components/data-display/category-dot.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Category Dot — punto de color de categoría",
+      "lineas": 227
+    },
+    {
+      "ruta": "components/data-display/data-table.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Data Table — tabla de datos",
+      "lineas": 329
+    },
+    {
+      "ruta": "components/data-display/donut-chart.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Donut Chart — dona con leyenda de porcentajes",
+      "lineas": 256
+    },
+    {
+      "ruta": "components/data-display/issue-row.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Issue Row — fila de problema u oportunidad",
+      "lineas": 247
+    },
+    {
+      "ruta": "components/data-display/line-chart.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Line Chart — gráfico de líneas con área",
+      "lineas": 322
+    },
+    {
+      "ruta": "components/data-display/metric-list.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Metric List — lista de factores evaluados",
+      "lineas": 205
+    },
+    {
+      "ruta": "components/data-display/progress-bar.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Progress Bar — barra horizontal de proporción",
+      "lineas": 216
+    },
+    {
+      "ruta": "components/data-display/score-ring.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Score Ring — anillo de SEO Score",
+      "lineas": 221
+    },
+    {
+      "ruta": "components/data-display/stat-card.md",
+      "categoria": "components/data-display",
+      "formato": "md",
+      "titulo": "Stat Card — tarjeta de métrica",
+      "lineas": 269
+    },
+    {
+      "ruta": "components/feedback/ai-thinking.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "AI Thinking — el estado \"la IA está pensando\"",
+      "lineas": 311
+    },
+    {
+      "ruta": "components/feedback/alert.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "Alert — aviso persistente en línea",
+      "lineas": 238
+    },
+    {
+      "ruta": "components/feedback/confirm-dialog.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "Confirm Dialog — confirmación de acción destructiva",
+      "lineas": 314
+    },
+    {
+      "ruta": "components/feedback/empty-state.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "Empty State — estado vacío",
+      "lineas": 235
+    },
+    {
+      "ruta": "components/feedback/skeleton.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "Skeleton — esqueletos de carga",
+      "lineas": 240
+    },
+    {
+      "ruta": "components/feedback/toast.md",
+      "categoria": "components/feedback",
+      "formato": "md",
+      "titulo": "Toast — notificación efímera",
+      "lineas": 214
+    },
+    {
+      "ruta": "components/forms/checkbox.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Checkbox — casilla",
+      "lineas": 232
+    },
+    {
+      "ruta": "components/forms/file-input.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "File Input — subida de archivo",
+      "lineas": 267
+    },
+    {
+      "ruta": "components/forms/form-field.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Form Field — campo de formulario (etiqueta + ayuda + error)",
+      "lineas": 293
+    },
+    {
+      "ruta": "components/forms/input.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Input — campo de texto",
+      "lineas": 229
+    },
+    {
+      "ruta": "components/forms/radio.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Radio — opción exclusiva",
+      "lineas": 220
+    },
+    {
+      "ruta": "components/forms/search-input.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Search Input — buscador",
+      "lineas": 244
+    },
+    {
+      "ruta": "components/forms/select.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Select — selector de una opción",
+      "lineas": 233
+    },
+    {
+      "ruta": "components/forms/switch.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Switch — interruptor",
+      "lineas": 214
+    },
+    {
+      "ruta": "components/forms/textarea.md",
+      "categoria": "components/forms",
+      "formato": "md",
+      "titulo": "Textarea — campo de texto largo",
+      "lineas": 191
+    },
+    {
+      "ruta": "components/layout/content-grid.md",
+      "categoria": "components/layout",
+      "formato": "md",
+      "titulo": "Content grid",
+      "lineas": 190
+    },
+    {
+      "ruta": "components/layout/page-header.md",
+      "categoria": "components/layout",
+      "formato": "md",
+      "titulo": "Page header",
+      "lineas": 187
+    },
+    {
+      "ruta": "components/layout/panel-shell.md",
+      "categoria": "components/layout",
+      "formato": "md",
+      "titulo": "Panel shell — composición de sidebar + topbar + contenido",
+      "lineas": 207
+    },
+    {
+      "ruta": "components/layout/split-view.md",
+      "categoria": "components/layout",
+      "formato": "md",
+      "titulo": "Split view — contenido principal + panel derecho",
+      "lineas": 212
+    },
+    {
+      "ruta": "components/navigation/breadcrumb.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Breadcrumb",
+      "lineas": 151
+    },
+    {
+      "ruta": "components/navigation/landing-nav.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Landing nav — navegación de marketing",
+      "lineas": 228
+    },
+    {
+      "ruta": "components/navigation/pagination.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Paginación",
+      "lineas": 169
+    },
+    {
+      "ruta": "components/navigation/settings-nav.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Settings nav — navegación vertical de Ajustes",
+      "lineas": 168
+    },
+    {
+      "ruta": "components/navigation/sidebar.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Sidebar del panel",
+      "lineas": 305
+    },
+    {
+      "ruta": "components/navigation/tabs.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Tabs",
+      "lineas": 168
+    },
+    {
+      "ruta": "components/navigation/topbar.md",
+      "categoria": "components/navigation",
+      "formato": "md",
+      "titulo": "Topbar del panel",
+      "lineas": 258
+    },
+    {
+      "ruta": "guidelines/color.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Color",
+      "lineas": 253
+    },
+    {
+      "ruta": "guidelines/estados.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Estados",
+      "lineas": 195
+    },
+    {
+      "ruta": "guidelines/iconografia.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Iconografía",
+      "lineas": 110
+    },
+    {
+      "ruta": "guidelines/landing.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Landing",
+      "lineas": 151
+    },
+    {
+      "ruta": "guidelines/layout.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Layout",
+      "lineas": 181
+    },
+    {
+      "ruta": "guidelines/marca.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Marca",
+      "lineas": 81
+    },
+    {
+      "ruta": "guidelines/tipografia.md",
+      "categoria": "guidelines",
+      "formato": "md",
+      "titulo": "Tipografía",
+      "lineas": 161
+    },
+    {
+      "ruta": "tokens/colors.css",
+      "categoria": "tokens",
+      "formato": "css",
+      "titulo": "Cuaderno — Design System · colors.css",
+      "lineas": 306
+    },
+    {
+      "ruta": "tokens/effects.css",
+      "categoria": "tokens",
+      "formato": "css",
+      "titulo": "Cuaderno — Design System · effects.css",
+      "lineas": 166
+    },
+    {
+      "ruta": "tokens/fonts.css",
+      "categoria": "tokens",
+      "formato": "css",
+      "titulo": "Cuaderno — Design System · fonts.css",
+      "lineas": 65
+    },
+    {
+      "ruta": "tokens/spacing.css",
+      "categoria": "tokens",
+      "formato": "css",
+      "titulo": "Cuaderno — Design System · spacing.css",
+      "lineas": 81
+    },
+    {
+      "ruta": "tokens/typography.css",
+      "categoria": "tokens",
+      "formato": "css",
+      "titulo": "Cuaderno — Design System · typography.css",
+      "lineas": 149
+    },
+    {
+      "ruta": "ui-ux-panels/01-landing-home.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Landing de marketing",
+      "ruta_destino": "No existe en el código",
+      "bytes": 1363611
+    },
+    {
+      "ruta": "ui-ux-panels/02-panel-resumen.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Dashboard del panel",
+      "ruta_destino": "app/panel/",
+      "bytes": 1295525
+    },
+    {
+      "ruta": "ui-ux-panels/03-panel-entradas.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Lista de entradas",
+      "ruta_destino": "app/panel/posts/ → renombrar a entradas/",
+      "bytes": 1114541
+    },
+    {
+      "ruta": "ui-ux-panels/04-panel-editor-de-entrada.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Editor TipTap + rail de publicación",
+      "ruta_destino": "app/panel/posts/[id]/",
+      "bytes": 1350678
+    },
+    {
+      "ruta": "ui-ux-panels/05-panel-paginas.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Lista de páginas",
+      "ruta_destino": "No existe en el código",
+      "bytes": 1081736
+    },
+    {
+      "ruta": "ui-ux-panels/06-panel-categorias.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Categorías",
+      "ruta_destino": "app/panel/taxonomias/ → separar en categorias/",
+      "bytes": 1084000
+    },
+    {
+      "ruta": "ui-ux-panels/07-panel-seo-analyzer.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "SEO Analyzer",
+      "ruta_destino": "No existe en el código",
+      "bytes": 1163880
+    },
+    {
+      "ruta": "ui-ux-panels/08-panel-analiticas.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Analíticas",
+      "ruta_destino": "No existe en el código",
+      "bytes": 1319267
+    },
+    {
+      "ruta": "ui-ux-panels/09-panel-ajustes.png",
+      "categoria": "pantallas",
+      "formato": "png",
+      "titulo": "Ajustes",
+      "ruta_destino": "app/panel/configuracion/ → renombrar a ajustes/",
+      "bytes": 1203596
+    },
+    {
+      "ruta": "ui-ux-panels/README.md",
+      "categoria": "pantallas",
+      "formato": "md",
+      "titulo": "Índice de las 9 pantallas y el lenguaje visual destilado",
+      "ruta_destino": "—",
+      "lineas": 39
+    },
+    {
+      "ruta": "ui_kits/landing/cta-final.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · CTA final — la única inversión de la página",
+      "lineas": 143
+    },
+    {
+      "ruta": "ui_kits/landing/faq.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · FAQ — acordeón de preguntas frecuentes",
+      "lineas": 160
+    },
+    {
+      "ruta": "ui_kits/landing/features-grid.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Features grid — «Un blog, infinitas posibilidades»",
+      "lineas": 121
+    },
+    {
+      "ruta": "ui_kits/landing/footer.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Footer — cierre y mapa del sitio",
+      "lineas": 150
+    },
+    {
+      "ruta": "ui_kits/landing/hero.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Hero — el argumento de venta",
+      "lineas": 142
+    },
+    {
+      "ruta": "ui_kits/landing/nav.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Nav — barra de navegación de marketing",
+      "lineas": 111
+    },
+    {
+      "ruta": "ui_kits/landing/pricing.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Pricing — tres planes en columnas iguales",
+      "lineas": 176
+    },
+    {
+      "ruta": "ui_kits/landing/product-shot.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Product shot — la captura del producto en tarjeta elevada",
+      "lineas": 135
+    },
+    {
+      "ruta": "ui_kits/landing/templates.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Templates — «Empieza con una plantilla»",
+      "lineas": 127
+    },
+    {
+      "ruta": "ui_kits/landing/testimonials.md",
+      "categoria": "ui_kits/landing",
+      "formato": "md",
+      "titulo": "Landing · Testimonials — prueba social",
+      "lineas": 121
+    },
+    {
+      "ruta": "ui_kits/panel/ajustes.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Ajustes",
+      "lineas": 233
+    },
+    {
+      "ruta": "ui_kits/panel/analiticas.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Analíticas",
+      "lineas": 240
+    },
+    {
+      "ruta": "ui_kits/panel/categorias.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Categorías",
+      "lineas": 203
+    },
+    {
+      "ruta": "ui_kits/panel/comentarios.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Comentarios",
+      "lineas": 206
+    },
+    {
+      "ruta": "ui_kits/panel/diseno.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Diseño",
+      "lineas": 232
+    },
+    {
+      "ruta": "ui_kits/panel/editor.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Editor de entrada",
+      "lineas": 218
+    },
+    {
+      "ruta": "ui_kits/panel/entradas.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Entradas — lista de entradas",
+      "lineas": 176
+    },
+    {
+      "ruta": "ui_kits/panel/etiquetas.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Etiquetas",
+      "lineas": 215
+    },
+    {
+      "ruta": "ui_kits/panel/paginas.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Páginas — lista de páginas estáticas",
+      "lineas": 205
+    },
+    {
+      "ruta": "ui_kits/panel/resumen.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · Resumen — el dashboard",
+      "lineas": 203
+    },
+    {
+      "ruta": "ui_kits/panel/seo-analyzer.md",
+      "categoria": "ui_kits/panel",
+      "formato": "md",
+      "titulo": "Panel · SEO Analyzer",
+      "lineas": 245
+    }
+  ],
+  "pendientes": [
+    {
+      "ruta": "components/core/accordion.md",
+      "categoria": "components/core",
+      "resuelve": "Acordeón — rail del editor y FAQ de la landing",
+      "la_piden": [
+        "ui_kits/panel/editor.md",
+        "ui_kits/landing/faq.md"
+      ]
+    },
+    {
+      "ruta": "components/core/segmented-control.md",
+      "categoria": "components/core",
+      "resuelve": "Grupo segmentado: lista/grilla, mensual/anual, nube/tabla",
+      "la_piden": [
+        "ui_kits/panel/entradas.md",
+        "ui_kits/panel/paginas.md",
+        "ui_kits/panel/categorias.md",
+        "ui_kits/panel/etiquetas.md",
+        "ui_kits/landing/pricing.md"
+      ]
+    },
+    {
+      "ruta": "components/core/sheet.md",
+      "categoria": "components/core",
+      "resuelve": "Drawer lateral y hoja inferior",
+      "la_piden": [
+        "ui_kits/landing/nav.md",
+        "ui_kits/panel/editor.md",
+        "ui_kits/panel/ajustes.md"
+      ]
+    },
+    {
+      "ruta": "components/core/popover.md",
+      "categoria": "components/core",
+      "resuelve": "Popover del selector de blog y del rango de fechas",
+      "la_piden": [
+        "components/navigation/sidebar.md",
+        "ui_kits/panel/analiticas.md"
+      ]
+    },
+    {
+      "ruta": "components/core/command-palette.md",
+      "categoria": "components/core",
+      "resuelve": "Paleta ⌘K que abre el buscador del topbar",
+      "la_piden": [
+        "components/navigation/topbar.md"
+      ]
+    },
+    {
+      "ruta": "components/feedback/dialog.md",
+      "categoria": "components/feedback",
+      "resuelve": "Diálogo modal base del que hereda confirm-dialog",
+      "la_piden": [
+        "ui_kits/panel/categorias.md",
+        "ui_kits/panel/etiquetas.md",
+        "ui_kits/panel/diseno.md"
+      ]
+    },
+    {
+      "ruta": "components/forms/combobox.md",
+      "categoria": "components/forms",
+      "resuelve": "Campo multivalor con sugerencias (categorías, etiquetas)",
+      "la_piden": [
+        "ui_kits/panel/editor.md",
+        "ui_kits/panel/etiquetas.md"
+      ]
+    },
+    {
+      "ruta": "components/forms/date-time-picker.md",
+      "categoria": "components/forms",
+      "resuelve": "Programar publicación y rango de fechas",
+      "la_piden": [
+        "ui_kits/panel/editor.md",
+        "ui_kits/panel/analiticas.md"
+      ]
+    }
+  ],
+  "dependencias_faltantes": [
+    {
+      "paquete": "recharts",
+      "para": "line-chart y donut-chart",
+      "comando": "pnpm add recharts"
+    },
+    {
+      "paquete": "next-themes",
+      "estado": "instalado, sin ThemeProvider montado",
+      "para": "modo claro y oscuro con attribute=\"data-theme\""
+    }
+  ],
+  "deuda_de_datos": [
+    "posts.seoScore y posts.seoAnalyzedAt no existen (columna SEO de Entradas, stat card de Resumen, SEO Analyzer)",
+    "posts.status no incluye 'private' (badge Privada) ni estado de papelera",
+    "comments.status y comments.parentId no existen (moderación y respuestas)",
+    "no existe la tabla pages (pantalla 05)",
+    "no existe fuente de series temporales para Analíticas (posts.views es un acumulado)",
+    "los ajustes del sitio cuelgan de users: hace falta separar siteSettings",
+    "no existe modelo de plan/suscripción (tarjeta Tu plan de Ajustes)"
+  ]
+}

@@ -1,0 +1,166 @@
+/* ============================================================================
+   Cuaderno — Design System · effects.css
+   Sombras, tiempo y movimiento.
+   ----------------------------------------------------------------------------
+   LA REGLA DE LA PROFUNDIDAD: el sistema NO se sostiene con sombra. Se sostiene
+   con el hairline de 1px y con aire. Las dos sombras que existen son casi
+   invisibles a propósito — están para separar lo que flota de lo que está
+   pegado al papel, no para dar dramatismo. Si una pantalla necesita una tercera
+   sombra, lo que falta es borde o espacio, no profundidad.
+
+   LA REGLA DEL MOVIMIENTO: el movimiento explica un cambio de estado, nunca
+   decora. Dos duraciones y una sola curva para todo el producto. Cuando el
+   usuario pide menos movimiento, el sistema se lo da (ver el bloque final).
+   ========================================================================== */
+
+:root {
+  /* --------------------------------------------------------------------------
+     SOMBRAS — dos, y sólo dos.
+       --shadow-rest  · lo que está apoyado en el papel: tarjetas, filas de
+                        tabla elevadas, el chrome del panel. Casi imperceptible;
+                        su trabajo lo hace el hairline.
+       --shadow-float · lo que se despegó del papel por una acción del usuario:
+                        dropdowns, popovers, menú ⋮, modales, tooltips,
+                        la paleta ⌘K. Difusa y con desplazamiento negativo para
+                        que el borde inferior no se vea duro.
+     -------------------------------------------------------------------------- */
+  --shadow-rest: 0 1px 2px rgba(10, 10, 10, .04);
+  --shadow-float: 0 8px 24px -14px rgba(10, 10, 10, .10);
+
+  /* --------------------------------------------------------------------------
+     DURACIONES
+       --dur-fast 120ms · realimentación inmediata al dedo o al cursor: hover,
+                          pressed, cambio de color, foco. Por encima de ~150ms
+                          el hover empieza a sentirse pegajoso.
+       --dur-base 220ms · un elemento que aparece, se despliega o cambia de
+                          tamaño: popover, sidebar, acordeón, entrada de toast.
+     -------------------------------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+
+  /* --------------------------------------------------------------------------
+     EASING — una sola curva para todo el sistema.
+     Sale rápido y frena largo: el elemento parece obedecer al instante y
+     acomodarse después. Nunca `linear` (se siente mecánico) ni un ease-in
+     (se siente lento de arranque).
+     -------------------------------------------------------------------------- */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+/* ============================================================================
+   KEYFRAMES
+   Tres animaciones, una por cada momento que las pantallas piden. Van con
+   prefijo `cuaderno-` para que nunca choquen con las de Tailwind, shadcn o
+   Base UI.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   1 · DESTELLO DE IA
+   El ✦ de «Escribir con IA» y de «Sugerencia de IA». Es el producto pensando:
+   por eso late en ÍNDIGO y no en negro ni en verde. Un latido lento y corto de
+   recorrido — no gira, no rebota, no llama la atención más de la cuenta.
+   Se usa mientras la IA trabaja; cuando termina, se quita la clase.
+   -------------------------------------------------------------------------- */
+@keyframes cuaderno-destello {
+  0%,
+  100% {
+    opacity: .55;
+    transform: scale(.94);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   2 · SHIMMER DE SKELETON
+   El brillo que recorre un bloque de carga. El gradiente está hecho con tokens
+   de superficie, así que funciona en claro y en oscuro sin tocar nada: el
+   hundido es la base y el hairline es el brillo que pasa por encima.
+   -------------------------------------------------------------------------- */
+@keyframes cuaderno-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   3 · APPEAR SUAVE
+   Todo lo que entra en pantalla: popovers, filas nuevas de tabla, toasts,
+   contenido de un tab. Sube 4px mientras aparece — lo justo para que el ojo
+   registre de dónde vino, sin que parezca que la interfaz se mueve sola.
+   -------------------------------------------------------------------------- */
+@keyframes cuaderno-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   UTILIDADES DE MOVIMIENTO
+   Las tres animaciones, ya atadas a su duración y a su curva.
+   ========================================================================== */
+
+/* El destello de IA: índigo, latido de 1.4s, indefinido mientras dure el
+   trabajo del modelo. */
+.destello-ia {
+  color: var(--accent);
+  animation: cuaderno-destello 1400ms var(--ease-out) infinite;
+}
+
+/* Bloque de carga. El alto y el ancho los pone quien lo usa; el radio por
+   defecto es el de input para que un skeleton de campo calce exacto. */
+.skeleton {
+  border-radius: var(--radius-input);
+  background-image: linear-gradient(
+    90deg,
+    var(--surface-sunken) 0%,
+    var(--border-hairline) 50%,
+    var(--surface-sunken) 100%
+  );
+  background-size: 200% 100%;
+  animation: cuaderno-shimmer 1600ms linear infinite;
+}
+
+/* Entrada estándar de cualquier elemento nuevo. */
+.appear {
+  animation: cuaderno-appear var(--dur-base) var(--ease-out) both;
+}
+
+/* ============================================================================
+   MOVIMIENTO REDUCIDO
+   Si el usuario pidió menos movimiento en su sistema, se lo damos: las
+   animaciones se apagan y el skeleton se queda en un bloque quieto, que sigue
+   comunicando «esto está cargando» sin moverse. Esto no es opcional — es
+   accesibilidad.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .destello-ia,
+  .skeleton,
+  .appear {
+    animation: none;
+  }
+
+  .skeleton {
+    background-image: none;
+    background-color: var(--surface-sunken);
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

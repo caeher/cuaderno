@@ -1,0 +1,65 @@
+/* ============================================================================
+   Cuaderno — Design System · fonts.css
+   La familia tipográfica del sistema y su declaración como token.
+   ----------------------------------------------------------------------------
+   ORDEN DE IMPORTACIÓN: este archivo va PRIMERO, siempre.
+   Las reglas @import de CSS sólo son válidas al inicio de la hoja, así que
+   fonts.css debe importarse antes que colors, typography, spacing y effects.
+
+     @import './tokens/fonts.css';
+     @import './tokens/colors.css';
+     @import './tokens/typography.css';
+     @import './tokens/spacing.css';
+     @import './tokens/effects.css';
+   ----------------------------------------------------------------------------
+   LA FAMILIA: Plus Jakarta Sans.
+   Las pantallas piden una sans GEOMÉTRICA HUMANISTA: esqueleto de círculo y
+   línea recta (geométrica) pero con terminales abiertas y una 'a' de doble piso
+   (humanista), para que un párrafo largo del editor se lea sin fatiga y un
+   display de 44px del landing se vea apretado y contemporáneo.
+   Plus Jakarta Sans cumple las dos mitades: geometría limpia en mayúsculas y
+   números, calidez humanista en minúsculas. Es variable (200–800), tiene el
+   set latino extendido completo — imprescindible para un producto en español:
+   á é í ó ú ñ ü ¿ ¡ — y sus números salen bien en versión tabular.
+
+   NOTA SOBRE EL CÓDIGO ACTUAL: hoy el repo carga Fraunces (serif) + Work Sans +
+   JetBrains Mono desde next/font. Este archivo es el OBJETIVO, no el estado
+   actual. En producción Next.js conviene servir la familia con next/font/google
+   (auto-hospedada, sin request a fonts.googleapis.com y sin salto de layout) y
+   dejar que exponga la variable; el @import de abajo es la vía canónica para
+   cualquier consumidor del design system que no corra sobre Next.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+
+:root {
+  /* --------------------------------------------------------------------------
+     LA FAMILIA DEL SISTEMA
+     Una sola familia para todo el producto: landing, panel y editor. La
+     jerarquía la construyen el tamaño, el peso y el aire — nunca un cambio de
+     familia. El fallback es real y no decorativo: si la fuente no carga, la
+     página sigue en una sans humanista del sistema y la métrica no colapsa.
+     -------------------------------------------------------------------------- */
+  --font-sans:
+    'Plus Jakarta Sans',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    'Noto Sans',
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji';
+}
+
+/* --------------------------------------------------------------------------
+   APLICACIÓN BASE
+   El documento entero hereda la familia. Ningún componente vuelve a declarar
+   font-family salvo que tenga una razón semántica para hacerlo.
+   -------------------------------------------------------------------------- */
+html {
+  font-family: var(--font-sans);
+}
