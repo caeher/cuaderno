@@ -1,4 +1,5 @@
 import type { Category } from "./taxonomy"
+import type { PostNarration } from "./narration"
 
 export type PostStatus = "draft" | "published" | "scheduled"
 
@@ -24,6 +25,7 @@ export interface Post {
   likes: number
   comments: number
   featured: boolean
+  narration?: PostNarration | null
   /** @deprecated Kept for schema backwards compatibility only; templates are managed at tenant level */
   designData?: string | null
   /** @deprecated Kept for schema backwards compatibility only; standard editor is used */

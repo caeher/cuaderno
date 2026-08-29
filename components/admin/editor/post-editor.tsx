@@ -12,6 +12,7 @@ import { CategorySelect } from "@/components/forms/category-select"
 import { TagMultiSelect } from "@/components/forms/tag-multi-select"
 import { EditorHeaderFields } from "@/components/admin/editor/editor-header-fields"
 import { EditorActionBar } from "@/components/admin/editor/editor-action-bar"
+import { PostNarrationManager } from "@/components/admin/editor/post-narration-manager"
 import { RichTextEditor } from "@/components/admin/tiptap/rich-text-editor"
 import { Input } from "@/components/ui/input"
 
@@ -20,9 +21,16 @@ export interface PostEditorProps {
   initialPost?: Post
   allTags: Tag[]
   allCategories?: Category[]
+  userRole?: "owner" | "admin"
 }
 
-export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: PostEditorProps) {
+export function PostEditor({
+  mode,
+  initialPost,
+  allTags,
+  allCategories = [],
+  userRole = "owner",
+}: PostEditorProps) {
   const router = useRouter()
   const [title, setTitle] = React.useState(initialPost?.title ?? "")
   const [slug, setSlug] = React.useState(initialPost?.slug ?? "")
@@ -141,6 +149,16 @@ export function PostEditor({ mode, initialPost, allTags, allCategories = [] }: P
             {isCustomSlug ? "Listo" : "Personalizar enlace"}
           </button>
         </div>
+
+        {/* Voice Narration Management for Authors */}
+        <PostNarrationManager
+          postId={initialPost?.id}
+          postSlug={initialPost?.slug || slug}
+          postTitle={title}
+          postExcerpt={excerpt}
+          postContent={content}
+          userRole={userRole}
+        />
 
         {/* Canvas Block Editor */}
         <div className="flex flex-col gap-2">

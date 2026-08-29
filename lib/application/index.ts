@@ -4,3 +4,5 @@ export * from "./comments"
 export * from "./users"
 export * from "./tenant"
 export * from "./dashboard"
+export * from "./narrations"
+

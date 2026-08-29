@@ -1,5 +1,12 @@
 import type { Post } from "@/lib/domain/entities"
-import { categoryRepository, commentRepository, postRepository, userRepository } from "@/lib/infrastructure/repositories"
+import {
+  categoryRepository,
+  commentRepository,
+  narrationRepository,
+  postRepository,
+  userRepository,
+} from "@/lib/infrastructure/repositories"
+import { isNarrationPlaybackEnabled } from "@/lib/server/audio-config"
 
 export async function getFeaturedPosts(limit = 3): Promise<Post[]> {
   const [featured, categories] = await Promise.all([
@@ -53,11 +60,12 @@ export async function getPostForReading(slug: string) {
   const post = await postRepository.findBySlug(slug)
   if (!post || post.status !== "published") return null
 
-  const [author, comments, allPublished, postCategory] = await Promise.all([
+  const [author, comments, allPublished, postCategory, narration] = await Promise.all([
     userRepository.findById(post.authorId),
     commentRepository.findByPostId(post.id),
     postRepository.findPublished(),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
+    narrationRepository.findByPostId(post.id),
   ])
 
   if (!author) return null
@@ -66,6 +74,7 @@ export async function getPostForReading(slug: string) {
   const catMap = new Map(categories.map((c) => [c.id, c]))
 
   post.category = postCategory
+  post.narration = isNarrationPlaybackEnabled() ? narration : null
 
   const relatedPosts = allPublished
     .filter(
@@ -96,16 +105,18 @@ export async function getPostForReadingByTenant(tenantSlug: string, postSlug: st
 
   if (!post || post.status !== "published" || !postBelongsToAuthor) return null
 
-  const [comments, allAuthorPosts, postCategory] = await Promise.all([
+  const [comments, allAuthorPosts, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
     postRepository.findByAuthorId(authorKey, "published"),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
+    narrationRepository.findByPostId(post.id),
   ])
 
   const categories = await categoryRepository.findAll()
   const catMap = new Map(categories.map((c) => [c.id, c]))
 
   post.category = postCategory
+  post.narration = isNarrationPlaybackEnabled() ? narration : null
 
   const relatedPosts = allAuthorPosts
     .filter(

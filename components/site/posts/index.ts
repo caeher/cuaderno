@@ -8,3 +8,5 @@ export * from "./post-search-filter"
 export * from "./related-posts-section"
 export * from "./author-timeline"
 export * from "./post-key-takeaways"
+export * from "./post-audio-player"
+

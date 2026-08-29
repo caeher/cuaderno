@@ -18,6 +18,7 @@ import {
   PostContent,
   PostActionBar,
   PostKeyTakeaways,
+  PostAudioPlayer,
   RelatedPostsSection,
 } from "@/components/site/posts"
 import { AuthorBioCard } from "@/components/site/authors"
@@ -97,12 +98,20 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
         <PostHeader post={post} author={author} />
         <PostCoverImage coverUrl={post.coverUrl} />
 
+        {/* Voice Narration Audio Player (only renders when ready) */}
+        <PostAudioPlayer
+          narration={post.narration}
+          postTitle={post.title}
+          postSlug={post.slug}
+        />
+
         {/* GEO & AI Direct Answer / Executive Summary */}
         <PostKeyTakeaways
           excerpt={post.excerpt}
           content={post.content}
           readingTimeMinutes={post.readingTimeMinutes}
         />
+
 
         <div className="mt-8">
           <PostContent content={post.content} />

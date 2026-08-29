@@ -1,7 +1,10 @@
 import type {
+  AudioFormat,
   Category,
   Comment,
+  NarrationStatus,
   Post,
+  PostNarration,
   PostStatus,
   Tag,
   User,
@@ -11,6 +14,7 @@ import type {
   TenantTemplate,
   TenantTemplateSettings,
 } from "@/lib/domain/template-schema"
+
 
 export function convexDocToUser(doc: any): User {
   return {
@@ -131,3 +135,34 @@ export function convexDocToTemplateRevision(doc: any): TemplateRevision {
     changeSummary: doc.changeSummary || undefined,
   }
 }
+
+export function convexDocToNarration(doc: any, audioUrl?: string | null): PostNarration {
+  return {
+    id: doc._id || doc.id,
+    postId: doc.postId,
+    authorId: doc.authorId,
+    tenantId: doc.tenantId || undefined,
+    organizationId: doc.organizationId || undefined,
+    status: (doc.status as NarrationStatus) || "pending",
+    transcript: doc.transcript || "",
+    contentHash: doc.contentHash || "",
+    idempotencyKey: doc.idempotencyKey || undefined,
+    vapiCallId: doc.vapiCallId || undefined,
+    fileSizeBytes: doc.fileSizeBytes !== undefined ? Number(doc.fileSizeBytes) : undefined,
+    mimeType: doc.mimeType || undefined,
+    endedReason: doc.endedReason || undefined,
+    generationMetadata: doc.generationMetadata || undefined,
+    language: doc.language || "es",
+    voice: doc.voice || "sarah",
+    duration: doc.duration,
+    format: (doc.format as AudioFormat) || "mp3",
+    storageId: doc.storageId ? (doc.storageId as string) : undefined,
+    audioUrl: audioUrl !== undefined ? audioUrl : doc.audioUrl || null,
+    isOutdated: doc.isOutdated !== undefined ? Boolean(doc.isOutdated) : undefined,
+    error: doc.error || undefined,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    approvedAt: doc.approvedAt || null,
+  }
+}
+

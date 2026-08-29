@@ -233,4 +233,49 @@ export default defineSchema({
     .index("by_tenant_and_version", ["tenantId", "version"])
     .index("by_template_and_version", ["templateId", "version"])
     .index("by_legacy_id", ["legacyId"]),
+
+  /**
+   * Colección: PostNarrations (Narraciones de audio asociadas a publicaciones)
+   */
+  postNarrations: defineTable({
+    legacyId: v.optional(v.string()),
+    postId: v.string(),
+    postDocId: v.optional(v.id("posts")),
+    authorId: v.string(),
+    tenantId: v.optional(v.string()),
+    organizationId: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("generating"),
+      v.literal("ready"),
+      v.literal("failed"),
+      v.literal("deleted")
+    ),
+    transcript: v.string(),
+    contentHash: v.string(),
+    language: v.string(),
+    voice: v.string(),
+    duration: v.optional(v.number()),
+    format: v.union(v.literal("mp3"), v.literal("wav")),
+    storageId: v.optional(v.id("_storage")),
+    vapiCallId: v.optional(v.string()),
+    idempotencyKey: v.optional(v.string()),
+    fileSizeBytes: v.optional(v.number()),
+    mimeType: v.optional(v.string()),
+    endedReason: v.optional(v.string()),
+    generationMetadata: v.optional(v.any()),
+    error: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+    approvedAt: v.optional(v.string()),
+  })
+    .index("by_post", ["postId"])
+    .index("by_post_doc", ["postDocId"])
+    .index("by_post_and_status", ["postId", "status"])
+    .index("by_idempotency_key", ["idempotencyKey"])
+    .index("by_tenant", ["tenantId"])
+    .index("by_author", ["authorId"])
+    .index("by_tenant_and_status", ["tenantId", "status"])
+    .index("by_legacy_id", ["legacyId"]),
 });
+

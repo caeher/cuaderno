@@ -12,8 +12,13 @@
     "convex:codegen": "convex codegen",
     "convex:export": "convex export",
     "test:contracts": "tsx scratch/run-contract-verification.ts",
+    "test:narration": "tsx scratch/run-narration-verification.ts",
+    "test:narration:faults": "tsx scratch/test-vapi-narration-fault-injection.ts",
+    "test:narration:security": "tsx scratch/test-narration-security-and-isolation.ts",
+    "test:narration:a11y": "tsx scratch/test-audio-player-accessibility.ts",
     "migrate:convex": "tsx scripts/migrate-to-convex.ts",
-    "setup:clerk-convex": "tsx scripts/setup-clerk-convex-jwt.ts"
+    "setup:clerk-convex": "tsx scripts/setup-clerk-convex-jwt.ts",
+    "test:vapi-spike": "tsx scratch/vapi-narration-poc.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

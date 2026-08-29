@@ -117,6 +117,20 @@ export function generateArticleJsonLd(
         url: `${SITE_CONFIG.url}/icon.svg`,
       },
     },
+    ...(post.narration && post.narration.status === "ready" && post.narration.audioUrl
+      ? {
+          audio: {
+            "@type": "AudioObject",
+            contentUrl: post.narration.audioUrl,
+            encodingFormat:
+              post.narration.mimeType ||
+              (post.narration.format === "wav" ? "audio/wav" : "audio/mpeg"),
+            duration: `PT${Math.round(post.narration.duration || 1)}S`,
+            name: `Narración de audio: ${post.title}`,
+            transcript: post.narration.transcript || undefined,
+          },
+        }
+      : {}),
     ...(geo
       ? {
           contentLocation: {
