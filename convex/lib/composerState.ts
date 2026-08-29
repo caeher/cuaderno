@@ -30,16 +30,25 @@ export const TERMINAL_STATUSES: readonly ComposerSessionStatus[] = [
   "cancelled",
 ]
 
+export type ComposerJobKind =
+  | "research"
+  | "outline"
+  | "article"
+  | "image"
+  | "moderation"
+
 /**
  * Transiciones legales.
  *
- * `drafting -> awaiting_review` existe además de `drafting -> imaging` porque la
- * portada es opcional: si el usuario no la pidió, la sesión salta la fase de imágenes.
+ * Tras research la sesión vuelve a `awaiting_confirmation` para que el usuario
+ * revise fuentes antes de pagar la redacción. `awaiting_confirmation -> drafting`
+ * es esa confirmación. `drafting -> awaiting_review` existe además de
+ * `drafting -> imaging` porque la portada es opcional.
  */
 const TRANSITIONS: Record<ComposerSessionStatus, readonly ComposerSessionStatus[]> = {
   collecting: ["awaiting_confirmation", "cancelled", "failed"],
-  awaiting_confirmation: ["collecting", "researching", "cancelled", "failed"],
-  researching: ["drafting", "failed", "cancelled"],
+  awaiting_confirmation: ["collecting", "researching", "drafting", "cancelled", "failed"],
+  researching: ["awaiting_confirmation", "drafting", "failed", "cancelled"],
   drafting: ["imaging", "awaiting_review", "failed", "cancelled"],
   imaging: ["awaiting_review", "failed", "cancelled"],
   awaiting_review: [],
@@ -82,7 +91,39 @@ export function assertTransition(
 
 /** Estado al que debe pasar `drafting` según si el usuario pidió portada. */
 export function nextAfterDrafting(wantsCoverImage: boolean | undefined): ComposerSessionStatus {
-  return wantsCoverImage ? "imaging" : "awaiting_review"
+  return wantsCoverImage === false ? "awaiting_review" : "imaging"
+}
+
+/** Tras research con fuentes: el usuario revisa y confirma antes de redactar. */
+export function nextAfterSuccessfulResearch(): ComposerSessionStatus {
+  return "awaiting_confirmation"
+}
+
+/**
+ * Cadena de transiciones que aplica `enqueueJob` al lanzar un trabajo de pago.
+ * Vacía si el estado actual ya admite ese job (reintento o outline).
+ */
+export function enqueueStatusChain(
+  from: ComposerSessionStatus,
+  kind: ComposerJobKind
+): ComposerSessionStatus[] {
+  if (kind === "research") {
+    if (from === "collecting") return ["awaiting_confirmation", "researching"]
+    if (from === "awaiting_confirmation") return ["researching"]
+    return []
+  }
+
+  if (kind === "article") {
+    if (from === "awaiting_confirmation" || from === "researching") return ["drafting"]
+    return []
+  }
+
+  if (kind === "image") {
+    if (from === "drafting") return ["imaging"]
+    return []
+  }
+
+  return []
 }
 
 /**

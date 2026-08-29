@@ -28,7 +28,9 @@ import type { Doc, Id } from "./_generated/dataModel"
 import { requireTenantAuth } from "./lib/auth"
 import {
   assertTransition,
+  enqueueStatusChain,
   isTerminalStatus,
+  type ComposerJobKind,
   type ComposerSessionStatus,
 } from "./lib/composerState"
 import { calculateReadingTime, getCurrentIsoTimestamp } from "./lib/helpers"
@@ -57,6 +59,26 @@ async function requireOwnedSession(
   }
 
   return { session, tenantId: identity.tenantId }
+}
+
+async function applyStatusChain(
+  ctx: { db: { patch: (id: Id<"composerSessions">, value: Record<string, unknown>) => Promise<void> } },
+  session: Doc<"composerSessions">,
+  chain: ComposerSessionStatus[]
+): Promise<ComposerSessionStatus> {
+  let current = session.status as ComposerSessionStatus
+
+  for (const to of chain) {
+    assertTransition(current, to)
+    if (current === to) continue
+    await ctx.db.patch(session._id, {
+      status: to,
+      updatedAt: getCurrentIsoTimestamp(),
+    })
+    current = to
+  }
+
+  return current
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -435,6 +457,17 @@ export const enqueueJob = mutation({
 
     if (existing) return existing._id
 
+    const kind = args.kind as ComposerJobKind
+    if (kind === "image" && session.brief.wantsCoverImage === false) {
+      throw new Error("Esta sesión no pidió portada; no se puede generar una imagen.")
+    }
+
+    await applyStatusChain(
+      ctx,
+      session,
+      enqueueStatusChain(session.status as ComposerSessionStatus, kind)
+    )
+
     const jobId = await ctx.db.insert("composerJobs", {
       sessionId: args.sessionId,
       tenantId,
@@ -491,6 +524,33 @@ export const startJob = internalMutation({
     })
 
     return true
+  },
+})
+
+/**
+ * Aplica las transiciones de `enqueueStatusChain` si el job arrancó y la
+ * sesión todavía no avanzó (reintentos o jobs encolados antes del orquestador).
+ */
+export const advanceSessionForJob = internalMutation({
+  args: {
+    sessionId: v.id("composerSessions"),
+    kind: v.union(
+      v.literal("research"),
+      v.literal("outline"),
+      v.literal("article"),
+      v.literal("image"),
+      v.literal("moderation")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db.get(args.sessionId)
+    if (!session) throw new Error("Sesión de Composer no encontrada.")
+
+    await applyStatusChain(
+      ctx,
+      session,
+      enqueueStatusChain(session.status as ComposerSessionStatus, args.kind as ComposerJobKind)
+    )
   },
 })
 
@@ -558,6 +618,9 @@ export const recordSources = internalMutation({
     const now = getCurrentIsoTimestamp()
 
     for (const source of args.sources) {
+      if (!source.url || source.url.trim().length < 8) {
+        throw new Error("No se puede persistir una fuente sin URL canónica.")
+      }
       // Deduplicar por URL dentro de la sesión: un reintento de research no debe
       // multiplicar las mismas fuentes.
       const existing = await ctx.db

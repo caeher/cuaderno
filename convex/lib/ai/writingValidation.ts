@@ -332,3 +332,53 @@ export function validateLengthAndTone(
 
   return { warnings }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. Citas 1:1 contra composerSources
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function extractHrefsFromHtml(html: string): string[] {
+  const matches = html.matchAll(/href=["']([^"']+)["']/gi)
+  const urls: string[] = []
+  for (const match of matches) {
+    if (match[1]) urls.push(match[1].trim())
+  }
+  return urls
+}
+
+function normalizeCitationUrl(rawUrl: string): string {
+  return rawUrl.toLowerCase().replace(/\/+$/, "")
+}
+
+/**
+ * Cada href http(s) del artículo debe pertenecer a una fuente no excluida.
+ * Anchors locales, rutas internas y protocolos no web se ignoran aquí:
+ * `validateSafeLinks` ya bloquea javascript:/data:.
+ */
+export function verifyCitationsAgainstSources(
+  htmlContent: string,
+  approvedSources: Array<{ url: string; isExcluded?: boolean }>
+): { valid: boolean; unapprovedUrls: string[] } {
+  const hrefs = extractHrefsFromHtml(htmlContent)
+  const validSourceUrls = new Set(
+    approvedSources
+      .filter((source) => !source.isExcluded)
+      .map((source) => normalizeCitationUrl(source.url))
+  )
+
+  const unapprovedUrls: string[] = []
+  for (const href of hrefs) {
+    if (href.startsWith("#") || href.startsWith("/")) continue
+    if (!/^https?:\/\//i.test(href)) continue
+
+    const normalizedHref = normalizeCitationUrl(href)
+    if (!validSourceUrls.has(normalizedHref)) {
+      unapprovedUrls.push(href)
+    }
+  }
+
+  return {
+    valid: unapprovedUrls.length === 0,
+    unapprovedUrls,
+  }
+}

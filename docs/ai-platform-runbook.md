@@ -29,7 +29,7 @@ pnpm convex env list          # verifica nombres, no valores
 | `OPENAI_WRITING_MODEL` | no | `gpt-5.6-luna` | Modelo de redacción (sin Web Search) |
 | `OPENAI_IMAGE_MODEL` | no | `gpt-image-1-mini` | Modelo de imágenes |
 | `OPENAI_REASONING_EFFORT` | no | `medium` | `minimal` · `low` · `medium` · `high` |
-| `OPENAI_IMAGE_QUALITY` | no | `auto` | `low` · `medium` · `high` · `auto` |
+| `OPENAI_IMAGE_QUALITY` | no | `low` | `low` · `medium` · `high` · `auto` |
 
 Los defaults son los que documenta el epic #13. **Confirmar que esos modelos están disponibles en la cuenta antes de fijarlos**; si no lo están, la variable de entorno es justamente el mecanismo para apuntar a otros sin tocar código.
 
@@ -58,7 +58,7 @@ Desde el panel, la query `ai.getConfigHealth` (requiere sesión) devuelve:
   "writingModel": "gpt-5.6-luna",
   "imageModel": "gpt-image-1-mini",
   "reasoningEffort": "medium",
-  "imageQuality": "auto",
+  "imageQuality": "low",
   "problems": []
 }
 ```

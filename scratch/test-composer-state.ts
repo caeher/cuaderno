@@ -8,10 +8,11 @@
 import {
   assertTransition,
   canTransition,
+  enqueueStatusChain,
   isBriefReady,
   isTerminalStatus,
   nextAfterDrafting,
-  type ComposerSessionStatus,
+  nextAfterSuccessfulResearch,
 } from "../convex/lib/composerState"
 
 let totalPassed = 0
@@ -51,9 +52,11 @@ async function runStateTests() {
   assert(canTransition("collecting", "failed"), "collecting -> failed")
 
   assert(canTransition("awaiting_confirmation", "researching"), "awaiting_confirmation -> researching")
+  assert(canTransition("awaiting_confirmation", "drafting"), "awaiting_confirmation -> drafting")
   assert(canTransition("awaiting_confirmation", "collecting"), "awaiting_confirmation -> collecting")
   assert(canTransition("awaiting_confirmation", "cancelled"), "awaiting_confirmation -> cancelled")
 
+  assert(canTransition("researching", "awaiting_confirmation"), "researching -> awaiting_confirmation")
   assert(canTransition("researching", "drafting"), "researching -> drafting")
   assert(canTransition("researching", "failed"), "researching -> failed")
   assert(canTransition("researching", "cancelled"), "researching -> cancelled")
@@ -98,7 +101,18 @@ async function runStateTests() {
   console.log("\n▶ Salto condicional de imágenes (nextAfterDrafting)")
   assert(nextAfterDrafting(true) === "imaging", "nextAfterDrafting(true) va a imaging")
   assert(nextAfterDrafting(false) === "awaiting_review", "nextAfterDrafting(false) va a awaiting_review")
-  assert(nextAfterDrafting(undefined) === "awaiting_review", "nextAfterDrafting(undefined) va a awaiting_review")
+  assert(nextAfterDrafting(undefined) === "imaging", "nextAfterDrafting(undefined) pide portada por defecto")
+  assert(nextAfterSuccessfulResearch() === "awaiting_confirmation", "research termina en revisión de fuentes")
+
+  console.log("\n▶ Cadena de enqueueJob")
+  assert(
+    enqueueStatusChain("collecting", "research").join(",") === "awaiting_confirmation,researching",
+    "enqueue research desde collecting avanza a researching"
+  )
+  assert(
+    enqueueStatusChain("awaiting_confirmation", "article").join(",") === "drafting",
+    "enqueue article desde revisión avanza a drafting"
+  )
 
   // 5. Validación de Brief Mínimo
   console.log("\n▶ Validación de completitud de Brief (isBriefReady)")

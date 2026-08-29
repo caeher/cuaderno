@@ -52,8 +52,9 @@ export const tenantTemplateSettingsValidator = v.object({
 /**
  * Estados de una sesión de Composer (issue #15).
  *
- * El orden feliz es collecting -> awaiting_confirmation -> researching -> drafting
- * -> imaging -> awaiting_review. `imaging` se salta si el usuario no pidió portada.
+ * El orden feliz es collecting -> awaiting_confirmation -> researching ->
+ * awaiting_confirmation (revisión de fuentes) -> drafting -> imaging ->
+ * awaiting_review. `imaging` se salta si el usuario no pidió portada.
  * Las transiciones legales viven en convex/lib/composerState.ts y se validan
  * en la mutation, nunca en la action: así dos jobs que terminan a destiempo no pueden
  * dejar la sesión en un estado imposible.
@@ -349,7 +350,8 @@ export default defineSchema({
     createdAt: v.string(),
   })
     .index("by_session", ["sessionId"])
-    .index("by_session_and_created", ["sessionId", "createdAt"]),
+    .index("by_session_and_created", ["sessionId", "createdAt"])
+    .index("by_tenant", ["tenantId"]),
 
   /**
    * Colección: ComposerJobs (unidad de trabajo asíncrono, reanudable y cancelable)
@@ -385,6 +387,7 @@ export default defineSchema({
     createdAt: v.string(),
   })
     .index("by_session", ["sessionId"])
+    .index("by_tenant", ["tenantId"])
     .index("by_tenant_and_status", ["tenantId", "status"])
     .index("by_tenant_and_idempotency_key", ["tenantId", "idempotencyKey"]),
 
@@ -421,7 +424,8 @@ export default defineSchema({
     ),
   })
     .index("by_session", ["sessionId"])
-    .index("by_session_and_url", ["sessionId", "url"]),
+    .index("by_session_and_url", ["sessionId", "url"])
+    .index("by_tenant", ["tenantId"]),
 
   /**
    * Colección: ComposerArtifacts (toda salida del modelo, versionada)
@@ -444,7 +448,8 @@ export default defineSchema({
     createdAt: v.string(),
   })
     .index("by_session", ["sessionId"])
-    .index("by_session_and_kind", ["sessionId", "kind"]),
+    .index("by_session_and_kind", ["sessionId", "kind"])
+    .index("by_tenant", ["tenantId"]),
 
   /**
    * Colección: AiUsageEvents (observabilidad de consumo)

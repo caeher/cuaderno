@@ -2,7 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { notFound, redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/application/users"
 import { AdminTopbar } from "@/components/admin/admin-topbar"
-import { ComposerWorkspace } from "@/components/admin/composer"
+import { ComposerEnabledGate, ComposerWorkspace } from "@/components/admin/composer"
 import { ShieldAlert } from "lucide-react"
 
 interface ComposerPageProps {
@@ -54,10 +54,12 @@ export default async function ComposerPage({ searchParams }: ComposerPageProps) 
   return (
     <div className="flex flex-1 flex-col min-h-screen">
       <AdminTopbar title="Composer" />
-      <ComposerWorkspace
-        tenantName={tenantDisplayName}
-        initialSessionId={initialSessionId}
-      />
+      <ComposerEnabledGate>
+        <ComposerWorkspace
+          tenantName={tenantDisplayName}
+          initialSessionId={initialSessionId}
+        />
+      </ComposerEnabledGate>
     </div>
   )
 }

@@ -8,8 +8,7 @@
  * 4. Cero auto-publicación: el handoff genera única y exclusivamente posts en estado 'draft'.
  */
 
-import { validateStructuredDraft } from "../convex/lib/ai/writingValidation"
-import type { ComposerSource } from "../lib/domain/entities"
+import { verifyCitationsAgainstSources } from "../convex/lib/ai/writingValidation"
 
 let totalPassed = 0
 let totalFailed = 0
@@ -26,43 +25,6 @@ function assert(condition: boolean, testName: string, detail?: string) {
   }
 }
 
-/**
- * Extrae todos los href de enlaces en una cadena HTML
- */
-function extractHrefsFromHtml(html: string): string[] {
-  const matches = html.matchAll(/href=["']([^"']+)["']/gi)
-  const urls: string[] = []
-  for (const m of matches) {
-    if (m[1]) urls.push(m[1].trim())
-  }
-  return urls
-}
-
-/**
- * Valida que cada hipervínculo en el HTML provenga de las fuentes aprobadas de la sesión
- */
-function verifyCitationsAgainstSources(
-  htmlContent: string,
-  approvedSources: Array<{ url: string; isExcluded?: boolean }>
-): { valid: boolean; unapprovedUrls: string[] } {
-  const hrefs = extractHrefsFromHtml(htmlContent)
-  const validSourceUrls = new Set(
-    approvedSources.filter((s) => !s.isExcluded).map((s) => s.url.toLowerCase().replace(/\/$/, ""))
-  )
-
-  const unapprovedUrls: string[] = []
-  for (const href of hrefs) {
-    const normalizedHref = href.toLowerCase().replace(/\/$/, "")
-    if (!validSourceUrls.has(normalizedHref)) {
-      unapprovedUrls.push(href)
-    }
-  }
-
-  return {
-    valid: unapprovedUrls.length === 0,
-    unapprovedUrls,
-  }
-}
 
 async function runCitationsAndPublicationTests() {
   console.log("\n===================================================================")

@@ -29,6 +29,7 @@ import { assertTextAllowed, outcomeFromProviderModeration } from "./moderation"
 import { getOpenAiClient } from "./openaiClient"
 
 export { getOpenAiClient } from "./openaiClient"
+import { assertResearchQueryBudget, countWebSearchCalls } from "./researchBudget"
 import { buildUsageSnapshot, type UsageSnapshot } from "./usage"
 
 const TEXT_TIMEOUT_MS = 120_000
@@ -220,11 +221,11 @@ export function extractSources(response: Response): ResearchSource[] {
 
     if (parsed && Array.isArray(parsed.confirmed_facts)) {
       for (const fact of parsed.confirmed_facts) {
-        if (fact.source_url) {
+        if (fact.source_url && fact.claim) {
           const canonical = canonicalizeUrl(fact.source_url)
           addOrUpdate(fact.source_url, fact.source_title, fact.snippet, fact.publisher)
           const source = sourcesMap.get(canonical)
-          if (source && fact.claim) {
+          if (source) {
             source.claims = source.claims || []
             source.claims.push({
               text: fact.claim,
@@ -234,11 +235,43 @@ export function extractSources(response: Response): ResearchSource[] {
         }
       }
     }
+
+    if (parsed && Array.isArray(parsed.inferences)) {
+      for (const inference of parsed.inferences) {
+        const text = typeof inference.point === "string" ? inference.point : inference.claim
+        const sourceUrl = inference.source_url
+        if (!text || !sourceUrl) continue
+        const canonical = canonicalizeUrl(sourceUrl)
+        addOrUpdate(sourceUrl, inference.source_title, inference.rationale, inference.publisher)
+        const source = sourcesMap.get(canonical)
+        if (source) {
+          source.claims = source.claims || []
+          source.claims.push({
+            text,
+            status: "inferred",
+          })
+        }
+      }
+    }
   } catch {
     // Si no es JSON puro, no rompemos: las fuentes extraídas de annotations y tool calls ya están capturadas.
   }
 
-  return Array.from(sourcesMap.values())
+  return normalizeResearchSources(Array.from(sourcesMap.values()))
+}
+
+export function normalizeResearchSources(sources: ResearchSource[]): ResearchSource[] {
+  return sources
+    .filter((source) => source.url.trim().length >= 8)
+    .map((source) => ({
+      ...source,
+      claims: (source.claims ?? [])
+        .filter((claim) => claim.text.trim().length > 0)
+        .map((claim) => ({
+          ...claim,
+          status: claim.status ?? "confirmed",
+        })),
+    }))
 }
 
 function countToolCalls(response: Response): number {
@@ -306,6 +339,9 @@ async function runTextPhase(
             ]
           : undefined,
         include: config.webSearch ? ["web_search_call.action.sources"] : undefined,
+        ...(config.webSearch && config.maxResearchQueries
+          ? { max_tool_calls: config.maxResearchQueries }
+          : {}),
       },
       { timeout: TEXT_TIMEOUT_MS, signal: AbortSignal.timeout(TEXT_TIMEOUT_MS) }
     )
@@ -317,6 +353,13 @@ async function runTextPhase(
 
   assertResponseAllowed(response)
   await assertTextAllowed(response.output_text)
+
+  if (config.webSearch && config.maxResearchQueries) {
+    assertResearchQueryBudget(
+      countWebSearchCalls(response.output),
+      config.maxResearchQueries
+    )
+  }
 
   const usage = buildUsageSnapshot({
     phase,

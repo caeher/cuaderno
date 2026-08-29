@@ -41,6 +41,10 @@ export function checkBriefAmbiguity(brief: ResearchBriefInput): BriefAmbiguityCh
     reasons.push("El tema es muy genérico y carece de un objetivo o ángulo editorial claro.")
   }
 
+  if (!brief.objective && (!topic || topic.length < 8)) {
+    reasons.push("Falta definir el objetivo o propósito editorial del artículo.")
+  }
+
   return {
     isAmbiguous: reasons.length > 0,
     reasons,

@@ -12,7 +12,10 @@ import {
 } from "../lib/domain/entities"
 import {
   assertTransition,
+  enqueueStatusChain,
   isTerminalStatus,
+  nextAfterDrafting,
+  nextAfterSuccessfulResearch,
   type ComposerSessionStatus as StateStatus,
 } from "../convex/lib/composerState"
 
@@ -246,6 +249,15 @@ class InMemoryConvexDatabase {
         return job._id
       }
     }
+
+    const chain = enqueueStatusChain(session.status as StateStatus, kind)
+    let current = session.status as StateStatus
+    for (const to of chain) {
+      assertTransition(current, to)
+      session.status = to
+      current = to
+    }
+    session.updatedAt = new Date().toISOString()
 
     const id = this.nextId("job")
     this.jobs.set(id, {
@@ -568,21 +580,44 @@ async function runPersistenceTests() {
   const usages = Array.from(db.usageEvents.values()).filter((u) => u.sessionId === sessionA)
   assert(usages.length === 1 && usages[0].model === "gpt-5.6-luna", "Evento de uso registrado correctamente para observabilidad")
 
-  // 8. Handoff Idempotente a Posts
-  console.log("\n▶ Handoff a Borrador de Posts")
-  // Transicionar sesión a awaiting_review
-  db.transitionSession(sessionA, "awaiting_confirmation")
-  db.transitionSession(sessionA, "researching")
-  db.transitionSession(sessionA, "drafting")
-  db.transitionSession(sessionA, "awaiting_review")
+  // 8. Camino feliz real: enqueue → research → revisión → draft → handoff
+  console.log("\n▶ Camino feliz hasta createDraftFromSession")
+  const happySession = db.createSession(TENANT_A, USER_A, {
+    topic: "IA editorial",
+    language: "es",
+    wantsCoverImage: false,
+  })
+  assert(db.sessions.get(happySession)?.status === "collecting", "Sesión nueva empieza en collecting")
 
-  const post1Id = db.createDraftFromSession(sessionA, TENANT_A)
+  db.enqueueJob(happySession, TENANT_A, "research", computeComposerJobIdempotencyKey(happySession, "research"))
+  assert(
+    db.sessions.get(happySession)?.status === "researching",
+    "enqueue research: collecting → awaiting_confirmation → researching"
+  )
+
+  db.transitionSession(happySession, nextAfterSuccessfulResearch())
+  assert(
+    db.sessions.get(happySession)?.status === "awaiting_confirmation",
+    "research con fuentes vuelve a awaiting_confirmation para revisión"
+  )
+
+  db.enqueueJob(happySession, TENANT_A, "article", computeComposerJobIdempotencyKey(happySession, "article"))
+  assert(db.sessions.get(happySession)?.status === "drafting", "enqueue article: awaiting_confirmation → drafting")
+
+  db.recordArtifact(happySession, "article", "<p>Artículo con fuente <a href=\"https://example.com/a\">verificada</a>.</p>")
+  db.recordArtifact(happySession, "excerpt", "Extracto del artículo.")
+  db.transitionSession(happySession, nextAfterDrafting(false))
+  assert(
+    db.sessions.get(happySession)?.status === "awaiting_review",
+    "drafting sin portada → awaiting_review"
+  )
+
+  const post1Id = db.createDraftFromSession(happySession, TENANT_A)
   const createdPost = db.posts.get(post1Id)
   assert(Boolean(createdPost), "createDraftFromSession genera post en la tabla posts")
   assert(createdPost?.status === "draft", "Invariante de seguridad: el post generado SIEMPRE tiene status: 'draft'")
 
-  // Reintento de creación de post (idempotencia)
-  const post2Id = db.createDraftFromSession(sessionA, TENANT_A)
+  const post2Id = db.createDraftFromSession(happySession, TENANT_A)
   assert(post1Id === post2Id, "Doble llamada a createDraftFromSession devuelve el mismo post sin duplicar")
 
   // 9. Cancelación y Cascada

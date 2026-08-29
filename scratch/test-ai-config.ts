@@ -13,6 +13,10 @@ import {
   requireUsableAiConfig,
   validateAiConfig,
 } from "../convex/lib/ai/config"
+import {
+  assertResearchQueryBudget,
+  countWebSearchCalls,
+} from "../convex/lib/ai/researchBudget"
 
 let totalPassed = 0
 let totalFailed = 0
@@ -175,6 +179,17 @@ async function runTests() {
       usableFailed = true
     }
     assert(usableFailed === false, "con flag y clave válidos no lanza")
+
+    console.log("\n▶ Presupuesto de consultas de research")
+    assert(countWebSearchCalls([{ type: "web_search_call" }, { type: "message" }]) === 1, "cuenta web_search_call")
+    assertResearchQueryBudget(5, 5)
+    let budgetThrew = false
+    try {
+      assertResearchQueryBudget(6, 5)
+    } catch (error) {
+      budgetThrew = error instanceof Error && error.message.includes("presupuesto")
+    }
+    assert(budgetThrew, "lanza si las consultas superan OPENAI_MAX_RESEARCH_QUERIES")
   } finally {
     restoreEnv()
   }

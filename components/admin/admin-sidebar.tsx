@@ -28,6 +28,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { UserButton, OrganizationSwitcher, useUser } from "@clerk/nextjs"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import type { User } from "@/lib/domain/entities"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitials } from "@/lib/format"
@@ -47,6 +49,11 @@ const navItems = [
 export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
   const pathname = usePathname()
   const { user } = useUser()
+  const composerHealth = useQuery(api.ai.getConfigHealth, {})
+  const composerAvailable = composerHealth?.availableForCurrentTenant === true
+  const visibleNavItems = navItems.filter(
+    (item) => item.href !== "/panel/composer" || composerAvailable
+  )
 
   const username = currentUser?.username || user?.username || "admin"
   const displayName = currentUser?.name || user?.fullName || "Administrador"
@@ -87,7 +94,7 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
           <SidebarGroupLabel>Contenido</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}

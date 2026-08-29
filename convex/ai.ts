@@ -8,7 +8,7 @@ import { v } from "convex/values"
 
 import { query } from "./_generated/server"
 import { requireTenantAuth } from "./lib/auth"
-import { validateAiConfig } from "./lib/ai/config"
+import { isComposerEnabledForTenant, validateAiConfig } from "./lib/ai/config"
 
 const aiConfigReportValidator = v.object({
   ok: v.boolean(),
@@ -37,6 +37,7 @@ const aiConfigReportValidator = v.object({
     v.literal("high")
   ),
   maxResearchQueries: v.number(),
+  availableForCurrentTenant: v.boolean(),
   problems: v.array(v.string()),
 })
 
@@ -50,7 +51,11 @@ export const getConfigHealth = query({
   args: {},
   returns: aiConfigReportValidator,
   handler: async (ctx) => {
-    await requireTenantAuth(ctx)
-    return validateAiConfig()
+    const identity = await requireTenantAuth(ctx)
+    const report = validateAiConfig()
+    return {
+      ...report,
+      availableForCurrentTenant: isComposerEnabledForTenant(identity.tenantId),
+    }
   },
 })

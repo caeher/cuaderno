@@ -81,16 +81,17 @@ composerSources         // la trazabilidad de la que depende el criterio de acep
 Los nombres de estado los fija el issue #15 y son los que manda:
 
 ```
-collecting ───────────(brief completo)────────> awaiting_confirmation
-awaiting_confirmation ─(usuario confirma)─────> researching
-awaiting_confirmation ─(usuario corrige)──────> collecting
-researching ──────────(fuentes suficientes)──> drafting
-researching ──────────(sin fuentes útiles)───> failed
-drafting ─────────────(pidió portada)────────> imaging
-drafting ─────────────(sin imágenes)─────────> awaiting_review
-imaging ──────────────(portada generada)─────> awaiting_review
-awaiting_review ──────(usuario acepta)───────> handoff: crea post en `draft`
-cualquiera ───────────(usuario cancela)──────> cancelled
+collecting ───────────(usuario confirma brief)──> awaiting_confirmation
+awaiting_confirmation ─(se encola research)────> researching
+awaiting_confirmation ─(usuario corrige)───────> collecting
+researching ──────────(fuentes suficientes)───> awaiting_confirmation  (revisión)
+researching ──────────(sin fuentes útiles)────> failed
+awaiting_confirmation ─(usuario confirma draft)─> drafting
+drafting ─────────────(pidió portada)─────────> imaging
+drafting ─────────────(sin portada)───────────> awaiting_review
+imaging ──────────────(portada generada)──────> awaiting_review
+awaiting_review ──────(usuario acepta)────────> handoff: crea post en `draft`
+cualquiera ───────────(usuario cancela)───────> cancelled
 ```
 
 Transiciones solo por mutation, nunca por action. La action reporta su resultado; la mutation decide si la transición es legal. Eso mantiene la máquina auditable y evita estados imposibles cuando dos jobs terminan a destiempo.
@@ -190,8 +191,14 @@ Estas no las puede resolver quien implemente; son de producto o de cuenta.
 
 ## 11. Estado
 
-- **#14 está implementado**: SDK de OpenAI en servidor, resolución de modelos por entorno (`convex/lib/ai/config.ts`), cliente Responses API e imágenes (`convex/lib/ai/client.ts`), moderación y registro de uso (`aiUsageEvents`).
-- **#15 está implementado** (`convex/schema.ts`, `convex/lib/composerState.ts`, `convex/composer.ts`): las 6 tablas, la máquina de estados validada en mutations, aislamiento por tenant sin aceptar `tenantId` del cliente, jobs idempotentes y cancelables, y retención.
-- **#16 está implementado**: Investigación web trazable y económica vía OpenAI Responses API con herramienta `web_search` (`search_context_size: low`), presupuesto de consultas (`OPENAI_MAX_RESEARCH_QUERIES`), extracción y normalización de dominios y URLs canónicas, clasificación epistémica (hechos confirmados, inferencias y lagunas de información), blindaje contra prompt injection, exclusión/revisión de fuentes y action orquestadora `executeResearchJob`.
+El camino feliz está orquestado en mutations (`enqueueJob` + `advanceSessionForJob` + `transitionSession`). Tras research la sesión vuelve a `awaiting_confirmation` para revisar fuentes; «Comenzar redacción» avanza a `drafting`. Composer se oculta en el panel cuando el tenant no está habilitado.
 
-El siguiente paso concreto es **#17: Borrador**: estructuración del post, generación de título, outline detallado, artículo completo, extracto y taxonomías a partir de las fuentes verificadas.
+- **#14**: SDK de OpenAI en servidor, modelos por entorno, `store: false`, moderación y `aiUsageEvents`.
+- **#15**: 6 tablas con `tenantId` e índice `by_tenant`, máquina de estados validada en mutations, jobs idempotentes/cancelables, retención 90 días.
+- **#16**: Web Search solo en research, `max_tool_calls` = `OPENAI_MAX_RESEARCH_QUERIES`, fuentes con URL canónica y claims; 0 fuentes → `failed`.
+- **#17**: Redacción sin Web Search, validación TipTap, citas 1:1 contra `composerSources` en runtime, handoff `draft` idempotente.
+- **#18**: Portada opcional (`wantsCoverImage !== false` por defecto), Convex Storage, alt WCAG &lt;125. El post solo tiene `coverUrl` (no hay campo de alt en `posts`). Imágenes adicionales (`wantsExtraImages`) quedan fuera de esta versión.
+- **#19**: Panel `/panel/composer` con brief, timeline, revisión y handoff. La entrada de nav y la página se ocultan/bloquean si `COMPOSER_ENABLED` o el kill switch lo apagan.
+- **#20**: `pnpm test:ai`, kill switch, canary, `aiMetrics.ts`, [composer-support-guide.md](./composer-support-guide.md).
+
+**Épica #13 implementada en local.** El rollout sigue dependiendo de `COMPOSER_ENABLED=true` en Convex y de confirmar modelos/presupuesto en la cuenta OpenAI. El epic en GitHub permanece abierto hasta esa activación operativa.

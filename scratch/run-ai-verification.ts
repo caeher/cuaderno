@@ -31,6 +31,8 @@ const suites = [
   { name: "14. Seguridad, aislamiento multi-tenant e idempotencia", file: "scratch/test-composer-security-isolation.ts" },
   { name: "15. Trazabilidad de citas 1:1 y cero auto-publicación", file: "scratch/test-composer-citations-and-publication.ts" },
   { name: "16. Feature flags, kill switch y canary rollout", file: "scratch/test-composer-flags-and-killswitch.ts" },
+  { name: "17. Máquina de estados y camino feliz", file: "scratch/test-composer-state.ts" },
+  { name: "18. Persistencia y handoff del camino real", file: "scratch/test-composer-persistence.ts" },
 ]
 
 function runAllSuites() {

@@ -36,11 +36,10 @@ import {
 import {
   parseRawModelJson,
   validateStructuredDraft,
+  verifyCitationsAgainstSources,
 } from "./lib/ai/writingValidation"
-import {
-  buildVisualImagePrompt,
-  generateSuggestedAltText,
-} from "./lib/ai/imagePrompts"
+import { nextAfterDrafting, nextAfterSuccessfulResearch } from "./lib/composerState"
+import { buildVisualImagePrompt } from "./lib/ai/imagePrompts"
 import type { UsageSnapshot } from "./lib/ai/usage"
 import { requireTenantAuth } from "./lib/auth"
 
@@ -328,9 +327,6 @@ export const executeImageJob = internalAction({
     sessionId: v.id("composerSessions"),
     jobId: v.id("composerJobs"),
     customPrompt: v.optional(v.string()),
-    quality: v.optional(
-      v.union(v.literal("low"), v.literal("medium"), v.literal("high"), v.literal("auto"))
-    ),
   },
   returns: v.object({
     ok: v.boolean(),
@@ -363,17 +359,14 @@ export const executeImageJob = internalAction({
       return { ok: false, model: "none", error: "Job cancelado." }
     }
 
-    // Asegurar que la sesión esté en 'imaging' si venía de drafting
-    if (session.status === "drafting") {
-      try {
-        await ctx.runMutation(internal.composer.transitionSession, {
-          sessionId: args.sessionId,
-          to: "imaging",
-        })
-      } catch {
-        // Continuar si ya estaba en imaging o awaiting_review
-      }
+    if (session.brief.wantsCoverImage === false) {
+      throw new Error("Esta sesión no pidió portada; no se puede generar una imagen.")
     }
+
+    await ctx.runMutation(internal.composer.advanceSessionForJob, {
+      sessionId: args.sessionId,
+      kind: "image",
+    })
 
     await ctx.runMutation(internal.composer.updateJobProgress, {
       jobId: args.jobId,
@@ -404,9 +397,7 @@ export const executeImageJob = internalAction({
     })
 
     try {
-      const result = await generateImage(finalPrompt, {
-        quality: args.quality,
-      })
+      const result = await generateImage(finalPrompt)
 
       if (!result.b64Json) {
         throw new Error("El proveedor no devolvió una imagen en base64.")
@@ -454,8 +445,10 @@ export const executeImageJob = internalAction({
         content: `He generado una propuesta de imagen de portada para tu artículo con el texto alternativo: "${finalAltText}". Puedes previsualizarla, editar su descripción o aprobarla para tu publicación.`,
       })
 
-      // 7. Transición a awaiting_review
-      if (session.status === "imaging" || session.status === "drafting") {
+      const latest = await ctx.runQuery(internal.composer.getSessionInternal, {
+        sessionId: args.sessionId,
+      })
+      if (latest && (latest.status === "imaging" || latest.status === "drafting")) {
         await ctx.runMutation(internal.composer.transitionSession, {
           sessionId: args.sessionId,
           to: "awaiting_review",
@@ -501,16 +494,14 @@ export const executeImageJob = internalAction({
         content: `No fue posible generar la portada automática: ${errorMsg}. Puedes continuar con la revisión del artículo o solicitar una regeneración más adelante.`,
       })
 
-      // Si la sesión estaba en imaging, permitirle avanzar a awaiting_review para no bloquear el borrador
-      try {
-        if (session.status === "imaging") {
-          await ctx.runMutation(internal.composer.transitionSession, {
-            sessionId: args.sessionId,
-            to: "awaiting_review",
-          })
-        }
-      } catch {
-        // Ignorar si la transición ya se realizó
+      const latest = await ctx.runQuery(internal.composer.getSessionInternal, {
+        sessionId: args.sessionId,
+      })
+      if (latest?.status === "imaging") {
+        await ctx.runMutation(internal.composer.transitionSession, {
+          sessionId: args.sessionId,
+          to: "awaiting_review",
+        })
       }
 
       throw presentOpenAiError(error)
@@ -563,6 +554,11 @@ export const executeResearchJob = internalAction({
     if (!started) {
       return { ok: false, sourceCount: 0, model: "none", error: "Job cancelado." }
     }
+
+    await ctx.runMutation(internal.composer.advanceSessionForJob, {
+      sessionId: args.sessionId,
+      kind: "research",
+    })
 
     // 1. Detección de ambigüedad en el brief antes de gastar presupuesto de búsqueda
     const ambiguity = checkBriefAmbiguity(session.brief)
@@ -661,12 +657,13 @@ export const executeResearchJob = internalAction({
         content: `Investigación completada con éxito. Se han analizado y guardado ${result.sources.length} fuentes. Puedes revisar las fuentes y el esquema antes de continuar con la redacción del borrador.`,
       })
 
-      // Transición legal de estado
-      const nextStatus = session.status === "researching" ? "drafting" : "awaiting_confirmation"
-      if (session.status !== nextStatus) {
+      const latest = await ctx.runQuery(internal.composer.getSessionInternal, {
+        sessionId: args.sessionId,
+      })
+      if (latest && latest.status !== nextAfterSuccessfulResearch()) {
         await ctx.runMutation(internal.composer.transitionSession, {
           sessionId: args.sessionId,
-          to: nextStatus,
+          to: nextAfterSuccessfulResearch(),
         })
       }
 
@@ -701,14 +698,15 @@ export const executeResearchJob = internalAction({
         error: errorMsg,
       })
 
-      try {
+      const latest = await ctx.runQuery(internal.composer.getSessionInternal, {
+        sessionId: args.sessionId,
+      })
+      if (latest && latest.status !== "failed" && latest.status !== "cancelled" && latest.status !== "awaiting_review") {
         await ctx.runMutation(internal.composer.transitionSession, {
           sessionId: args.sessionId,
           to: "failed",
           failureReason: errorMsg,
         })
-      } catch {
-        // Ignorar si la transición a failed ya no era legal desde un estado terminal
       }
 
       throw presentOpenAiError(error)
@@ -890,17 +888,10 @@ export const executeDraftingJob = internalAction({
       return { ok: false, model: "none", error: "Job cancelado." }
     }
 
-    // Asegurar que la sesión esté en estado "drafting"
-    if (session.status !== "drafting" && session.status !== "awaiting_review") {
-      try {
-        await ctx.runMutation(internal.composer.transitionSession, {
-          sessionId: args.sessionId,
-          to: "drafting",
-        })
-      } catch {
-        // Continuar si ya estaba en drafting o transición intermedia
-      }
-    }
+    await ctx.runMutation(internal.composer.advanceSessionForJob, {
+      sessionId: args.sessionId,
+      kind: "article",
+    })
 
     // 1. Cargar fuentes aprobadas
     const rawSources = await ctx.runQuery(internal.composer.getSessionSourcesInternal, {
@@ -979,6 +970,22 @@ export const executeDraftingJob = internalAction({
 
       const draft = validation.parsedDraft
 
+      const citationCheck = verifyCitationsAgainstSources(draft.content, activeSources)
+      if (!citationCheck.valid) {
+        const citationErrorMsg = `El borrador cita URLs que no están en las fuentes aprobadas:\n- ${citationCheck.unapprovedUrls.join("\n- ")}`
+        await ctx.runMutation(internal.composer.finishJob, {
+          jobId: args.jobId,
+          status: "failed",
+          error: citationErrorMsg,
+        })
+        await ctx.runMutation(internal.composer.appendMessageInternal, {
+          sessionId: args.sessionId,
+          role: "assistant",
+          content: `No pude entregar el borrador: hay citas sin fuente verificada.\n- ${citationCheck.unapprovedUrls.join("\n- ")}`,
+        })
+        return { ok: false, model: result.usage.model, error: citationErrorMsg }
+      }
+
       // 4. Persistir artefactos estructurados
       await ctx.runMutation(internal.composer.recordArtifact, {
         sessionId: args.sessionId,
@@ -1021,12 +1028,16 @@ export const executeDraftingJob = internalAction({
         status: "succeeded",
       })
 
-      // 5. Transición de estado: a 'imaging' si pidió portada, o directo a 'awaiting_review'
-      const nextStatus = session.brief.wantsCoverImage ? "imaging" : "awaiting_review"
-      await ctx.runMutation(internal.composer.transitionSession, {
+      const latest = await ctx.runQuery(internal.composer.getSessionInternal, {
         sessionId: args.sessionId,
-        to: nextStatus,
       })
+      const nextStatus = nextAfterDrafting(latest?.brief.wantsCoverImage ?? session.brief.wantsCoverImage)
+      if (latest && latest.status !== nextStatus) {
+        await ctx.runMutation(internal.composer.transitionSession, {
+          sessionId: args.sessionId,
+          to: nextStatus,
+        })
+      }
 
       // Mensaje de confirmación al usuario
       await ctx.runMutation(internal.composer.appendMessageInternal, {
@@ -1066,14 +1077,20 @@ export const executeDraftingJob = internalAction({
         error: errorMsg,
       })
 
-      try {
+      const failedSession = await ctx.runQuery(internal.composer.getSessionInternal, {
+        sessionId: args.sessionId,
+      })
+      if (
+        failedSession &&
+        failedSession.status !== "failed" &&
+        failedSession.status !== "cancelled" &&
+        failedSession.status !== "awaiting_review"
+      ) {
         await ctx.runMutation(internal.composer.transitionSession, {
           sessionId: args.sessionId,
           to: "failed",
           failureReason: errorMsg,
         })
-      } catch {
-        // Ignorar si ya estaba en estado terminal
       }
 
       throw presentOpenAiError(error)
