@@ -20,6 +20,10 @@ export const RESERVED_SUBDOMAINS = new Set([
   "dashboard",
   "blog",
   "status",
+  "post",
+  "posts",
+  "author",
+  "autor",
 ])
 
 export const RESERVED_ROOT_PATHS = new Set([
@@ -39,6 +43,10 @@ export const RESERVED_ROOT_PATHS = new Set([
   "/placeholder.svg",
   "/robots.txt",
   "/sitemap.xml",
+  "/post",
+  "/posts",
+  "/author",
+  "/autor",
 ])
 
 export function getRootDomain(): string {
@@ -72,6 +80,10 @@ export function isReservedPath(pathname: string): boolean {
     firstSegment.startsWith("/panel") ||
     firstSegment.startsWith("/legal") ||
     firstSegment.startsWith("/explorar") ||
+    firstSegment.startsWith("/post") ||
+    firstSegment.startsWith("/posts") ||
+    firstSegment.startsWith("/author") ||
+    firstSegment.startsWith("/autor") ||
     firstSegment.startsWith("/sign-") ||
     firstSegment.startsWith("/iniciar-") ||
     firstSegment.startsWith("/registro")
