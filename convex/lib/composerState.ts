@@ -8,6 +8,9 @@
  * imágenes cerrando la sesión mientras el de research todavía escribe fuentes.
  *
  * Es lógica pura y sin I/O: se puede razonar y probar sin base de datos.
+ *
+ * El archivo se llama `composerState` (sin guion) porque Convex solo admite
+ * componentes de ruta alfanuméricos, guiones bajos o puntos.
  */
 
 export type ComposerSessionStatus =

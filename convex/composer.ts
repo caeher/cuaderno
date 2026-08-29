@@ -29,7 +29,7 @@ import {
   assertTransition,
   isTerminalStatus,
   type ComposerSessionStatus,
-} from "./lib/composer-state"
+} from "./lib/composerState"
 import { calculateReadingTime, getCurrentIsoTimestamp } from "./lib/helpers"
 import { composerBriefValidator, composerSessionStatusValidator } from "./schema"
 
@@ -495,11 +495,13 @@ export const recordUsage = internalMutation({
     status: v.string(),
     requestId: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await ctx.db.insert("aiUsageEvents", {
       ...args,
       createdAt: getCurrentIsoTimestamp(),
     })
+    return null
   },
 })
 

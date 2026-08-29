@@ -54,7 +54,7 @@ export const tenantTemplateSettingsValidator = v.object({
  *
  * El orden feliz es collecting -> awaiting_confirmation -> researching -> drafting
  * -> imaging -> awaiting_review. `imaging` se salta si el usuario no pidió portada.
- * Las transiciones legales viven en lib/domain/composer/state-machine.ts y se validan
+ * Las transiciones legales viven en convex/lib/composerState.ts y se validan
  * en la mutation, nunca en la action: así dos jobs que terminan a destiempo no pueden
  * dejar la sesión en un estado imposible.
  */
