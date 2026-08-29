@@ -48,8 +48,11 @@ const navItems = [
 
 export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
   const pathname = usePathname()
-  const { user } = useUser()
-  const composerHealth = useQuery(api.ai.getConfigHealth, {})
+  const { user, isLoaded, isSignedIn } = useUser()
+  const composerHealth = useQuery(
+    api.ai.getConfigHealth,
+    isLoaded && isSignedIn ? {} : "skip"
+  )
   const composerAvailable = composerHealth?.availableForCurrentTenant === true
   const visibleNavItems = navItems.filter(
     (item) => item.href !== "/panel/composer" || composerAvailable

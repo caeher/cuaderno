@@ -1,14 +1,19 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs"
 import { useQuery } from "convex/react"
 import { Sparkles } from "lucide-react"
 
 import { api } from "@/convex/_generated/api"
 
 export function ComposerEnabledGate({ children }: { children: React.ReactNode }) {
-  const health = useQuery(api.ai.getConfigHealth, {})
+  const { isLoaded, isSignedIn } = useUser()
+  const health = useQuery(
+    api.ai.getConfigHealth,
+    isLoaded && isSignedIn ? {} : "skip"
+  )
 
-  if (health === undefined) {
+  if (!isLoaded || health === undefined) {
     return (
       <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
         Comprobando disponibilidad de Composer…

@@ -7,7 +7,7 @@
 import { v } from "convex/values"
 
 import { query } from "./_generated/server"
-import { requireTenantAuth } from "./lib/auth"
+import { getTenantIdentity } from "./lib/auth"
 import { isComposerEnabledForTenant, validateAiConfig } from "./lib/ai/config"
 
 const aiConfigReportValidator = v.object({
@@ -44,18 +44,22 @@ const aiConfigReportValidator = v.object({
 /**
  * Reporta si la plataforma de IA está bien configurada.
  *
- * Requiere sesión. Nunca devuelve la clave — `validateAiConfig` solo informa si
+ * Si no hay sesión activa, devuelve availableForCurrentTenant: false de forma segura sin lanzar error.
+ * Nunca devuelve la clave — `validateAiConfig` solo informa si
  * existe. No confirma conectividad con el proveedor: eso lo hace `aiNode.runSmokeTest`.
  */
 export const getConfigHealth = query({
   args: {},
   returns: aiConfigReportValidator,
   handler: async (ctx) => {
-    const identity = await requireTenantAuth(ctx)
+    const identity = await getTenantIdentity(ctx)
     const report = validateAiConfig()
     return {
       ...report,
-      availableForCurrentTenant: isComposerEnabledForTenant(identity.tenantId),
+      availableForCurrentTenant:
+        identity.isAuthenticated && identity.tenantId
+          ? isComposerEnabledForTenant(identity.tenantId)
+          : false,
     }
   },
 })
