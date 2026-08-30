@@ -6,6 +6,12 @@ import { assertCanManageResource, assertCanManageTenant, requireTenantAuth, getT
 import type { AuthenticatedTenantIdentity } from "@/convex/lib/auth"
 import { computePostContentHash, isNarrationOutdated } from "@/lib/domain/entities"
 import { getAudioServerConfig, isValidAudioMimeType } from "@/lib/server/audio-config"
+import { toConvexPostUpdateArgs } from "@/lib/infrastructure/convex/repositories/convex-post-repository"
+import {
+  getTextPhaseConfig,
+  isComposerEnabled,
+  validateAiConfig,
+} from "@/convex/lib/ai/config"
 
 
 export async function runConvexAuthAndSecurityTests(): Promise<{ totalPassed: number; totalFailed: number }> {
@@ -252,6 +258,65 @@ export async function runConvexAuthAndSecurityTests(): Promise<{ totalPassed: nu
   assert(audioConfig.defaultVoiceId === "sarah", "Configuración de audio resuelve voz 'sarah' por defecto")
   assert(audioConfig.vapiBaseUrl === "https://api.vapi.ai", "Configuración de audio resuelve URL base de Vapi")
   assert(audioConfig.allowedMimeTypes.includes("audio/mpeg"), "allowedMimeTypes incluye 'audio/mpeg'")
+
+  // --- 11. Create de taxonomía / artículo: tenantId del panel como organizationId ---
+  console.log("\n▶ [Test 11] Create de categoría/artículo en blog personal (organizationId = tenantId)")
+  let personalCreateOk = true
+  try {
+    assertCanManageResource(userIdentity as AuthenticatedTenantIdentity, {
+      organizationId: "user_123",
+      authorId: "user_123",
+    })
+  } catch {
+    personalCreateOk = false
+  }
+  assert(personalCreateOk, "Permite crear categoría/artículo cuando organizationId es el tenant personal")
+
+  let personalCreateWithoutAuthorOk = true
+  try {
+    assertCanManageResource(userIdentity as AuthenticatedTenantIdentity, {
+      organizationId: "user_123",
+    })
+  } catch {
+    personalCreateWithoutAuthorOk = false
+  }
+  assert(
+    personalCreateWithoutAuthorOk,
+    "Permite crear con solo organizationId = tenantId (sin authorId explícito)"
+  )
+
+  // --- 12. Update parcial de artículo no borra categoría ni portada ---
+  console.log("\n▶ [Test 12] Update parcial de artículo no envía categoryId/coverUrl nulos")
+  const statusOnlyUpdate = toConvexPostUpdateArgs("post_1", { status: "published" })
+  assert(
+    !("categoryId" in statusOnlyUpdate) && !("coverUrl" in statusOnlyUpdate) && !("tags" in statusOnlyUpdate),
+    "toggle de estado no incluye categoryId, coverUrl ni tags"
+  )
+  assert(statusOnlyUpdate.status === "published" && statusOnlyUpdate.id === "post_1", "El update parcial conserva status e id")
+
+  const clearCategoryUpdate = toConvexPostUpdateArgs("post_1", { categoryId: null })
+  assert(clearCategoryUpdate.categoryId === null, "Permitir categoryId null solo cuando el caso de uso lo pide")
+
+  // --- 13. Configuración de Composer / OpenAI ---
+  console.log("\n▶ [Test 13] Configuración de Composer: research con Web Search, writing sin él")
+  const previousComposer = process.env.COMPOSER_ENABLED
+  const previousKey = process.env.OPENAI_API_KEY
+  delete process.env.COMPOSER_ENABLED
+  assert(!isComposerEnabled(), "Composer permanece apagado si COMPOSER_ENABLED no es 'true'")
+  process.env.COMPOSER_ENABLED = "true"
+  process.env.OPENAI_API_KEY = "sk-test-contract"
+  assert(isComposerEnabled(), "Composer se enciende solo con COMPOSER_ENABLED=true")
+  const research = getTextPhaseConfig("research")
+  const writing = getTextPhaseConfig("writing")
+  assert(research.webSearch === true, "La fase research habilita Web Search")
+  assert(writing.webSearch === false, "La fase writing no habilita Web Search")
+  const report = validateAiConfig()
+  assert(report.hasApiKey === true && report.ok === true, "validateAiConfig reporta clave presente sin exponerla")
+  assert(!("apiKey" in report), "El reporte de health no incluye la clave")
+  if (previousComposer === undefined) delete process.env.COMPOSER_ENABLED
+  else process.env.COMPOSER_ENABLED = previousComposer
+  if (previousKey === undefined) delete process.env.OPENAI_API_KEY
+  else process.env.OPENAI_API_KEY = previousKey
 
   console.log(`\n==================================================`)
   console.log(`📊 RESULTADOS CONVEX SECURITY: ${totalPassed} Pasaron | ${totalFailed} Fallaron`)

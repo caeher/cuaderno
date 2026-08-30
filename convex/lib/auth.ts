@@ -162,7 +162,11 @@ export function assertCanManageResource(
   if (resource.organizationId && identity.orgId && resource.organizationId === identity.orgId) {
     return;
   }
-  // 3. Coincidencia de autor directo (blog personal)
+  // 3. Blog personal: el panel envía tenantId (userId) como organizationId
+  if (resource.organizationId && resource.organizationId === identity.tenantId) {
+    return;
+  }
+  // 4. Coincidencia de autor directo (blog personal)
   if (resource.authorId && (resource.authorId === identity.userId || resource.authorId === identity.tenantId)) {
     return;
   }

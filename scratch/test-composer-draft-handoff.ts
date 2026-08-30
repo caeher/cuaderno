@@ -12,6 +12,11 @@
  */
 
 import { calculateReadingTime } from "../convex/lib/helpers"
+import {
+  parseComposerTaxonomyArtifact,
+  resolveComposerOrganizationId,
+  slugifyTaxonomyLabel,
+} from "../convex/lib/composerTaxonomy"
 
 let totalPassed = 0
 let totalFailed = 0
@@ -90,6 +95,31 @@ async function runTests() {
   const rawTitle = "¡¿Cómo Crear un Blog de Alto Impacto en 2026?!"
   const slug = slugify(rawTitle)
   assert(slug === "como-crear-un-blog-de-alto-impacto-en-2026", "Genera slug limpio y URL-friendly")
+
+  console.log("\n▶ 5. Materialización de taxonomía de Composer en el handoff")
+  const parsed = parseComposerTaxonomyArtifact(
+    JSON.stringify({
+      suggestedCategories: [" Tecnología ", "Análisis", "tecnologia"],
+      suggestedTags: ["#IA", "software", "ia", ""],
+      suggestedSlug: "guia-practica-de-ia",
+    })
+  )
+  assert(parsed.categories[0] === "Tecnología", "Toma la primera categoría sugerida")
+  assert(parsed.categories.length === 2, "Deduplica categorías equivalentes por slug")
+  assert(parsed.tags.join(",") === "IA,software", "Deduplica etiquetas y quita vacías")
+  assert(parsed.suggestedSlug === "guia-practica-de-ia", "Conserva el slug editorial sugerido")
+  assert(slugifyTaxonomyLabel("Tecnología") === "tecnologia", "Slugifica acentos para find-or-create")
+  assert(
+    resolveComposerOrganizationId("org_acme", "user_1") === "org_acme",
+    "En org, organizationId del handoff es el tenant"
+  )
+  assert(
+    resolveComposerOrganizationId("user_1", "user_1") === undefined,
+    "En blog personal no inventa organizationId"
+  )
+
+  const malformed = parseComposerTaxonomyArtifact("no-es-json{")
+  assert(malformed.tags.length === 0 && malformed.categories.length === 0, "JSON inválido no tumba el handoff")
 
   console.log("\n===================================================================")
   console.log(`Resultado: ${totalPassed} pass, ${totalFailed} fail`)

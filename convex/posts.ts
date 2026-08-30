@@ -3,6 +3,12 @@ import { mutation, query } from "./_generated/server"
 import type { Doc } from "./_generated/dataModel"
 import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
 import { calculateReadingTime, findDocById, getCurrentIsoDate } from "./lib/helpers"
+import {
+  adjustCategoryPostCount,
+  adjustTagPostCounts,
+  categoryAssignmentChanged,
+  tagSlugsDiffer,
+} from "./lib/taxonomyCounts"
 
 export const list = query({
   args: {},
@@ -233,14 +239,22 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, {
-      authorId: args.authorId,
+      authorId: args.authorId || identity.userId,
       organizationId: args.organizationId,
-      tenantId: args.tenantId,
+      tenantId: args.tenantId || identity.tenantId,
     })
 
     const now = getCurrentIsoDate()
     const readingTime = args.readingTimeMinutes || calculateReadingTime(args.content)
-    const effectiveTenantId = args.tenantId || args.organizationId || identity.tenantId || undefined
+    const effectiveTenantId = identity.tenantId
+    const effectiveOrgId =
+      identity.tenantType === "organization"
+        ? identity.orgId ?? undefined
+        : args.organizationId === identity.tenantId
+          ? args.organizationId
+          : args.organizationId && args.organizationId === identity.orgId
+            ? args.organizationId
+            : undefined
 
     const authorDoc = await findDocById(ctx.db, "users", args.authorId)
     const resolvedAuthorId =
@@ -259,7 +273,7 @@ export const create = mutation({
       legacyId: args.id,
       authorId: resolvedAuthorId,
       authorDocId,
-      organizationId: args.organizationId,
+      organizationId: effectiveOrgId ?? args.organizationId,
       tenantId: effectiveTenantId,
       categoryId: args.categoryId || undefined,
       categoryDocId,
@@ -282,12 +296,14 @@ export const create = mutation({
       editorMode: args.editorMode || "notion",
     })
 
-    // Actualizar atómicamente el contador postCount del autor en users
     if (authorDoc) {
       await ctx.db.patch(authorDoc._id, {
         postCount: (authorDoc.postCount || 0) + 1,
       })
     }
+
+    await adjustCategoryPostCount(ctx, categoryDocId ?? args.categoryId, 1)
+    await adjustTagPostCounts(ctx, effectiveTenantId, args.tags, 1)
 
     return await ctx.db.get(docId)
   },
@@ -367,6 +383,27 @@ export const update = mutation({
     if (args.editorMode !== undefined) updates.editorMode = args.editorMode
 
     await ctx.db.patch(post._id, updates)
+
+    if (args.categoryId !== undefined) {
+      const nextCategoryId = args.categoryId || undefined
+      const nextCategoryDocId = updates.categoryDocId
+      if (
+        categoryAssignmentChanged(
+          { categoryId: post.categoryId, categoryDocId: post.categoryDocId as string | undefined },
+          { categoryId: nextCategoryId, categoryDocId: nextCategoryDocId as string | undefined }
+        )
+      ) {
+        await adjustCategoryPostCount(ctx, post.categoryDocId ?? post.categoryId, -1)
+        await adjustCategoryPostCount(ctx, nextCategoryDocId ?? nextCategoryId, 1)
+      }
+    }
+
+    if (args.tags !== undefined && tagSlugsDiffer(post.tags, args.tags)) {
+      const tenantKey = post.tenantId || post.organizationId || identity.tenantId
+      await adjustTagPostCounts(ctx, tenantKey, post.tags, -1)
+      await adjustTagPostCounts(ctx, tenantKey, args.tags, 1)
+    }
+
     return await ctx.db.get(post._id)
   },
 })
@@ -380,19 +417,29 @@ export const remove = mutation({
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, post)
 
-    // 1. Eliminar comentarios asociados a esta publicación
-    const comments = await ctx.db.query("comments").collect()
-    for (const comment of comments) {
-      if (
-        comment.postId === post.legacyId ||
-        comment.postId === (post._id as string) ||
-        comment.postDocId === post._id
-      ) {
-        await ctx.db.delete(comment._id)
-      }
+    const postKeys = [post._id as string, post.legacyId].filter(
+      (value): value is string => Boolean(value)
+    )
+    const commentsByDoc = await ctx.db
+      .query("comments")
+      .withIndex("by_post_doc", (q) => q.eq("postDocId", post._id))
+      .collect()
+    const commentsById: Doc<"comments">[] = []
+    for (const key of postKeys) {
+      const batch = await ctx.db
+        .query("comments")
+        .withIndex("by_post", (q) => q.eq("postId", key))
+        .collect()
+      commentsById.push(...batch)
     }
 
-    // 2. Decrementar postCount en el autor
+    const seenComments = new Set<string>()
+    for (const comment of [...commentsByDoc, ...commentsById]) {
+      if (seenComments.has(comment._id)) continue
+      seenComments.add(comment._id)
+      await ctx.db.delete(comment._id)
+    }
+
     const author = await findDocById(ctx.db, "users", post.authorId)
     if (author) {
       await ctx.db.patch(author._id, {
@@ -400,7 +447,10 @@ export const remove = mutation({
       })
     }
 
-    // 3. Eliminar post
+    const tenantKey = post.tenantId || post.organizationId || identity.tenantId
+    await adjustCategoryPostCount(ctx, post.categoryDocId ?? post.categoryId, -1)
+    await adjustTagPostCounts(ctx, tenantKey, post.tags, -1)
+
     await ctx.db.delete(post._id)
     return true
   },

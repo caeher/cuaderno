@@ -3,6 +3,8 @@ import { mutation, query } from "./_generated/server"
 import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
 import { findDocById } from "./lib/helpers"
 
+const POST_STATUSES = ["draft", "published", "scheduled"] as const
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -79,18 +81,34 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, {
-      authorId: args.authorId,
+      authorId: args.authorId || identity.userId,
       organizationId: args.organizationId,
-      tenantId: args.tenantId,
+      tenantId: args.tenantId || identity.tenantId,
     })
 
-    const effectiveTenantId = args.tenantId || args.organizationId || identity.tenantId || undefined
-    const effectiveAuthorId = args.authorId || identity.userId || undefined
+    const effectiveTenantId = identity.tenantId
+    const effectiveAuthorId = args.authorId || identity.userId
+    const effectiveOrgId =
+      identity.tenantType === "organization"
+        ? identity.orgId ?? undefined
+        : args.organizationId === identity.tenantId
+          ? args.organizationId
+          : undefined
+
+    const existing = await ctx.db
+      .query("categories")
+      .withIndex("by_slug_and_tenant", (q) =>
+        q.eq("slug", args.slug).eq("tenantId", effectiveTenantId)
+      )
+      .first()
+    if (existing) {
+      throw new Error(`Ya existe una categoría con el slug "${args.slug}".`)
+    }
 
     const docId = await ctx.db.insert("categories", {
       legacyId: args.id,
       tenantId: effectiveTenantId,
-      organizationId: args.organizationId || (identity.tenantType === "organization" ? identity.orgId ?? undefined : undefined),
+      organizationId: effectiveOrgId,
       authorId: effectiveAuthorId,
       name: args.name,
       slug: args.slug,
@@ -141,18 +159,47 @@ export const remove = mutation({
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, category)
 
-    // Desvincular category de los posts que la referencien
-    const postsWithCategory = await ctx.db.query("posts").collect()
-    for (const post of postsWithCategory) {
-      if (
-        post.categoryId === category.legacyId ||
-        post.categoryId === (category._id as string) ||
-        post.categoryDocId === category._id
-      ) {
-        await ctx.db.patch(post._id, {
-          categoryId: undefined,
-          categoryDocId: undefined,
-        })
+    const tenantKey = category.tenantId || category.organizationId || category.authorId
+    const categoryKeys = [category._id as string, category.legacyId].filter(
+      (value): value is string => Boolean(value)
+    )
+
+    if (tenantKey) {
+      for (const status of POST_STATUSES) {
+        const posts = await ctx.db
+          .query("posts")
+          .withIndex("by_tenant_and_status", (q) =>
+            q.eq("tenantId", tenantKey).eq("status", status)
+          )
+          .collect()
+        for (const post of posts) {
+          if (
+            post.categoryDocId === category._id ||
+            categoryKeys.includes(post.categoryId || "")
+          ) {
+            await ctx.db.patch(post._id, {
+              categoryId: undefined,
+              categoryDocId: undefined,
+            })
+          }
+        }
+      }
+    } else {
+      for (const status of POST_STATUSES) {
+        for (const key of categoryKeys) {
+          const posts = await ctx.db
+            .query("posts")
+            .withIndex("by_category_and_status", (q) =>
+              q.eq("categoryId", key).eq("status", status)
+            )
+            .collect()
+          for (const post of posts) {
+            await ctx.db.patch(post._id, {
+              categoryId: undefined,
+              categoryDocId: undefined,
+            })
+          }
+        }
       }
     }
 
