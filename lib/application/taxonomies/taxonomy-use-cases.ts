@@ -19,11 +19,13 @@ export async function getAllCategories(): Promise<Category[]> {
 export async function getCategoriesByOrganization(orgId: string): Promise<Category[]> {
   const [categories, posts] = await Promise.all([
     categoryRepository.findByOrganization(orgId),
-    postRepository.findAll(),
+    postRepository.findByOrganization(orgId),
   ])
   return categories.map((cat) => ({
     ...cat,
-    postCount: posts.filter((p) => p.categoryId === cat.id).length,
+    postCount: posts.filter(
+      (p) => p.categoryId === cat.id || p.categoryId === cat.slug
+    ).length,
   }))
 }
 
@@ -58,7 +60,7 @@ export async function getAllTags(): Promise<Tag[]> {
 export async function getTagsByOrganization(orgId: string): Promise<Tag[]> {
   const [tags, posts] = await Promise.all([
     tagRepository.findByOrganization(orgId),
-    postRepository.findAll(),
+    postRepository.findByOrganization(orgId),
   ])
   return tags.map((t) => ({
     ...t,

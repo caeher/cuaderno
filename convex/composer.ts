@@ -35,6 +35,13 @@ import {
 } from "./lib/composerState"
 import { calculateReadingTime, getCurrentIsoTimestamp } from "./lib/helpers"
 import { isComposerEnabledForTenant } from "./lib/ai/config"
+import {
+  findOrCreateTenantCategory,
+  findOrCreateTenantTag,
+  parseComposerTaxonomyArtifact,
+  resolveComposerOrganizationId,
+} from "./lib/composerTaxonomy"
+import { adjustCategoryPostCount, adjustTagPostCounts } from "./lib/taxonomyCounts"
 import { composerBriefValidator, composerSessionStatusValidator } from "./schema"
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -952,29 +959,25 @@ export const createDraftFromSession = mutation({
       throw new Error("La sesión no tiene un artículo generado; no hay nada que convertir en borrador.")
     }
 
-    // Las etiquetas llegan como JSON del modelo: si viene mal formado se ignora en vez
-    // de tumbar el handoff. Perder etiquetas es recuperable; perder el artículo no.
-    let tags: string[] = []
-    let suggestedSlugFromTaxonomy: string | undefined
     const taxonomy = porTipo("taxonomy")
-    if (taxonomy?.content) {
-      try {
-        const parsed = JSON.parse(taxonomy.content)
-        if (Array.isArray(parsed)) {
-          tags = parsed.filter((x: unknown): x is string => typeof x === "string")
-        } else if (parsed && typeof parsed === "object") {
-          if (Array.isArray(parsed.tags)) {
-            tags = parsed.tags.filter((x: unknown): x is string => typeof x === "string")
-          } else if (Array.isArray(parsed.suggestedTags)) {
-            tags = parsed.suggestedTags.filter((x: unknown): x is string => typeof x === "string")
-          }
-          if (typeof parsed.suggestedSlug === "string" && parsed.suggestedSlug.trim()) {
-            suggestedSlugFromTaxonomy = parsed.suggestedSlug.trim()
-          }
-        }
-      } catch {
-        tags = []
-      }
+    const parsedTaxonomy = parseComposerTaxonomyArtifact(taxonomy?.content)
+    const suggestedSlugFromTaxonomy = parsedTaxonomy.suggestedSlug
+    const owner = {
+      tenantId,
+      authorId: session.authorId,
+      organizationId: resolveComposerOrganizationId(tenantId, session.authorId),
+    }
+
+    let categoryDoc: Doc<"categories"> | undefined
+    const firstCategoryName = parsedTaxonomy.categories[0]
+    if (firstCategoryName) {
+      categoryDoc = await findOrCreateTenantCategory(ctx, owner, firstCategoryName)
+    }
+
+    const tags: string[] = []
+    for (const label of parsedTaxonomy.tags) {
+      const tag = await findOrCreateTenantTag(ctx, owner, label)
+      tags.push(tag.slug)
     }
 
     const wantsCover = session.brief.wantsCoverImage !== false
@@ -1010,7 +1013,10 @@ export const createDraftFromSession = mutation({
     const postId = await ctx.db.insert("posts", {
       authorId: authorDoc?.clerkUserId || authorDoc?.legacyId || session.authorId,
       authorDocId: authorDoc?._id,
+      organizationId: owner.organizationId,
       tenantId,
+      categoryId: categoryDoc ? (categoryDoc._id as string) : undefined,
+      categoryDocId: categoryDoc?._id,
       title,
       slug,
       excerpt: porTipo("excerpt")?.content ?? "",
@@ -1030,6 +1036,9 @@ export const createDraftFromSession = mutation({
     if (authorDoc) {
       await ctx.db.patch(authorDoc._id, { postCount: (authorDoc.postCount || 0) + 1 })
     }
+
+    await adjustCategoryPostCount(ctx, categoryDoc?._id, 1)
+    await adjustTagPostCounts(ctx, tenantId, tags, 1)
 
     await ctx.db.patch(args.sessionId, { postId, updatedAt: now })
 

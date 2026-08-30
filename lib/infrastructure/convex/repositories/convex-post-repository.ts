@@ -9,6 +9,52 @@ import type { PostRepository } from "@/lib/domain/repositories"
 import { convexMutation, convexQuery } from "../client"
 import { convexDocToPost } from "../mappers"
 
+/**
+ * Solo envía a Convex los campos que el caso de uso realmente cambió.
+ * Coercer `undefined` a `null` (p. ej. categoryId) borraba la categoría
+ * al publicar, destacar o duplicar un artículo.
+ */
+export function toConvexPostUpdateArgs(id: string, input: UpdatePostInput) {
+  const args: {
+    id: string
+    organizationId?: string
+    categoryId?: string | null
+    title?: string
+    slug?: string
+    excerpt?: string
+    content?: string
+    coverUrl?: string | null
+    tags?: string[]
+    status?: PostStatus
+    readingTimeMinutes?: number
+    featured?: boolean
+    views?: number
+    likes?: number
+    comments?: number
+    designData?: string | null
+    editorMode?: "notion" | "elementor"
+  } = { id }
+
+  if (input.organizationId !== undefined) args.organizationId = input.organizationId
+  if (input.categoryId !== undefined) args.categoryId = input.categoryId
+  if (input.title !== undefined) args.title = input.title
+  if (input.slug !== undefined) args.slug = input.slug
+  if (input.excerpt !== undefined) args.excerpt = input.excerpt
+  if (input.content !== undefined) args.content = input.content
+  if (input.coverUrl !== undefined) args.coverUrl = input.coverUrl
+  if (input.tags !== undefined) args.tags = input.tags
+  if (input.status !== undefined) args.status = input.status
+  if (input.readingTimeMinutes !== undefined) args.readingTimeMinutes = input.readingTimeMinutes
+  if (input.featured !== undefined) args.featured = input.featured
+  if (input.views !== undefined) args.views = input.views
+  if (input.likes !== undefined) args.likes = input.likes
+  if (input.comments !== undefined) args.comments = input.comments
+  if (input.designData !== undefined) args.designData = input.designData
+  if (input.editorMode !== undefined) args.editorMode = input.editorMode
+
+  return args
+}
+
 export class ConvexPostRepository implements PostRepository {
   async findAll(): Promise<Post[]> {
     const docs = await convexQuery(api.posts.list)
@@ -84,25 +130,7 @@ export class ConvexPostRepository implements PostRepository {
   }
 
   async update(id: string, input: UpdatePostInput): Promise<Post | null> {
-    const doc = await convexMutation(api.posts.update, {
-      id,
-      organizationId: input.organizationId,
-      categoryId: input.categoryId ?? null,
-      title: input.title,
-      slug: input.slug,
-      excerpt: input.excerpt,
-      content: input.content,
-      coverUrl: input.coverUrl ?? null,
-      tags: input.tags,
-      status: input.status,
-      readingTimeMinutes: input.readingTimeMinutes,
-      featured: input.featured,
-      views: input.views,
-      likes: input.likes,
-      comments: input.comments,
-      designData: input.designData ?? null,
-      editorMode: input.editorMode,
-    })
+    const doc = await convexMutation(api.posts.update, toConvexPostUpdateArgs(id, input))
     return doc ? convexDocToPost(doc) : null
   }
 

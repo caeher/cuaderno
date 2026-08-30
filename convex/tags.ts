@@ -3,6 +3,8 @@ import { mutation, query } from "./_generated/server"
 import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
 import { findDocById } from "./lib/helpers"
 
+const POST_STATUSES = ["draft", "published", "scheduled"] as const
+
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -77,18 +79,34 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, {
-      authorId: args.authorId,
+      authorId: args.authorId || identity.userId,
       organizationId: args.organizationId,
-      tenantId: args.tenantId,
+      tenantId: args.tenantId || identity.tenantId,
     })
 
-    const effectiveTenantId = args.tenantId || args.organizationId || identity.tenantId || undefined
-    const effectiveAuthorId = args.authorId || identity.userId || undefined
+    const effectiveTenantId = identity.tenantId
+    const effectiveAuthorId = args.authorId || identity.userId
+    const effectiveOrgId =
+      identity.tenantType === "organization"
+        ? identity.orgId ?? undefined
+        : args.organizationId === identity.tenantId
+          ? args.organizationId
+          : undefined
+
+    const existing = await ctx.db
+      .query("tags")
+      .withIndex("by_slug_and_tenant", (q) =>
+        q.eq("slug", args.slug).eq("tenantId", effectiveTenantId)
+      )
+      .first()
+    if (existing) {
+      throw new Error(`Ya existe una etiqueta con el slug "${args.slug}".`)
+    }
 
     const docId = await ctx.db.insert("tags", {
       legacyId: args.id,
       tenantId: effectiveTenantId,
-      organizationId: args.organizationId || (identity.tenantType === "organization" ? identity.orgId ?? undefined : undefined),
+      organizationId: effectiveOrgId,
       authorId: effectiveAuthorId,
       name: args.name,
       slug: args.slug,
@@ -132,6 +150,29 @@ export const remove = mutation({
 
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, tag)
+
+    const tenantKey = tag.tenantId || tag.organizationId || tag.authorId
+    const tagKeys = new Set(
+      [tag.slug, tag._id as string, tag.legacyId].filter((value): value is string => Boolean(value))
+    )
+
+    if (tenantKey) {
+      for (const status of POST_STATUSES) {
+        const posts = await ctx.db
+          .query("posts")
+          .withIndex("by_tenant_and_status", (q) =>
+            q.eq("tenantId", tenantKey).eq("status", status)
+          )
+          .collect()
+        for (const post of posts) {
+          if (post.tags.some((value) => tagKeys.has(value))) {
+            await ctx.db.patch(post._id, {
+              tags: post.tags.filter((value) => !tagKeys.has(value)),
+            })
+          }
+        }
+      }
+    }
 
     await ctx.db.delete(tag._id)
     return true
