@@ -56,6 +56,7 @@ Desde el panel, la query `ai.getConfigHealth` (requiere sesión) devuelve:
   "composerEnabled": false,
   "killSwitchActive": false,
   "availableForCurrentTenant": false,
+  "isAuthenticated": true,
   "researchModel": "gpt-5.6-luna",
   "writingModel": "gpt-5.6-luna",
   "imageModel": "gpt-image-1-mini",
@@ -86,8 +87,7 @@ Este orden no es negociable:
 
 `COMPOSER_ENABLED` es el interruptor. Apagarlo:
 
-- oculta la UI de Composer,
-- hace que las actions rechacen con un mensaje explícito,
+- deja la entrada de Composer visible en el panel, pero el gate y las actions rechazan con un mensaje explícito,
 - **no toca los datos**: las sesiones, jobs y artefactos existentes quedan intactos.
 
 Por eso el rollback no requiere migración: se apaga la variable y el sistema vuelve al estado anterior. Cualquier cambio futuro que haga que apagar el flag deje datos inconsistentes rompe esta garantía.

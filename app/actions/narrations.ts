@@ -8,8 +8,23 @@ import {
   retryPostNarration,
   updateNarrationTranscript,
 } from "@/lib/application"
+import { checkNarrationServiceStatus } from "@/lib/server/audio-config"
 import { recordPlaybackMetric } from "@/lib/server/narration-metrics"
 import { revalidateAllPostPaths } from "./utils"
+
+/**
+ * Diagnóstico de narración Vapi para el panel. Nunca expone la clave.
+ */
+export async function getNarrationServiceHealthAction() {
+  await requireCurrentUser()
+  const status = checkNarrationServiceStatus()
+  return {
+    enabled: status.enabled,
+    isConfigured: status.isConfigured,
+    isKillSwitchActive: status.isKillSwitchActive,
+    reason: status.reason ?? null,
+  }
+}
 
 /**
  * Server action to generate or fetch the voice narration for a post.

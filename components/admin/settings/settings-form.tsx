@@ -16,6 +16,7 @@ import {
   Network,
   Scale,
   Search,
+  AudioLines,
 } from "lucide-react"
 import { toast } from "sonner"
 import type { TenantLegalSettings, TenantSeoSettings, User } from "@/lib/domain/entities"
@@ -34,6 +35,7 @@ import { SocialSettingsSection } from "@/components/admin/settings/social-settin
 import { AccountSettingsSection } from "@/components/admin/settings/account-settings-section"
 import { TimezoneSettingsSection } from "@/components/admin/settings/timezone-settings-section"
 import { OrganizationSettingsSection } from "@/components/admin/settings/organization-settings-section"
+import { IntegrationsSettingsSection } from "@/components/admin/settings/integrations-settings-section"
 import { getInitials } from "@/lib/format"
 
 export interface SettingsFormProps {
@@ -129,6 +131,10 @@ export function SettingsForm({ user }: SettingsFormProps) {
           <TabsTrigger value="social" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
             <Share2 className="size-3.5" />
             <span>Redes</span>
+          </TabsTrigger>
+          <TabsTrigger value="integraciones" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
+            <AudioLines className="size-3.5 text-violet-500" />
+            <span>Integraciones</span>
           </TabsTrigger>
           <TabsTrigger value="cuenta" className="gap-1.5 text-xs py-2 px-3 cursor-pointer">
             <Shield className="size-3.5" />
@@ -265,6 +271,10 @@ export function SettingsForm({ user }: SettingsFormProps) {
             />
           </TabsContent>
 
+          <TabsContent value="integraciones" className="flex flex-col gap-6">
+            <IntegrationsSettingsSection />
+          </TabsContent>
+
           {/* TAB 5: INFORMACIÓN DE CUENTA */}
           <TabsContent value="cuenta" className="flex flex-col gap-6">
             <AccountSettingsSection
@@ -279,7 +289,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
           </TabsContent>
 
           {/* Floating Save Button Bar (not strictly necessary on organization tab since Clerk handles its own save, but available globally) */}
-          {activeTab !== "organizacion" && (
+          {activeTab !== "organizacion" && activeTab !== "integraciones" && (
             <div className="flex justify-end sticky bottom-4 z-10 bg-background/90 backdrop-blur-md p-3 rounded-lg border border-border/80 shadow-md">
               <LoadingSubmitButton isLoading={isSaving} loadingText="Guardando cambios...">
                 Guardar cambios

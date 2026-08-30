@@ -34,6 +34,7 @@ import type { User } from "@/lib/domain/entities"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitials } from "@/lib/format"
 import { buildTenantUrl } from "@/lib/tenant-utils"
+import { isComposerNavItemVisible, isComposerReadyForUse } from "@/lib/application/panel"
 
 const navItems = [
   { title: "Panel", href: "/panel", icon: LayoutDashboard },
@@ -53,9 +54,9 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
     api.ai.getConfigHealth,
     isLoaded && isSignedIn ? {} : "skip"
   )
-  const composerAvailable = composerHealth?.availableForCurrentTenant === true
+  const composerReady = isComposerReadyForUse(composerHealth ?? null)
   const visibleNavItems = navItems.filter(
-    (item) => item.href !== "/panel/composer" || composerAvailable
+    (item) => item.href !== "/panel/composer" || isComposerNavItemVisible()
   )
 
   const username = currentUser?.username || user?.username || "admin"
@@ -97,18 +98,29 @@ export function AdminSidebar({ currentUser }: { currentUser?: User | null }) {
           <SidebarGroupLabel>Contenido</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {visibleNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    render={<Link href={item.href} />}
-                    isActive={pathname === item.href}
-                    tooltip={item.title}
-                  >
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {visibleNavItems.map((item) => {
+                const isComposer = item.href === "/panel/composer"
+                const composerUnavailable = isComposer && !composerReady
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      render={<Link href={item.href} />}
+                      isActive={
+                        item.href === "/panel"
+                          ? pathname === "/panel"
+                          : pathname === item.href || pathname.startsWith(`${item.href}/`)
+                      }
+                      tooltip={
+                        composerUnavailable ? "Composer (no disponible en este entorno)" : item.title
+                      }
+                      className={composerUnavailable ? "opacity-70" : undefined}
+                    >
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

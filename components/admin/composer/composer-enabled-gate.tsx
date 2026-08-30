@@ -5,6 +5,7 @@ import { useQuery } from "convex/react"
 import { Sparkles } from "lucide-react"
 
 import { api } from "@/convex/_generated/api"
+import { getComposerUnavailableReason } from "@/lib/application/panel"
 
 export function ComposerEnabledGate({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser()
@@ -21,20 +22,15 @@ export function ComposerEnabledGate({ children }: { children: React.ReactNode })
     )
   }
 
-  if (!health.availableForCurrentTenant) {
-    const reason = health.killSwitchActive
-      ? "Composer está desactivado de emergencia en este entorno."
-      : !health.composerEnabled
-        ? "Composer está apagado en este entorno (COMPOSER_ENABLED)."
-        : "Composer no está habilitado para este espacio de trabajo en el rollout actual."
-
+  const unavailable = getComposerUnavailableReason(health)
+  if (unavailable) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
         <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <Sparkles className="size-6" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground">Composer no está disponible</h2>
-        <p className="mt-1 max-w-md text-xs text-muted-foreground">{reason}</p>
+        <h2 className="text-lg font-semibold text-foreground">{unavailable.title}</h2>
+        <p className="mt-1 max-w-md text-xs text-muted-foreground">{unavailable.message}</p>
       </div>
     )
   }
