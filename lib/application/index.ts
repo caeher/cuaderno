@@ -6,4 +6,5 @@ export * from "./tenant"
 export * from "./dashboard"
 export * from "./narrations"
 export * from "./composer"
+export * from "./panel"
 

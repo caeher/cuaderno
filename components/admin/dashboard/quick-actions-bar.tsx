@@ -30,6 +30,11 @@ export function QuickActionsBar({ authorUsername = "admin" }: QuickActionsBarPro
             Nuevo post
           </Button>
 
+          <Button size="sm" variant="outline" render={<Link href="/panel/composer" />}>
+            <Sparkles data-icon="inline-start" />
+            Composer
+          </Button>
+
           <Button size="sm" variant="outline" className="text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-800/60 hover:bg-violet-50 dark:hover:bg-violet-950/30" render={<Link href="/panel/disenador" />}>
             <Palette data-icon="inline-start" />
             Diseñador Visual

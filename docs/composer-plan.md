@@ -198,7 +198,7 @@ El camino feliz está orquestado en mutations (`enqueueJob` + `advanceSessionFor
 - **#16**: Web Search solo en research, `max_tool_calls` = `OPENAI_MAX_RESEARCH_QUERIES`, fuentes con URL canónica y claims; 0 fuentes → `failed`.
 - **#17**: Redacción sin Web Search, validación TipTap, citas 1:1 contra `composerSources` en runtime, handoff `draft` idempotente.
 - **#18**: Portada opcional (`wantsCoverImage !== false` por defecto), Convex Storage, alt WCAG &lt;125. El post solo tiene `coverUrl` (no hay campo de alt en `posts`). Imágenes adicionales (`wantsExtraImages`) quedan fuera de esta versión.
-- **#19**: Panel `/panel/composer` con brief, timeline, revisión y handoff. La entrada de nav y la página se ocultan/bloquean si `COMPOSER_ENABLED` o el kill switch lo apagan.
+- **#19**: Panel `/panel/composer` con brief, timeline, revisión y handoff. La entrada de nav permanece visible; la página y las actions se bloquean si `COMPOSER_ENABLED` o el kill switch lo apagan.
 - **#20**: `pnpm test:ai`, kill switch, canary, `aiMetrics.ts`, [composer-support-guide.md](./composer-support-guide.md).
 
 **Épica #13 implementada en local.** El rollout sigue dependiendo de `COMPOSER_ENABLED=true` en Convex y de confirmar modelos/presupuesto en la cuenta OpenAI. El epic en GitHub permanece abierto hasta esa activación operativa.

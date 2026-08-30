@@ -28,9 +28,14 @@ import {
   generatePostNarrationAction,
   retryPostNarrationAction,
   deletePostNarrationAction,
+  getNarrationServiceHealthAction,
 } from "@/app/actions/narrations"
 import { computeNarrationSourceHash } from "@/lib/domain/entities"
 import { cleanPostToSpeechScript } from "@/lib/server/speech-script-sanitizer"
+import {
+  getNarrationUnavailableMessage,
+  type NarrationHealthSnapshot,
+} from "@/lib/application/panel"
 
 export interface PostNarrationManagerProps {
   postId?: string
@@ -62,6 +67,33 @@ export function PostNarrationManager({
   const [isTranscriptDialogOpen, setIsTranscriptDialogOpen] = React.useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [serviceHealth, setServiceHealth] = React.useState<NarrationHealthSnapshot | null>(null)
+
+  React.useEffect(() => {
+    let cancelled = false
+    getNarrationServiceHealthAction()
+      .then((status) => {
+        if (!cancelled) setServiceHealth(status)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setServiceHealth({
+            enabled: false,
+            isConfigured: false,
+            isKillSwitchActive: false,
+            reason: "No se pudo comprobar el estado del servicio de narración.",
+          })
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const serviceUnavailableMessage = serviceHealth
+    ? getNarrationUnavailableMessage(serviceHealth)
+    : null
+  const isServiceEnabled = serviceHealth === null || serviceHealth.enabled
 
   // Audio preview state
   const audioRef = React.useRef<HTMLAudioElement | null>(null)
@@ -248,7 +280,7 @@ export function PostNarrationManager({
           <Button
             size="sm"
             onClick={() => setIsScopeDialogOpen(true)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isServiceEnabled}
             className="cursor-pointer gap-1.5 text-xs font-medium"
           >
             <Sparkles className="size-3.5" />
@@ -256,6 +288,15 @@ export function PostNarrationManager({
           </Button>
         )}
       </div>
+
+      {serviceUnavailableMessage && (
+        <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>
+            <strong className="font-medium">Vapi no está operativo:</strong> {serviceUnavailableMessage}
+          </p>
+        </div>
+      )}
 
       {/* STATE 1: GENERATING (Non-blocking banner) */}
       {status === "generating" && (

@@ -38,6 +38,7 @@ const aiConfigReportValidator = v.object({
   ),
   maxResearchQueries: v.number(),
   availableForCurrentTenant: v.boolean(),
+  isAuthenticated: v.boolean(),
   problems: v.array(v.string()),
 })
 
@@ -56,6 +57,7 @@ export const getConfigHealth = query({
     const report = validateAiConfig()
     return {
       ...report,
+      isAuthenticated: identity.isAuthenticated,
       availableForCurrentTenant:
         identity.isAuthenticated && identity.tenantId
           ? isComposerEnabledForTenant(identity.tenantId)

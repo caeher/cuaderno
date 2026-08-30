@@ -33,6 +33,7 @@ const suites = [
   { name: "16. Feature flags, kill switch y canary rollout", file: "scratch/test-composer-flags-and-killswitch.ts" },
   { name: "17. Máquina de estados y camino feliz", file: "scratch/test-composer-state.ts" },
   { name: "18. Persistencia y handoff del camino real", file: "scratch/test-composer-persistence.ts" },
+  { name: "19. Visibilidad de Composer y Vapi en el panel", file: "scratch/test-panel-integration-visibility.ts" },
 ]
 
 function runAllSuites() {
