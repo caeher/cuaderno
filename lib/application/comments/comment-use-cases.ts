@@ -20,8 +20,8 @@ export async function getAllCommentsForAdmin(scope: {
 }> {
   const posts =
     scope.tenantType === "organization"
-      ? await postRepository.findByOrganization(scope.tenantId)
-      : await postRepository.findByAuthorId(scope.authorId)
+      ? await postRepository.findEditorialByOrganization(scope.tenantId)
+      : await postRepository.findEditorialByAuthorId(scope.authorId)
 
   const postMap = new Map(posts.map((p) => [p.id, p]))
   const commentLists = await Promise.all(posts.map((p) => commentRepository.findByPostId(p.id)))

@@ -59,7 +59,7 @@ export async function createNarrationRequest(
     format?: AudioFormat
   }
 ): Promise<PostNarration> {
-  const post = await postRepository.findById(postId)
+  const post = await postRepository.findEditorialById(postId)
   if (!post) {
     throw new Error(`Publicación con ID "${postId}" no encontrada.`)
   }
@@ -122,4 +122,3 @@ export async function updateNarrationTranscript(
 export async function deleteNarration(id: string): Promise<boolean> {
   return narrationRepository.delete(id)
 }
-

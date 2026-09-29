@@ -188,7 +188,7 @@ async function runTests() {
   // --- 4. Post Content Integrity & Independence ---
   console.log("\n▶ [Test 4] Post Content Integrity & Independence from Templates")
   {
-    const posts = await postRepository.findAll()
+    const posts = await postRepository.findPublished()
     assert(Array.isArray(posts), "El repositorio de posts responde adecuadamente de forma desacoplada")
     if (posts.length > 0) {
       const firstPost = posts[0]

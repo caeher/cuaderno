@@ -9,6 +9,7 @@ import {
   narrationRepository,
 } from "../lib/infrastructure/repositories"
 import { runConvexAuthAndSecurityTests } from "./contract-tests/convex-handler-tests"
+import { runPostReadSecurityTests } from "./contract-tests/post-read-security-tests"
 import { runRepositoryContractSuite } from "./contract-tests/repository-contract-suite"
 
 const shouldRunLiveConvexTests =
@@ -27,6 +28,10 @@ async function main() {
   const securityResults = await runConvexAuthAndSecurityTests()
   grandTotalPassed += securityResults.totalPassed
   grandTotalFailed += securityResults.totalFailed
+
+  const postReadResults = await runPostReadSecurityTests()
+  grandTotalPassed += postReadResults.totalPassed
+  grandTotalFailed += postReadResults.totalFailed
 
   // 2. Verificación de Instanciación de Repositorios Convex
   console.log("==================================================")
@@ -93,4 +98,3 @@ main().catch((err) => {
   console.error("Error fatal en el runner de verificación:", err)
   process.exit(1)
 })
-

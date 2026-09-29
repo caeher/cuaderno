@@ -1,15 +1,17 @@
-import type { CreatePostInput, Post, PostStatus, UpdatePostInput } from "../entities"
+import type { CreatePostInput, Post, PostStatus, PublishedPost, UpdatePostInput } from "../entities"
 
 export interface PostRepository {
-  findAll(): Promise<Post[]>
-  findById(id: string): Promise<Post | null>
-  findBySlug(slug: string): Promise<Post | null>
-  findByAuthorId(authorId: string, status?: PostStatus): Promise<Post[]>
-  findByOrganization(organizationId: string, status?: PostStatus): Promise<Post[]>
-  findPublished(): Promise<Post[]>
-  findFeatured(): Promise<Post[]>
-  findByTag(tagSlug: string): Promise<Post[]>
-  findByCategory(categoryIdOrSlug: string): Promise<Post[]>
+  findPublishedById(id: string, tenantId?: string): Promise<PublishedPost | null>
+  findPublishedBySlug(slug: string, tenantId?: string): Promise<PublishedPost | null>
+  findPublishedByAuthorId(authorId: string): Promise<PublishedPost[]>
+  findPublishedByTenant(tenantId: string): Promise<PublishedPost[]>
+  findPublished(): Promise<PublishedPost[]>
+  findFeaturedPublished(): Promise<PublishedPost[]>
+  findPublishedByTag(tagSlug: string): Promise<PublishedPost[]>
+  findPublishedByCategory(categoryIdOrSlug: string): Promise<PublishedPost[]>
+  findEditorialById(id: string): Promise<Post | null>
+  findEditorialByAuthorId(authorId: string, status?: PostStatus): Promise<Post[]>
+  findEditorialByOrganization(organizationId: string, status?: PostStatus): Promise<Post[]>
   create(input: CreatePostInput): Promise<Post>
   update(id: string, input: UpdatePostInput): Promise<Post | null>
   delete(id: string): Promise<boolean>

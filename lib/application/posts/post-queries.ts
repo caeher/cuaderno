@@ -10,7 +10,7 @@ import { isNarrationPlaybackEnabled } from "@/lib/server/audio-config"
 
 export async function getFeaturedPosts(limit = 3): Promise<Post[]> {
   const [featured, categories] = await Promise.all([
-    postRepository.findFeatured(),
+    postRepository.findFeaturedPublished(),
     categoryRepository.findAll(),
   ])
   const catMap = new Map(categories.map((c) => [c.id, c]))
@@ -28,11 +28,11 @@ export async function getPublishedFeed(options?: {
   let posts: Post[] = []
 
   if (options?.tag) {
-    posts = await postRepository.findByTag(options.tag)
+    posts = await postRepository.findPublishedByTag(options.tag)
   } else if (options?.category) {
     const cat = await categoryRepository.findBySlug(options.category)
     const catId = cat ? cat.id : options.category
-    posts = await postRepository.findByCategory(catId)
+    posts = await postRepository.findPublishedByCategory(catId)
   } else {
     posts = await postRepository.findPublished()
   }
@@ -57,8 +57,8 @@ export async function getPublishedFeed(options?: {
 }
 
 export async function getPostForReading(slug: string) {
-  const post = await postRepository.findBySlug(slug)
-  if (!post || post.status !== "published") return null
+  const post = await postRepository.findPublishedBySlug(slug)
+  if (!post) return null
 
   let author = await userRepository.findById(post.authorId)
   if (!author) {
@@ -88,6 +88,7 @@ export async function getPostForReading(slug: string) {
       coverUrl: "",
       bio: "",
       tagline: "",
+      socials: {},
       role: "owner",
       joinedAt: new Date().toISOString(),
       postCount: 1,
@@ -142,38 +143,15 @@ export async function getPostForReadingByTenant(tenantSlug: string, postSlug: st
     ) ?? null
   }
 
-  const post = await postRepository.findBySlug(postSlug)
-  if (!post || post.status !== "published") return null
+  if (!author) return null
 
-  if (!author) {
-    author = await userRepository.findById(post.authorId)
-    if (!author) {
-      author = await userRepository.findByClerkUserId(post.authorId)
-    }
-  }
-
-  if (!author) {
-    author = {
-      id: post.authorId,
-      username: tenantSlug || "autor",
-      name: "Autor",
-      email: "",
-      avatarUrl: "",
-      coverUrl: "",
-      bio: "",
-      tagline: "",
-      role: "owner",
-      joinedAt: new Date().toISOString(),
-      postCount: 1,
-      followerCount: 0,
-    }
-  }
-
-  const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
+  const tenantId = author.clerkUserId ?? author.legacyId ?? author.id
+  const post = await postRepository.findPublishedBySlug(postSlug, tenantId)
+  if (!post) return null
 
   const [comments, allAuthorPosts, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
-    postRepository.findByAuthorId(authorKey, "published").catch(() => []),
+    postRepository.findPublishedByTenant(tenantId).catch(() => []),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
     narrationRepository.findByPostId(post.id),
   ])
@@ -200,5 +178,5 @@ export async function getPostForReadingByTenant(tenantSlug: string, postSlug: st
 }
 
 export async function getPostForEditing(postId: string): Promise<Post | null> {
-  return postRepository.findById(postId)
+  return postRepository.findEditorialById(postId)
 }

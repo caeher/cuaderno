@@ -169,22 +169,22 @@ export async function runRepositoryContractSuite(
   const authorAfterPost = await repos.userRepository.findById(testUser.id)
   assert((authorAfterPost?.postCount ?? 0) === initialPostCount + 1, "PostRepository.create incrementa atómicamente postCount en el autor")
 
-  const foundPost = await repos.postRepository.findBySlug(postSlug)
-  assert(foundPost !== null && foundPost.id === createdPost.id, "PostRepository.findBySlug recupera post")
+  const foundPost = await repos.postRepository.findPublishedBySlug(postSlug)
+  assert(foundPost !== null && foundPost.id === createdPost.id, "PostRepository.findPublishedBySlug recupera una publicación pública")
 
-  const authorPosts = await repos.postRepository.findByAuthorId(testUser.id, "published")
-  assert(authorPosts.some((p) => p.slug === postSlug), "PostRepository.findByAuthorId recupera posts del autor filtrados por status")
+  const authorPosts = await repos.postRepository.findPublishedByAuthorId(testUser.id)
+  assert(authorPosts.some((p) => p.slug === postSlug), "PostRepository.findPublishedByAuthorId recupera solo publicaciones públicas del autor")
 
   const publishedPosts = await repos.postRepository.findPublished()
   assert(publishedPosts.some((p) => p.slug === postSlug), "PostRepository.findPublished incluye post publicado")
 
-  const featuredPosts = await repos.postRepository.findFeatured()
+  const featuredPosts = await repos.postRepository.findFeaturedPublished()
   assert(featuredPosts.some((p) => p.slug === postSlug), "PostRepository.findFeatured incluye post destacado")
 
-  const tagPosts = await repos.postRepository.findByTag(tagSlug)
+  const tagPosts = await repos.postRepository.findPublishedByTag(tagSlug)
   assert(tagPosts.some((p) => p.slug === postSlug), "PostRepository.findByTag recupera post que contiene el tag")
 
-  const categoryPosts = await repos.postRepository.findByCategory(createdCat.id)
+  const categoryPosts = await repos.postRepository.findPublishedByCategory(createdCat.id)
   assert(categoryPosts.some((p) => p.slug === postSlug), "PostRepository.findByCategory recupera post asociado a la categoría")
 
   const updatedPost = await repos.postRepository.update(createdPost.id, {
@@ -207,7 +207,7 @@ export async function runRepositoryContractSuite(
   assert(createdComment.postId === createdPost.id, "CommentRepository.create persiste comentario")
 
   // Verificar incremento de comments en el post
-  const postWithComment = await repos.postRepository.findById(createdPost.id)
+  const postWithComment = await repos.postRepository.findEditorialById(createdPost.id)
   assert((postWithComment?.comments ?? 0) >= 1, "CommentRepository.create incrementa atómicamente el contador comments en el post")
 
   const comments = await repos.commentRepository.findByPostId(createdPost.id)
@@ -215,7 +215,7 @@ export async function runRepositoryContractSuite(
 
   // Borrar comentario
   await repos.commentRepository.delete(createdComment.id)
-  const postAfterCommentDel = await repos.postRepository.findById(createdPost.id)
+  const postAfterCommentDel = await repos.postRepository.findEditorialById(createdPost.id)
   assert((postAfterCommentDel?.comments ?? 0) === 0, "CommentRepository.delete decrementa atómicamente el contador comments en el post")
 
   // ----------------------------------------------------
@@ -310,7 +310,7 @@ export async function runRepositoryContractSuite(
   console.log(`\n▶ [${suiteName}] 8. Limpieza y desvinculación en cascada`)
   // Eliminar post
   await repos.postRepository.delete(createdPost.id)
-  const postDeleted = await repos.postRepository.findById(createdPost.id)
+  const postDeleted = await repos.postRepository.findEditorialById(createdPost.id)
   assert(postDeleted === null, "PostRepository.delete elimina el post")
   const authorAfterDel = await repos.userRepository.findById(testUser.id)
   assert((authorAfterDel?.postCount ?? 0) === initialPostCount, "PostRepository.delete decrementa postCount en autor")
@@ -335,4 +335,3 @@ export async function runRepositoryContractSuite(
     failures,
   }
 }
-

@@ -1,36 +1,64 @@
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
-import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
+import { mutation, query, type QueryCtx } from "./_generated/server"
+import type { Doc } from "./_generated/dataModel"
+import { requireTenantAuth } from "./lib/auth"
 import { findDocById, getCurrentIsoDate } from "./lib/helpers"
+import { assertCanReadEditorialPost, canReadEditorialPost } from "./lib/post-access"
+
+const publicCommentValidator = v.object({
+  _id: v.id("comments"),
+  postId: v.string(),
+  authorName: v.string(),
+  authorAvatarUrl: v.optional(v.string()),
+  content: v.string(),
+  createdAt: v.string(),
+})
+
+export async function getCommentsForPostHandler(ctx: QueryCtx, args: { postId: string }) {
+  const post = await findDocById(ctx.db, "posts", args.postId)
+  if (!post) return []
+
+  if (post.status !== "published") {
+    try {
+      const identity = await requireTenantAuth(ctx)
+      if (!await canReadEditorialPost(ctx, identity, post)) return []
+    } catch {
+      return []
+    }
+  }
+
+  const keys = new Set([post._id as string, ...(post.legacyId ? [post.legacyId] : [])])
+  const commentsById = new Map<string, Doc<"comments">>()
+  for (const key of keys) {
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_post", (q) => q.eq("postId", key))
+      .collect()
+    for (const comment of comments) commentsById.set(comment._id, comment)
+  }
+
+  const commentsByDoc = await ctx.db
+    .query("comments")
+    .withIndex("by_post_doc", (q) => q.eq("postDocId", post._id))
+    .collect()
+  for (const comment of commentsByDoc) commentsById.set(comment._id, comment)
+
+  return Array.from(commentsById.values())
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((comment) => ({
+      _id: comment._id,
+      postId: comment.postId,
+      authorName: comment.authorName,
+      ...(comment.authorAvatarUrl ? { authorAvatarUrl: comment.authorAvatarUrl } : {}),
+      content: comment.content,
+      createdAt: comment.createdAt,
+    }))
+}
 
 export const getByPostId = query({
   args: { postId: v.string() },
-  handler: async (ctx, args) => {
-    // 1. Buscar por postId indexado
-    const comments = await ctx.db
-      .query("comments")
-      .withIndex("by_post", (q) => q.eq("postId", args.postId))
-      .collect()
-
-    if (comments.length > 0) {
-      return comments.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    }
-
-    // 2. Si args.postId es un Id nativo o legacyId, resolver el post correspondiente
-    const post = await findDocById(ctx.db, "posts", args.postId)
-    if (post) {
-      const allComments = await ctx.db.query("comments").collect()
-      const matching = allComments.filter(
-        (c) =>
-          c.postId === post.legacyId ||
-          c.postId === (post._id as string) ||
-          c.postDocId === post._id
-      )
-      return matching.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    }
-
-    return []
-  },
+  returns: v.array(publicCommentValidator),
+  handler: getCommentsForPostHandler,
 })
 
 export const create = mutation({
@@ -47,6 +75,9 @@ export const create = mutation({
   handler: async (ctx, args) => {
     const now = args.createdAt || getCurrentIsoDate()
     const post = await findDocById(ctx.db, "posts", args.postId)
+    if (!post || post.status !== "published") {
+      throw new Error("Solo se puede comentar en publicaciones disponibles.")
+    }
 
     const docId = await ctx.db.insert("comments", {
       legacyId: args.id,
@@ -85,7 +116,7 @@ export const remove = mutation({
     }
 
     const identity = await requireTenantAuth(ctx)
-    assertCanManageResource(identity, post)
+    await assertCanReadEditorialPost(ctx, identity, post)
 
     // Decrementar comentarios en el post correspondiente
     await ctx.db.patch(post._id, {

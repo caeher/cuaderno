@@ -87,7 +87,7 @@ export async function getAuthorProfile(username: string): Promise<{
 
   const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
   const [posts, categories] = await Promise.all([
-    postRepository.findByAuthorId(authorKey, "published"),
+    postRepository.findPublishedByAuthorId(authorKey),
     categoryRepository.findAll(),
   ])
   const catMap = new Map(categories.map((c) => [c.id, c]))

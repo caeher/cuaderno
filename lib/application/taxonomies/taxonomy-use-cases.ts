@@ -9,7 +9,7 @@ import type {
 import { categoryRepository, postRepository, tagRepository } from "@/lib/infrastructure/repositories"
 
 export async function getAllCategories(): Promise<Category[]> {
-  const [categories, posts] = await Promise.all([categoryRepository.findAll(), postRepository.findAll()])
+  const [categories, posts] = await Promise.all([categoryRepository.findAll(), postRepository.findPublished()])
   return categories.map((cat) => ({
     ...cat,
     postCount: posts.filter((p) => p.categoryId === cat.id).length,
@@ -19,7 +19,7 @@ export async function getAllCategories(): Promise<Category[]> {
 export async function getCategoriesByOrganization(orgId: string): Promise<Category[]> {
   const [categories, posts] = await Promise.all([
     categoryRepository.findByOrganization(orgId),
-    postRepository.findByOrganization(orgId),
+    postRepository.findEditorialByOrganization(orgId),
   ])
   return categories.map((cat) => ({
     ...cat,
@@ -50,7 +50,7 @@ export async function deleteCategory(id: string): Promise<boolean> {
 }
 
 export async function getAllTags(): Promise<Tag[]> {
-  const [tags, posts] = await Promise.all([tagRepository.findAll(), postRepository.findAll()])
+  const [tags, posts] = await Promise.all([tagRepository.findAll(), postRepository.findPublished()])
   return tags.map((t) => ({
     ...t,
     postCount: posts.filter((p) => p.tags.includes(t.slug) || p.tags.includes(t.id)).length,
@@ -60,7 +60,7 @@ export async function getAllTags(): Promise<Tag[]> {
 export async function getTagsByOrganization(orgId: string): Promise<Tag[]> {
   const [tags, posts] = await Promise.all([
     tagRepository.findByOrganization(orgId),
-    postRepository.findByOrganization(orgId),
+    postRepository.findEditorialByOrganization(orgId),
   ])
   return tags.map((t) => ({
     ...t,

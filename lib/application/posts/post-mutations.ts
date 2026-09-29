@@ -18,13 +18,13 @@ export async function togglePostStatus(id: string, newStatus: PostStatus): Promi
 }
 
 export async function togglePostFeatured(id: string): Promise<Post | null> {
-  const post = await postRepository.findById(id)
+  const post = await postRepository.findEditorialById(id)
   if (!post) return null
   return postRepository.update(id, { featured: !post.featured })
 }
 
 export async function duplicatePost(id: string): Promise<Post | null> {
-  const original = await postRepository.findById(id)
+  const original = await postRepository.findEditorialById(id)
   if (!original) return null
 
   const randomSuffix = Math.random().toString(36).substring(2, 6)

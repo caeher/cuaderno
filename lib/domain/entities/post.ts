@@ -32,6 +32,14 @@ export interface Post {
   editorMode?: EditorMode
 }
 
+/**
+ * Datos de una publicación visible públicamente. No contiene IDs de propietario
+ * organizacional ni campos exclusivos del editor.
+ */
+export type PublishedPost = Omit<Post, "status" | "organizationId" | "designData" | "editorMode"> & {
+  status: "published"
+}
+
 export interface CreatePostInput {
   authorId: string
   organizationId?: string

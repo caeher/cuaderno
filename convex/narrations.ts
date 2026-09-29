@@ -1,13 +1,13 @@
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { mutation, query, type QueryCtx } from "./_generated/server"
 import type { Doc } from "./_generated/dataModel"
 import {
   assertCanManageResource,
-  getTenantIdentity,
   requireTenantAuth,
 } from "./lib/auth"
 import { findDocById, getCurrentIsoDate } from "./lib/helpers"
 import { cleanPostToSpeechScript } from "../lib/server/speech-script-sanitizer"
+import { canReadEditorialPost } from "./lib/post-access"
 
 /**
  * Deterministic hash of post content, title, and language.
@@ -41,101 +41,103 @@ function computeContentHash(
  * - Autor / Admin propietario: recibe todos los estados, snapshot de texto, error
  *   y la bandera de obsolescencia (isOutdated) comparada con el post actual.
  */
-export const getForPost = query({
-  args: { postId: v.string() },
-  handler: async (ctx, args) => {
-    const post = await findDocById(ctx.db, "posts", args.postId)
-    if (!post) return null
+export async function getNarrationForPostHandler(ctx: QueryCtx, args: { postId: string }) {
+  const post = await findDocById(ctx.db, "posts", args.postId)
+  if (!post) return null
 
-    // Buscar narraciones asociadas al post (por postId o por postDocId)
-    const postKey = (post._id as string)
-    const postLegacyKey = post.legacyId || postKey
+  let isOwner = false
+  try {
+    const identity = await requireTenantAuth(ctx)
+    isOwner = await canReadEditorialPost(ctx, identity, post)
+  } catch {
+    isOwner = false
+  }
 
-    const byPost = await ctx.db
-      .query("postNarrations")
-      .withIndex("by_post", (q) => q.eq("postId", postKey))
-      .collect()
+  // Una narración puede contener un snapshot del artículo en su transcripción.
+  // Solo el propietario puede consultar narraciones de posts no publicados.
+  if (post.status !== "published" && !isOwner) return null
 
-    const byLegacy =
-      postLegacyKey !== postKey
-        ? await ctx.db
-            .query("postNarrations")
-            .withIndex("by_post", (q) => q.eq("postId", postLegacyKey))
-            .collect()
-        : []
+  // Buscar narraciones asociadas al post (por postId o por postDocId)
+  const postKey = post._id as string
+  const postLegacyKey = post.legacyId || postKey
 
-    const byDocId = await ctx.db
-      .query("postNarrations")
-      .withIndex("by_post_doc", (q) => q.eq("postDocId", post._id))
-      .collect()
+  const byPost = await ctx.db
+    .query("postNarrations")
+    .withIndex("by_post", (q) => q.eq("postId", postKey))
+    .collect()
 
-    const allNarrations = [...byPost, ...byLegacy, ...byDocId]
-      .filter((n) => n.status !== "deleted")
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const byLegacy =
+    postLegacyKey !== postKey
+      ? await ctx.db
+          .query("postNarrations")
+          .withIndex("by_post", (q) => q.eq("postId", postLegacyKey))
+          .collect()
+      : []
 
-    if (allNarrations.length === 0) return null
+  const byDocId = await ctx.db
+    .query("postNarrations")
+    .withIndex("by_post_doc", (q) => q.eq("postDocId", post._id))
+    .collect()
 
-    const activeNarration = allNarrations[0]
+  const allNarrations = [...byPost, ...byLegacy, ...byDocId]
+    .filter((n) => n.status !== "deleted")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+
+  if (allNarrations.length === 0) return null
+
+  const activeNarration = allNarrations[0]
 
     // Resolver URL de audio estable desde Convex Storage
-    let audioUrl: string | null = null
-    if (activeNarration.storageId) {
-      audioUrl = await ctx.storage.getUrl(activeNarration.storageId)
-    }
+  let audioUrl: string | null = null
+  if (activeNarration.storageId) {
+    audioUrl = await ctx.storage.getUrl(activeNarration.storageId)
+  }
 
-    // Verificar si el llamador es el autor/administrador del post
-    const identity = await getTenantIdentity(ctx)
-    let isOwner = false
-    if (identity.isAuthenticated && identity.userId && identity.tenantId) {
-      try {
-        assertCanManageResource(identity as any, post)
-        isOwner = true
-      } catch {
-        isOwner = false
-      }
-    }
-
-    // Vista de Autor/Admin: datos completos y verificación de obsolescencia
-    if (isOwner) {
-      const script = cleanPostToSpeechScript(
-        post.title,
-        post.content,
-        post.excerpt,
-        { language: activeNarration.language || "es" }
-      )
-      const currentHash = computeContentHash(
-        post.title,
-        script.speechScript,
-        activeNarration.language || "es"
-      )
-      const isOutdated = activeNarration.contentHash !== currentHash
-
-      return {
-        ...activeNarration,
-        audioUrl,
-        isOutdated,
-      }
-    }
-
-    // Vista Pública: únicamente narraciones listas ("ready")
-    if (activeNarration.status !== "ready") {
-      return null
-    }
+  // Vista de Autor/Admin: datos completos y verificación de obsolescencia
+  if (isOwner) {
+    const script = cleanPostToSpeechScript(
+      post.title,
+      post.content,
+      post.excerpt,
+      { language: activeNarration.language || "es" }
+    )
+    const currentHash = computeContentHash(
+      post.title,
+      script.speechScript,
+      activeNarration.language || "es"
+    )
+    const isOutdated = activeNarration.contentHash !== currentHash
 
     return {
-      _id: activeNarration._id,
-      postId: activeNarration.postId,
-      status: activeNarration.status,
-      language: activeNarration.language,
-      voice: activeNarration.voice,
-      duration: activeNarration.duration,
-      format: activeNarration.format,
+      ...activeNarration,
       audioUrl,
-      transcript: activeNarration.transcript,
-      approvedAt: activeNarration.approvedAt,
-      createdAt: activeNarration.createdAt,
+      isOutdated,
     }
-  },
+  }
+
+  // Vista Pública: únicamente narraciones listas ("ready")
+  if (activeNarration.status !== "ready") {
+    return null
+  }
+
+  return {
+    _id: activeNarration._id,
+    postId: activeNarration.postId,
+    status: activeNarration.status,
+    language: activeNarration.language,
+    voice: activeNarration.voice,
+    duration: activeNarration.duration,
+    format: activeNarration.format,
+    audioUrl,
+    transcript: activeNarration.transcript,
+    approvedAt: activeNarration.approvedAt,
+    createdAt: activeNarration.createdAt,
+  }
+}
+
+export const getForPost = query({
+  args: { postId: v.string() },
+  handler: getNarrationForPostHandler,
 })
 
 /**

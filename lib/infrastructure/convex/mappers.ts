@@ -18,15 +18,11 @@ import type {
   Post,
   PostNarration,
   PostStatus,
+  PublishedPost,
   Tag,
-  User,
+  User
 } from "@/lib/domain/entities"
-import type {
-  TemplateRevision,
-  TenantTemplate,
-  TenantTemplateSettings,
-} from "@/lib/domain/template-schema"
-
+import type { TemplateRevision, TenantTemplate, TenantTemplateSettings } from "@/lib/domain/template-schema"
 
 export function convexDocToUser(doc: any): User {
   return {
@@ -50,7 +46,7 @@ export function convexDocToUser(doc: any): User {
     subdomainEnabled: doc.subdomainEnabled ?? true,
     customDomain: doc.customDomain || undefined,
     legalSettings: doc.legalSettings || {},
-    seoSettings: doc.seoSettings || {},
+    seoSettings: doc.seoSettings || {}
   }
 }
 
@@ -64,7 +60,7 @@ export function convexDocToCategory(doc: any): Category {
     description: doc.description || undefined,
     color: doc.color || "#3b82f6",
     icon: doc.icon || undefined,
-    postCount: doc.postCount || 0,
+    postCount: doc.postCount || 0
   }
 }
 
@@ -76,7 +72,7 @@ export function convexDocToTag(doc: any): Tag {
     name: doc.name,
     slug: doc.slug,
     color: doc.color || "#64748b",
-    postCount: doc.postCount || 0,
+    postCount: doc.postCount || 0
   }
 }
 
@@ -101,7 +97,29 @@ export function convexDocToPost(doc: any): Post {
     comments: doc.comments || 0,
     featured: Boolean(doc.featured),
     designData: doc.designData || null,
-    editorMode: doc.editorMode || "notion",
+    editorMode: doc.editorMode || "notion"
+  }
+}
+
+export function convexPublishedPostToDomain(doc: any): PublishedPost {
+  return {
+    id: doc.id,
+    authorId: doc.authorId,
+    categoryId: doc.categoryId ?? null,
+    title: doc.title,
+    slug: doc.slug,
+    excerpt: doc.excerpt,
+    content: doc.content,
+    coverUrl: doc.coverUrl ?? null,
+    tags: Array.isArray(doc.tags) ? doc.tags : [],
+    status: "published",
+    publishedAt: doc.publishedAt ?? null,
+    updatedAt: doc.updatedAt,
+    readingTimeMinutes: doc.readingTimeMinutes,
+    views: doc.views,
+    likes: doc.likes,
+    comments: doc.comments,
+    featured: Boolean(doc.featured)
   }
 }
 
@@ -112,7 +130,7 @@ export function convexDocToComment(doc: any): Comment {
     authorName: doc.authorName,
     authorAvatarUrl: doc.authorAvatarUrl || "/placeholder.svg?height=200&width=200",
     content: doc.content,
-    createdAt: doc.createdAt,
+    createdAt: doc.createdAt
   }
 }
 
@@ -130,7 +148,7 @@ export function convexDocToTenantTemplate(doc: any): TenantTemplate {
     isPublished: Boolean(doc.isPublished),
     publishedAt: doc.publishedAt || null,
     createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt,
+    updatedAt: doc.updatedAt
   }
 }
 
@@ -144,7 +162,7 @@ export function convexDocToTemplateRevision(doc: any): TemplateRevision {
     settingsSnapshot: (doc.settingsSnapshot as TenantTemplateSettings) || {},
     publishedBy: doc.publishedBy || null,
     createdAt: doc.createdAt,
-    changeSummary: doc.changeSummary || undefined,
+    changeSummary: doc.changeSummary || undefined
   }
 }
 
@@ -174,7 +192,7 @@ export function convexDocToNarration(doc: any, audioUrl?: string | null): PostNa
     error: doc.error || undefined,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
-    approvedAt: doc.approvedAt || null,
+    approvedAt: doc.approvedAt || null
   }
 }
 
@@ -190,7 +208,7 @@ export function convexDocToComposerSession(doc: any): ComposerSession {
     postId: doc.postId ? (doc.postId as string) : undefined,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
-    expiresAt: doc.expiresAt || undefined,
+    expiresAt: doc.expiresAt || undefined
   }
 }
 
@@ -201,7 +219,7 @@ export function convexDocToComposerMessage(doc: any): ComposerMessage {
     tenantId: doc.tenantId,
     role: (doc.role as ComposerMessageRole) || "user",
     content: doc.content || "",
-    createdAt: doc.createdAt,
+    createdAt: doc.createdAt
   }
 }
 
@@ -218,7 +236,7 @@ export function convexDocToComposerJob(doc: any): ComposerJob {
     error: doc.error || undefined,
     startedAt: doc.startedAt || undefined,
     finishedAt: doc.finishedAt || undefined,
-    createdAt: doc.createdAt,
+    createdAt: doc.createdAt
   }
 }
 
@@ -235,7 +253,7 @@ export function convexDocToComposerSource(doc: any): ComposerSource {
     fetchedAt: doc.fetchedAt || "",
     snippet: doc.snippet || undefined,
     isExcluded: doc.isExcluded !== undefined ? Boolean(doc.isExcluded) : undefined,
-    claims: Array.isArray(doc.claims) ? doc.claims : [],
+    claims: Array.isArray(doc.claims) ? doc.claims : []
   }
 }
 
@@ -249,7 +267,7 @@ export function convexDocToComposerArtifact(doc: any): ComposerArtifact {
     storageId: doc.storageId ? (doc.storageId as string) : undefined,
     version: Number(doc.version || 1),
     supersededBy: doc.supersededBy ? (doc.supersededBy as string) : undefined,
-    createdAt: doc.createdAt,
+    createdAt: doc.createdAt
   }
 }
 
@@ -269,7 +287,6 @@ export function convexDocToAiUsageEvent(doc: any): AiUsageEvent {
     actualCostUsd: doc.actualCostUsd !== undefined ? Number(doc.actualCostUsd) : undefined,
     status: doc.status || "succeeded",
     requestId: doc.requestId || undefined,
-    createdAt: doc.createdAt,
+    createdAt: doc.createdAt
   }
 }
-

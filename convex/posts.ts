@@ -1,175 +1,428 @@
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { mutation, query, type QueryCtx } from "./_generated/server"
 import type { Doc } from "./_generated/dataModel"
-import { assertCanManageResource, requireTenantAuth } from "./lib/auth"
+import { assertCanManageResource, requireTenantAuth, type AuthenticatedTenantIdentity } from "./lib/auth"
 import { calculateReadingTime, findDocById, getCurrentIsoDate } from "./lib/helpers"
+import { assertCanReadEditorialPost, canReadEditorialPost } from "./lib/post-access"
 import {
   adjustCategoryPostCount,
   adjustTagPostCounts,
   categoryAssignmentChanged,
-  tagSlugsDiffer,
+  tagSlugsDiffer
 } from "./lib/taxonomyCounts"
+
+const postStatusValidator = v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))
+
+const publishedPostValidator = v.object({
+  id: v.id("posts"),
+  authorId: v.string(),
+  categoryId: v.union(v.string(), v.null()),
+  title: v.string(),
+  slug: v.string(),
+  excerpt: v.string(),
+  content: v.string(),
+  coverUrl: v.union(v.string(), v.null()),
+  tags: v.array(v.string()),
+  status: v.literal("published"),
+  publishedAt: v.union(v.string(), v.null()),
+  updatedAt: v.string(),
+  readingTimeMinutes: v.number(),
+  views: v.number(),
+  likes: v.number(),
+  comments: v.number(),
+  featured: v.boolean()
+})
+
+const postDocValidator = v.object({
+  _id: v.id("posts"),
+  _creationTime: v.number(),
+  legacyId: v.optional(v.string()),
+  authorId: v.string(),
+  authorDocId: v.optional(v.id("users")),
+  organizationId: v.optional(v.string()),
+  tenantId: v.optional(v.string()),
+  categoryId: v.optional(v.string()),
+  categoryDocId: v.optional(v.id("categories")),
+  title: v.string(),
+  slug: v.string(),
+  excerpt: v.string(),
+  content: v.string(),
+  coverUrl: v.optional(v.string()),
+  tags: v.array(v.string()),
+  status: postStatusValidator,
+  publishedAt: v.optional(v.string()),
+  updatedAt: v.string(),
+  scheduledFor: v.optional(v.string()),
+  readingTimeMinutes: v.number(),
+  views: v.number(),
+  likes: v.number(),
+  comments: v.number(),
+  featured: v.boolean(),
+  designData: v.optional(v.string()),
+  editorMode: v.optional(v.union(v.literal("notion"), v.literal("elementor"))),
+  contentStorageId: v.optional(v.id("_storage"))
+})
+
+const publishedPostListValidator = v.array(publishedPostValidator)
+const postDocListValidator = v.array(postDocValidator)
+const nullablePublishedPostValidator = v.union(publishedPostValidator, v.null())
+const nullablePostDocValidator = v.union(postDocValidator, v.null())
+
+type PublishedPostRecord = {
+  id: Doc<"posts">["_id"]
+  authorId: string
+  categoryId: string | null
+  title: string
+  slug: string
+  excerpt: string
+  content: string
+  coverUrl: string | null
+  tags: string[]
+  status: "published"
+  publishedAt: string | null
+  updatedAt: string
+  readingTimeMinutes: number
+  views: number
+  likes: number
+  comments: number
+  featured: boolean
+}
+
+function toPublishedPost(post: Doc<"posts">): PublishedPostRecord {
+  return {
+    id: post._id,
+    authorId: post.authorId,
+    categoryId: post.categoryId ?? null,
+    title: post.title,
+    slug: post.slug,
+    excerpt: post.excerpt,
+    content: post.content,
+    coverUrl: post.coverUrl ?? null,
+    tags: post.tags,
+    status: "published",
+    publishedAt: post.publishedAt ?? null,
+    updatedAt: post.updatedAt,
+    readingTimeMinutes: post.readingTimeMinutes,
+    views: post.views,
+    likes: post.likes,
+    comments: post.comments,
+    featured: post.featured
+  }
+}
+
+function sortByPublishedDate(posts: Doc<"posts">[]) {
+  return posts.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
+}
+
+function sortByUpdatedDate(posts: Doc<"posts">[]) {
+  return posts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+}
+
+async function getTenantAuthor(ctx: QueryCtx, tenantId: string) {
+  return findDocById(ctx.db, "users", tenantId)
+}
+
+function authorKeys(authorId: string, author: Doc<"users"> | null) {
+  return new Set<string>([
+    authorId,
+    ...(author?.legacyId ? [author.legacyId] : []),
+    ...(author?.clerkUserId ? [author.clerkUserId] : []),
+    ...(author?._id ? [author._id as string] : [])
+  ])
+}
+
+function isPostForTenant(post: Doc<"posts">, tenantId: string, author: Doc<"users"> | null) {
+  if (post.tenantId) return post.tenantId === tenantId
+  if (post.organizationId) return post.organizationId === tenantId
+
+  const keys = authorKeys(tenantId, author)
+  return keys.has(post.authorId) || Boolean(author && post.authorDocId === author._id)
+}
+
+async function collectPublishedByAuthor(ctx: QueryCtx, authorId: string) {
+  const author = await findDocById(ctx.db, "users", authorId)
+  const keys = authorKeys(authorId, author)
+  const postsById = new Map<string, Doc<"posts">>()
+
+  for (const key of keys) {
+    const batch = await ctx.db
+      .query("posts")
+      .withIndex("by_author_and_status", (q) => q.eq("authorId", key).eq("status", "published"))
+      .collect()
+    for (const post of batch) postsById.set(post._id, post)
+  }
+
+  if (author?._id) {
+    const legacyBatch = await ctx.db
+      .query("posts")
+      .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
+      .collect()
+    for (const post of legacyBatch) {
+      if (post.status === "published") postsById.set(post._id, post)
+    }
+  }
+
+  return sortByPublishedDate(Array.from(postsById.values()))
+}
+
+async function collectPublishedByTenant(ctx: QueryCtx, tenantId: string) {
+  const author = await getTenantAuthor(ctx, tenantId)
+  const keys = authorKeys(tenantId, author)
+  const postsById = new Map<string, Doc<"posts">>()
+  const add = (posts: Doc<"posts">[]) => {
+    for (const post of posts) postsById.set(post._id, post)
+  }
+
+  add(
+    await ctx.db
+      .query("posts")
+      .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", tenantId).eq("status", "published"))
+      .collect()
+  )
+  add(
+    await ctx.db
+      .query("posts")
+      .withIndex("by_org_and_status", (q) => q.eq("organizationId", tenantId).eq("status", "published"))
+      .collect()
+  )
+
+  for (const key of keys) {
+    add(
+      await ctx.db
+        .query("posts")
+        .withIndex("by_author_and_status", (q) => q.eq("authorId", key).eq("status", "published"))
+        .collect()
+    )
+  }
+
+  if (author?._id) {
+    const byDoc = await ctx.db
+      .query("posts")
+      .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
+      .collect()
+    add(byDoc.filter((post) => post.status === "published"))
+  }
+
+  const matching: Doc<"posts">[] = []
+  for (const post of postsById.values()) {
+    if (post.status === "published" && isPostForTenant(post, tenantId, author)) {
+      matching.push(post)
+    }
+  }
+  return sortByPublishedDate(matching)
+}
+
+async function collectEditorialByAuthor(ctx: QueryCtx, authorId: string, status: Doc<"posts">["status"] | undefined) {
+  const author = await findDocById(ctx.db, "users", authorId)
+  const keys = authorKeys(authorId, author)
+  const postsById = new Map<string, Doc<"posts">>()
+
+  for (const key of keys) {
+    const batch = status
+      ? await ctx.db
+          .query("posts")
+          .withIndex("by_author_and_status", (q) => q.eq("authorId", key).eq("status", status))
+          .collect()
+      : await ctx.db
+          .query("posts")
+          .withIndex("by_author", (q) => q.eq("authorId", key))
+          .collect()
+    for (const post of batch) postsById.set(post._id, post)
+  }
+
+  if (author?._id) {
+    const byDoc = await ctx.db
+      .query("posts")
+      .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
+      .collect()
+    for (const post of byDoc) {
+      if (!status || post.status === status) postsById.set(post._id, post)
+    }
+  }
+
+  return sortByUpdatedDate(Array.from(postsById.values()))
+}
+
+async function assertEditorialAuthorAccess(ctx: QueryCtx, identity: AuthenticatedTenantIdentity, authorId: string) {
+  const author = await findDocById(ctx.db, "users", authorId)
+  if (identity.tenantType !== "user" || (author?.clerkUserId !== identity.userId && authorId !== identity.userId)) {
+    throw new Error("Acceso denegado: no puedes consultar publicaciones de este autor.")
+  }
+}
+
+export async function listPublishedHandler(ctx: QueryCtx) {
+  const posts = await ctx.db
+    .query("posts")
+    .withIndex("by_status", (q) => q.eq("status", "published"))
+    .collect()
+  return sortByPublishedDate(posts).map(toPublishedPost)
+}
 
 export const list = query({
   args: {},
-  handler: async (ctx) => {
-    const posts = await ctx.db.query("posts").collect()
-    return posts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  },
+  returns: publishedPostListValidator,
+  handler: listPublishedHandler
 })
+
+export async function getPublishedByIdHandler(ctx: QueryCtx, args: { id: string; tenantId?: string }) {
+  const post = await findDocById(ctx.db, "posts", args.id)
+  if (!post || post.status !== "published") return null
+  if (args.tenantId) {
+    const author = await getTenantAuthor(ctx, args.tenantId)
+    if (!isPostForTenant(post, args.tenantId, author)) return null
+  }
+  return toPublishedPost(post)
+}
 
 export const getById = query({
-  args: { id: v.string() },
-  handler: async (ctx, args) => {
-    return await findDocById(ctx.db, "posts", args.id)
-  },
+  args: { id: v.string(), tenantId: v.optional(v.string()) },
+  returns: nullablePublishedPostValidator,
+  handler: getPublishedByIdHandler
 })
+
+export async function getPublishedBySlugHandler(ctx: QueryCtx, args: { slug: string; tenantId?: string }) {
+  const candidates = await ctx.db
+    .query("posts")
+    .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+    .collect()
+  let matching = candidates.filter((post) => post.status === "published")
+  if (args.tenantId) {
+    const author = await getTenantAuthor(ctx, args.tenantId)
+    const tenantMatches: Doc<"posts">[] = []
+    for (const post of matching) {
+      if (isPostForTenant(post, args.tenantId, author)) tenantMatches.push(post)
+    }
+    matching = tenantMatches
+  }
+  matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
+  return matching[0] ? toPublishedPost(matching[0]) : null
+}
 
 export const getBySlug = query({
-  args: { slug: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("posts")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .first()
-  },
+  args: { slug: v.string(), tenantId: v.optional(v.string()) },
+  returns: nullablePublishedPostValidator,
+  handler: getPublishedBySlugHandler
 })
+
+export async function getPublishedByAuthorIdHandler(ctx: QueryCtx, args: { authorId: string }) {
+  return (await collectPublishedByAuthor(ctx, args.authorId)).map(toPublishedPost)
+}
 
 export const getByAuthorId = query({
-  args: {
-    authorId: v.string(),
-    status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))
-    ),
-  },
-  handler: async (ctx, args) => {
-    const author = await findDocById(ctx.db, "users", args.authorId)
-    const authorKeys = new Set<string>([args.authorId])
-    if (author?.legacyId) authorKeys.add(author.legacyId)
-    if (author?.clerkUserId) authorKeys.add(author.clerkUserId)
-    if (author?._id) authorKeys.add(author._id as string)
-
-    const postsById = new Map<string, Doc<"posts">>()
-
-    const collectPosts = (batch: Doc<"posts">[]) => {
-      for (const post of batch) {
-        postsById.set(post._id, post)
-      }
-    }
-
-    for (const authorKey of authorKeys) {
-      if (args.status) {
-        const batch = await ctx.db
-          .query("posts")
-          .withIndex("by_author_and_status", (q) =>
-            q.eq("authorId", authorKey).eq("status", args.status!)
-          )
-          .collect()
-        collectPosts(batch)
-      } else {
-        const batch = await ctx.db
-          .query("posts")
-          .withIndex("by_author", (q) => q.eq("authorId", authorKey))
-          .collect()
-        collectPosts(batch)
-      }
-    }
-
-    if (author?._id) {
-      const byDoc = await ctx.db
-        .query("posts")
-        .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
-        .collect()
-      await collectPosts(byDoc)
-    }
-
-    const posts = Array.from(postsById.values()).filter(Boolean)
-    return posts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-  },
+  args: { authorId: v.string() },
+  returns: publishedPostListValidator,
+  handler: getPublishedByAuthorIdHandler
 })
 
-export const getByOrganization = query({
+export async function getPublishedByTenantHandler(ctx: QueryCtx, args: { tenantId: string }) {
+  return (await collectPublishedByTenant(ctx, args.tenantId)).map(toPublishedPost)
+}
+
+export const getPublishedByTenant = query({
+  args: { tenantId: v.string() },
+  returns: publishedPostListValidator,
+  handler: getPublishedByTenantHandler
+})
+
+export async function getEditorialByIdHandler(ctx: QueryCtx, args: { id: string }) {
+  const identity = await requireTenantAuth(ctx)
+  const post = await findDocById(ctx.db, "posts", args.id)
+  if (!post) return null
+  await assertCanReadEditorialPost(ctx, identity, post)
+  return post
+}
+
+export const getEditorialById = query({
+  args: { id: v.string() },
+  returns: nullablePostDocValidator,
+  handler: getEditorialByIdHandler
+})
+
+export async function getEditorialByAuthorIdHandler(
+  ctx: QueryCtx,
+  args: { authorId: string; status?: "draft" | "published" | "scheduled" }
+) {
+  const identity = await requireTenantAuth(ctx)
+  await assertEditorialAuthorAccess(ctx, identity, args.authorId)
+  const posts = await collectEditorialByAuthor(ctx, args.authorId, args.status)
+  const matching: Doc<"posts">[] = []
+  for (const post of posts) {
+    if (await canReadEditorialPost(ctx, identity, post)) matching.push(post)
+  }
+  return matching
+}
+
+export const getEditorialByAuthorId = query({
+  args: { authorId: v.string(), status: v.optional(postStatusValidator) },
+  returns: postDocListValidator,
+  handler: getEditorialByAuthorIdHandler
+})
+
+export async function getEditorialByOrganizationHandler(
+  ctx: QueryCtx,
   args: {
-    organizationId: v.string(),
-    status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))
-    ),
-  },
-  handler: async (ctx, args) => {
-    const statuses = args.status
-      ? [args.status]
-      : (["draft", "published", "scheduled"] as const)
+    organizationId: string
+    status?: "draft" | "published" | "scheduled"
+  }
+) {
+  const identity = await requireTenantAuth(ctx, args.organizationId)
+  const statuses = args.status ? [args.status] : (["draft", "published", "scheduled"] as const)
+  const postsById = new Map<string, Doc<"posts">>()
 
-    const postsById = new Map<string, { _id: { toString(): string }; updatedAt: string }>()
+  for (const status of statuses) {
+    const byOrganization = await ctx.db
+      .query("posts")
+      .withIndex("by_org_and_status", (q) => q.eq("organizationId", args.organizationId).eq("status", status))
+      .collect()
+    const byTenant = await ctx.db
+      .query("posts")
+      .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", args.organizationId).eq("status", status))
+      .collect()
+    for (const post of [...byOrganization, ...byTenant]) postsById.set(post._id, post)
+  }
 
-    const collectUnique = (
-      batch: Array<{ _id: { toString(): string }; updatedAt: string }>
-    ) => {
-      for (const post of batch) {
-        postsById.set(post._id.toString(), post)
-      }
-    }
+  const matching: Doc<"posts">[] = []
+  for (const post of postsById.values()) {
+    if (await canReadEditorialPost(ctx, identity, post)) matching.push(post)
+  }
+  return sortByUpdatedDate(matching)
+}
 
-    for (const status of statuses) {
-      const byOrg = await ctx.db
-        .query("posts")
-        .withIndex("by_org_and_status", (q) =>
-          q.eq("organizationId", args.organizationId).eq("status", status)
-        )
-        .collect()
-      collectUnique(byOrg)
-
-      const byTenant = await ctx.db
-        .query("posts")
-        .withIndex("by_tenant_and_status", (q) =>
-          q.eq("tenantId", args.organizationId).eq("status", status)
-        )
-        .collect()
-      collectUnique(byTenant)
-
-      const byAuthor = await ctx.db
-        .query("posts")
-        .withIndex("by_author_and_status", (q) =>
-          q.eq("authorId", args.organizationId).eq("status", status)
-        )
-        .collect()
-      collectUnique(byAuthor)
-    }
-
-    return Array.from(postsById.values()).sort((a, b) =>
-      b.updatedAt.localeCompare(a.updatedAt)
-    )
-  },
+export const getEditorialByOrganization = query({
+  args: { organizationId: v.string(), status: v.optional(postStatusValidator) },
+  returns: postDocListValidator,
+  handler: getEditorialByOrganizationHandler
 })
 
 export const getPublished = query({
   args: {},
+  returns: publishedPostListValidator,
   handler: async (ctx) => {
     const posts = await ctx.db
       .query("posts")
       .withIndex("by_status", (q) => q.eq("status", "published"))
       .collect()
 
-    return posts.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  },
+    return sortByPublishedDate(posts).map(toPublishedPost)
+  }
 })
 
 export const getFeatured = query({
   args: {},
+  returns: publishedPostListValidator,
   handler: async (ctx) => {
     const posts = await ctx.db
       .query("posts")
-      .withIndex("by_status_and_featured", (q) =>
-        q.eq("status", "published").eq("featured", true)
-      )
+      .withIndex("by_status_and_featured", (q) => q.eq("status", "published").eq("featured", true))
       .collect()
 
-    return posts.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  },
+    return sortByPublishedDate(posts).map(toPublishedPost)
+  }
 })
 
 export const getByTag = query({
   args: { tagSlug: v.string() },
+  returns: publishedPostListValidator,
   handler: async (ctx, args) => {
     const published = await ctx.db
       .query("posts")
@@ -179,11 +432,13 @@ export const getByTag = query({
     return published
       .filter((p) => p.tags && p.tags.includes(args.tagSlug))
       .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  },
+      .map(toPublishedPost)
+  }
 })
 
 export const getByCategory = query({
   args: { categoryIdOrSlug: v.string() },
+  returns: publishedPostListValidator,
   handler: async (ctx, args) => {
     const published = await ctx.db
       .query("posts")
@@ -212,8 +467,8 @@ export const getByCategory = query({
       }
     }
 
-    return matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  },
+    return matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || "")).map(toPublishedPost)
+  }
 })
 
 export const create = mutation({
@@ -234,14 +489,14 @@ export const create = mutation({
     readingTimeMinutes: v.optional(v.number()),
     featured: v.optional(v.boolean()),
     designData: v.optional(v.union(v.string(), v.null())),
-    editorMode: v.optional(v.union(v.literal("notion"), v.literal("elementor"))),
+    editorMode: v.optional(v.union(v.literal("notion"), v.literal("elementor")))
   },
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     assertCanManageResource(identity, {
       authorId: args.authorId || identity.userId,
       organizationId: args.organizationId,
-      tenantId: args.tenantId || identity.tenantId,
+      tenantId: args.tenantId || identity.tenantId
     })
 
     const now = getCurrentIsoDate()
@@ -249,7 +504,7 @@ export const create = mutation({
     const effectiveTenantId = identity.tenantId
     const effectiveOrgId =
       identity.tenantType === "organization"
-        ? identity.orgId ?? undefined
+        ? (identity.orgId ?? undefined)
         : args.organizationId === identity.tenantId
           ? args.organizationId
           : args.organizationId && args.organizationId === identity.orgId
@@ -257,8 +512,7 @@ export const create = mutation({
             : undefined
 
     const authorDoc = await findDocById(ctx.db, "users", args.authorId)
-    const resolvedAuthorId =
-      authorDoc?.clerkUserId || authorDoc?.legacyId || args.authorId
+    const resolvedAuthorId = authorDoc?.clerkUserId || authorDoc?.legacyId || args.authorId
     const authorDocId = authorDoc?._id
 
     let categoryDocId = undefined
@@ -293,12 +547,12 @@ export const create = mutation({
       comments: 0,
       featured: args.featured ?? false,
       designData: args.designData || undefined,
-      editorMode: args.editorMode || "notion",
+      editorMode: args.editorMode || "notion"
     })
 
     if (authorDoc) {
       await ctx.db.patch(authorDoc._id, {
-        postCount: (authorDoc.postCount || 0) + 1,
+        postCount: (authorDoc.postCount || 0) + 1
       })
     }
 
@@ -306,7 +560,7 @@ export const create = mutation({
     await adjustTagPostCounts(ctx, effectiveTenantId, args.tags, 1)
 
     return await ctx.db.get(docId)
-  },
+  }
 })
 
 export const update = mutation({
@@ -320,9 +574,7 @@ export const update = mutation({
     content: v.optional(v.string()),
     coverUrl: v.optional(v.union(v.string(), v.null())),
     tags: v.optional(v.array(v.string())),
-    status: v.optional(
-      v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))
-    ),
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))),
     scheduledFor: v.optional(v.string()),
     readingTimeMinutes: v.optional(v.number()),
     featured: v.optional(v.boolean()),
@@ -330,18 +582,18 @@ export const update = mutation({
     likes: v.optional(v.number()),
     comments: v.optional(v.number()),
     designData: v.optional(v.union(v.string(), v.null())),
-    editorMode: v.optional(v.union(v.literal("notion"), v.literal("elementor"))),
+    editorMode: v.optional(v.union(v.literal("notion"), v.literal("elementor")))
   },
   handler: async (ctx, args) => {
     const post = await findDocById(ctx.db, "posts", args.id)
     if (!post) return null
 
     const identity = await requireTenantAuth(ctx)
-    assertCanManageResource(identity, post)
+    await assertCanReadEditorialPost(ctx, identity, post)
 
     const now = getCurrentIsoDate()
     const updates: Partial<typeof post> = {
-      updatedAt: now,
+      updatedAt: now
     }
 
     if (args.title !== undefined) updates.title = args.title
@@ -350,9 +602,7 @@ export const update = mutation({
     if (args.content !== undefined) {
       updates.content = args.content
       updates.readingTimeMinutes =
-        args.readingTimeMinutes !== undefined
-          ? args.readingTimeMinutes
-          : calculateReadingTime(args.content)
+        args.readingTimeMinutes !== undefined ? args.readingTimeMinutes : calculateReadingTime(args.content)
     } else if (args.readingTimeMinutes !== undefined) {
       updates.readingTimeMinutes = args.readingTimeMinutes
     }
@@ -389,8 +639,14 @@ export const update = mutation({
       const nextCategoryDocId = updates.categoryDocId
       if (
         categoryAssignmentChanged(
-          { categoryId: post.categoryId, categoryDocId: post.categoryDocId as string | undefined },
-          { categoryId: nextCategoryId, categoryDocId: nextCategoryDocId as string | undefined }
+          {
+            categoryId: post.categoryId,
+            categoryDocId: post.categoryDocId as string | undefined
+          },
+          {
+            categoryId: nextCategoryId,
+            categoryDocId: nextCategoryDocId as string | undefined
+          }
         )
       ) {
         await adjustCategoryPostCount(ctx, post.categoryDocId ?? post.categoryId, -1)
@@ -405,7 +661,7 @@ export const update = mutation({
     }
 
     return await ctx.db.get(post._id)
-  },
+  }
 })
 
 export const remove = mutation({
@@ -415,11 +671,9 @@ export const remove = mutation({
     if (!post) return true
 
     const identity = await requireTenantAuth(ctx)
-    assertCanManageResource(identity, post)
+    await assertCanReadEditorialPost(ctx, identity, post)
 
-    const postKeys = [post._id as string, post.legacyId].filter(
-      (value): value is string => Boolean(value)
-    )
+    const postKeys = [post._id as string, post.legacyId].filter((value): value is string => Boolean(value))
     const commentsByDoc = await ctx.db
       .query("comments")
       .withIndex("by_post_doc", (q) => q.eq("postDocId", post._id))
@@ -443,7 +697,7 @@ export const remove = mutation({
     const author = await findDocById(ctx.db, "users", post.authorId)
     if (author) {
       await ctx.db.patch(author._id, {
-        postCount: Math.max(0, (author.postCount || 1) - 1),
+        postCount: Math.max(0, (author.postCount || 1) - 1)
       })
     }
 
@@ -453,5 +707,5 @@ export const remove = mutation({
 
     await ctx.db.delete(post._id)
     return true
-  },
+  }
 })

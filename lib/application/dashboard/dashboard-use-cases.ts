@@ -9,10 +9,10 @@ export interface PanelTenantScope {
 
 async function getPostsForPanelScope(scope: PanelTenantScope, status?: PostStatus) {
   if (scope.tenantType === "organization") {
-    return postRepository.findByOrganization(scope.tenantId, status)
+    return postRepository.findEditorialByOrganization(scope.tenantId, status)
   }
 
-  return postRepository.findByAuthorId(scope.authorId, status)
+  return postRepository.findEditorialByAuthorId(scope.authorId, status)
 }
 
 export async function getDashboardData(scope: PanelTenantScope) {

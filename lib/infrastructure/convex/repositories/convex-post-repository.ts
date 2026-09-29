@@ -1,13 +1,8 @@
 import { api } from "@/convex/_generated/api"
-import type {
-  CreatePostInput,
-  Post,
-  PostStatus,
-  UpdatePostInput,
-} from "@/lib/domain/entities"
+import type { CreatePostInput, Post, PostStatus, PublishedPost, UpdatePostInput } from "@/lib/domain/entities"
 import type { PostRepository } from "@/lib/domain/repositories"
 import { convexMutation, convexQuery } from "../client"
-import { convexDocToPost } from "../mappers"
+import { convexDocToPost, convexPublishedPostToDomain } from "../mappers"
 
 /**
  * Solo envía a Convex los campos que el caso de uso realmente cambió.
@@ -56,57 +51,69 @@ export function toConvexPostUpdateArgs(id: string, input: UpdatePostInput) {
 }
 
 export class ConvexPostRepository implements PostRepository {
-  async findAll(): Promise<Post[]> {
-    const docs = await convexQuery(api.posts.list)
-    return (docs || []).map(convexDocToPost)
+  async findPublishedById(id: string, tenantId?: string): Promise<PublishedPost | null> {
+    const doc = await convexQuery(api.posts.getById, { id, tenantId })
+    return doc ? convexPublishedPostToDomain(doc) : null
   }
 
-  async findById(id: string): Promise<Post | null> {
-    const doc = await convexQuery(api.posts.getById, { id })
+  async findPublishedBySlug(slug: string, tenantId?: string): Promise<PublishedPost | null> {
+    const doc = await convexQuery(api.posts.getBySlug, { slug, tenantId })
+    return doc ? convexPublishedPostToDomain(doc) : null
+  }
+
+  async findPublishedByAuthorId(authorId: string): Promise<PublishedPost[]> {
+    const docs = await convexQuery(api.posts.getByAuthorId, { authorId })
+    return (docs || []).map(convexPublishedPostToDomain)
+  }
+
+  async findPublishedByTenant(tenantId: string): Promise<PublishedPost[]> {
+    const docs = await convexQuery(api.posts.getPublishedByTenant, {
+      tenantId
+    })
+    return (docs || []).map(convexPublishedPostToDomain)
+  }
+
+  async findEditorialById(id: string): Promise<Post | null> {
+    const doc = await convexQuery(api.posts.getEditorialById, { id })
     return doc ? convexDocToPost(doc) : null
   }
 
-  async findBySlug(slug: string): Promise<Post | null> {
-    const doc = await convexQuery(api.posts.getBySlug, { slug })
-    return doc ? convexDocToPost(doc) : null
-  }
-
-  async findByAuthorId(authorId: string, status?: PostStatus): Promise<Post[]> {
-    const docs = await convexQuery(api.posts.getByAuthorId, {
+  async findEditorialByAuthorId(authorId: string, status?: PostStatus): Promise<Post[]> {
+    const docs = await convexQuery(api.posts.getEditorialByAuthorId, {
       authorId,
-      status,
+      status
     })
     return (docs || []).map(convexDocToPost)
   }
 
-  async findByOrganization(organizationId: string, status?: PostStatus): Promise<Post[]> {
-    const docs = await convexQuery(api.posts.getByOrganization, {
+  async findEditorialByOrganization(organizationId: string, status?: PostStatus): Promise<Post[]> {
+    const docs = await convexQuery(api.posts.getEditorialByOrganization, {
       organizationId,
-      status,
+      status
     })
     return (docs || []).map(convexDocToPost)
   }
 
-  async findPublished(): Promise<Post[]> {
+  async findPublished(): Promise<PublishedPost[]> {
     const docs = await convexQuery(api.posts.getPublished)
-    return (docs || []).map(convexDocToPost)
+    return (docs || []).map(convexPublishedPostToDomain)
   }
 
-  async findFeatured(): Promise<Post[]> {
+  async findFeaturedPublished(): Promise<PublishedPost[]> {
     const docs = await convexQuery(api.posts.getFeatured)
-    return (docs || []).map(convexDocToPost)
+    return (docs || []).map(convexPublishedPostToDomain)
   }
 
-  async findByTag(tagSlug: string): Promise<Post[]> {
+  async findPublishedByTag(tagSlug: string): Promise<PublishedPost[]> {
     const docs = await convexQuery(api.posts.getByTag, { tagSlug })
-    return (docs || []).map(convexDocToPost)
+    return (docs || []).map(convexPublishedPostToDomain)
   }
 
-  async findByCategory(categoryIdOrSlug: string): Promise<Post[]> {
+  async findPublishedByCategory(categoryIdOrSlug: string): Promise<PublishedPost[]> {
     const docs = await convexQuery(api.posts.getByCategory, {
-      categoryIdOrSlug,
+      categoryIdOrSlug
     })
-    return (docs || []).map(convexDocToPost)
+    return (docs || []).map(convexPublishedPostToDomain)
   }
 
   async create(input: CreatePostInput): Promise<Post> {
@@ -124,7 +131,7 @@ export class ConvexPostRepository implements PostRepository {
       readingTimeMinutes: input.readingTimeMinutes,
       featured: input.featured,
       designData: input.designData ?? null,
-      editorMode: input.editorMode,
+      editorMode: input.editorMode
     })
     return convexDocToPost(doc)
   }

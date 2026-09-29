@@ -127,7 +127,7 @@ export async function executePostNarrationJob(
   const config = getAudioServerConfig()
 
   // 1. STEP: Load and validate source post (READ-ONLY)
-  const post = await postRepository.findById(postId)
+  const post = await postRepository.findEditorialById(postId)
   if (!post) {
     return {
       success: false,

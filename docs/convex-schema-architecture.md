@@ -79,14 +79,15 @@ Plantillas visuales modulares para personalización de páginas por tenant.
 
 | Ruta / Caso de Uso | Operación | Colección | Índice Convex Utilizado | Justificación y Filtro |
 | :--- | :--- | :--- | :--- | :--- |
-| **Página Principal / Feed Público** (`/`, `/explorar`) | `getPublishedFeed` | `posts` | `by_status_and_publishedAt` | Filtra `status == "published"` y ordena por fecha descendente sin escanear borradores. |
+| **Página Principal / Feed Público** (`/`, `/explorar`) | `list` / `getPublished` | `posts` | `by_status` | Agrega publicaciones públicas de varios tenants y devuelve una proyección mínima. |
 | **Posts Destacados** (Home / Widgets) | `getFeaturedPosts` | `posts` | `by_status_and_featured` | Filtra `status == "published"` y `featured == true`. |
-| **Lectura de Post** (`/post/[slug]`) | `getPostForReading` | `posts` | `by_slug` | Lookup exacto por slug único (`O(1)`). |
-| **Lectura de Post por Tenant** (`/[tenant]/post/[slug]`) | `getPostForReadingByTenant` | `posts` | `by_slug` | Lookup de post y validación de `authorId` contra usuario. |
-| **Feed de Tenant** (`/[tenant]`) | `getTenantPosts` | `posts` | `by_tenant_and_status` | Recupera únicamente posts publicados del tenant dado. |
+| **Lectura de Post** (`/post/[slug]`) | `getBySlug` | `posts` | `by_slug` | Devuelve una proyección de posts `published`; nunca incluye campos editoriales. |
+| **Lectura de Post por Tenant** (`/[tenant]/post/[slug]`) | `getBySlug` con `tenantId` | `posts` | `by_slug` | Exige estado `published` y coincidencia con el tenant canónico o su propietario heredado. |
+| **Feed de Tenant** (`/[tenant]`) | `getPublishedByTenant` | `posts` | `by_tenant_and_status` | Recupera publicaciones `published` que pertenecen al tenant resuelto. |
 | **Perfil de Autor / Tenant** (`/autor/[username]`) | `getAuthorProfile` | `users` | `by_username` | Búsqueda directa del usuario por su handle (`username`). |
-| **Panel: Listado de Posts del Autor** (`/panel/posts`) | `getAuthorPosts` | `posts` | `by_author_and_status` | Filtra por autor y estado, ordenado por `updatedAt`. |
-| **Panel: Posts de Organización** (`/panel/posts`) | `getOrgPosts` | `posts` | `by_org_and_status` | Filtra por organización activa y estado. |
+| **Panel: Listado de Posts del Autor** (`/panel/posts`) | `getEditorialByAuthorId` | `posts` | `by_author_and_status` | Exige identidad personal coincidente, filtra por estado y ordena por `updatedAt`. |
+| **Panel: Posts de Organización** (`/panel/posts`) | `getEditorialByOrganization` | `posts` | `by_org_and_status` | Exige que la organización activa coincida con el argumento y valida la propiedad de cada post. |
+| **Panel: Post por ID** (`/panel/posts/[id]`) | `getEditorialById` | `posts` | `_id` / `legacyId` | Resuelve IDs nativos y heredados y comprueba el tenant propietario en Convex. |
 | **Comentarios de un Post** (Lectura y Widget) | `getPostComments` | `comments` | `by_post` | Obtiene comentarios para un `postId` ordenados cronológicamente (`createdAt`). |
 | **Taxonomías por Organización/Tenant** | `getCategories`, `getTags` | `categories`, `tags` | `by_tenant`, `by_slug_and_tenant` | Recupera categorías/tags asociadas al tenant o slug específico. |
 | **Plantilla Activa del Tenant** (Diseñador y SSR) | `getTenantTemplate` | `tenantTemplates` | `by_tenant` | Recupera la plantilla exacta configurada para el tenant (`org_...` o `user_...`). |
@@ -179,8 +180,11 @@ Para evitar desbordamientos en casos anómalos (p. ej. inserción masiva de imá
 El control de acceso se basa en la identidad autenticada mediante **Clerk JWT** resuelta en `convex/lib/auth.ts`:
 
 1. **Lecturas Públicas**:
-   - Acceso sin autenticación permitido únicamente para publicaciones con `status: "published"`, categorías/tags activas y plantillas con `isPublished: true`.
+   - Las consultas públicas `posts.list`, `getById`, `getBySlug` y `getByAuthorId`, junto con las consultas de feed, exigen `status: "published"` y devuelven solo los campos de lectura de `PublishedPost`.
+   - El feed global puede agregar publicaciones públicas de todos los tenants. Las rutas de blog pasan el `tenantId` resuelto y filtran por ese tenant; los posts heredados sin tenant usan una resolución explícita por autor.
+   - Comentarios y narraciones de un post solo son visibles públicamente si el post está publicado. Sus dueños autenticados conservan la lectura editorial.
 2. **Mutaciones y Lecturas Privadas**:
+   - `getEditorialById`, `getEditorialByAuthorId` y `getEditorialByOrganization` usan `requireTenantAuth(ctx)` y validan el tenant/propietario del recurso en Convex. Los IDs enviados por el cliente no conceden acceso.
    - `requireTenantAuth(ctx, expectedTenantId)`: Valida la sesión activa de Clerk.
    - **Tenants Personales (`tenantType: "user"`)**:
      `identity.userId === targetTenantId` o `resource.authorId === identity.userId`.
