@@ -1,6 +1,6 @@
-import { v } from "convex/values"
-import { mutation, query, type QueryCtx } from "./_generated/server"
-import { getTenantIdentity, requireTenantAuth } from "./lib/auth"
+import { v, type Infer } from "convex/values"
+import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { requireTenantAuth } from "./lib/auth"
 import { findDocById, getCurrentIsoDate } from "./lib/helpers"
 import {
   socialLinksValidator,
@@ -115,10 +115,9 @@ export async function getPrivateByIdHandler(ctx: QueryCtx, args: { id: string })
   const user = await findDocById(ctx.db, "users", args.id)
   if (!user) return null
 
-  const ownsProfile =
-    user.clerkUserId === identity.userId ||
-    Boolean(identity.tokenIdentifier && user.tokenIdentifier === identity.tokenIdentifier)
-  if (!ownsProfile) throw new Error("Acceso denegado: solo el propietario puede consultar su perfil privado.")
+  if (user.clerkUserId !== identity.userId) {
+    throw new Error("Acceso denegado: solo el propietario puede consultar su perfil privado.")
+  }
   return user
 }
 
@@ -329,67 +328,73 @@ export const create = mutation({
   },
 })
 
+const updateArgsValidator = v.object({
+  id: v.string(),
+  username: v.optional(v.string()),
+  name: v.optional(v.string()),
+  email: v.optional(v.string()),
+  avatarUrl: v.optional(v.string()),
+  coverUrl: v.optional(v.string()),
+  bio: v.optional(v.string()),
+  tagline: v.optional(v.string()),
+  location: v.optional(v.string()),
+  socials: v.optional(socialLinksValidator),
+  timezone: v.optional(v.string()),
+  subdomainEnabled: v.optional(v.boolean()),
+  customDomain: v.optional(v.string()),
+  legalSettings: v.optional(tenantLegalSettingsValidator),
+  seoSettings: v.optional(tenantSeoSettingsValidator),
+})
+
+export async function updateUserHandler(
+  ctx: MutationCtx,
+  args: Infer<typeof updateArgsValidator>
+) {
+  const identity = await requireTenantAuth(ctx)
+  const user = await findDocById(ctx.db, "users", args.id)
+  if (!user) return null
+
+  // Profile fields are personal. Organization roles grant no access to a member's profile.
+  // Legacy profiles are linked to this subject by syncFromClerk before they can be edited.
+  if (user.clerkUserId !== identity.userId) {
+    throw new Error("Acceso denegado: No tienes autorización para modificar este usuario.")
+  }
+
+  if (args.username !== undefined && args.username !== user.username) {
+    const matches = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", args.username!))
+      .collect()
+    if (matches.some((candidate) => candidate._id !== user._id)) {
+      throw new Error("Ese nombre de usuario ya está en uso.")
+    }
+  }
+
+  const updates: Partial<typeof user> = {}
+  if (args.username !== undefined) updates.username = args.username
+  if (args.name !== undefined) updates.name = args.name
+  if (args.email !== undefined) updates.email = args.email
+  if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl
+  if (args.coverUrl !== undefined) updates.coverUrl = args.coverUrl
+  if (args.bio !== undefined) updates.bio = args.bio
+  if (args.tagline !== undefined) updates.tagline = args.tagline
+  if (args.location !== undefined) updates.location = args.location
+  if (args.socials !== undefined) updates.socials = args.socials
+  if (args.timezone !== undefined) updates.timezone = args.timezone
+  if (args.subdomainEnabled !== undefined) updates.subdomainEnabled = args.subdomainEnabled
+  if (args.customDomain !== undefined)
+    updates.customDomain = normalizeCustomDomainValue(args.customDomain)
+  if (args.legalSettings !== undefined) updates.legalSettings = args.legalSettings
+  if (args.seoSettings !== undefined) updates.seoSettings = args.seoSettings
+
+  await ctx.db.patch(user._id, updates)
+  return await ctx.db.get(user._id)
+}
+
 export const update = mutation({
-  args: {
-    id: v.string(),
-    username: v.optional(v.string()),
-    name: v.optional(v.string()),
-    email: v.optional(v.string()),
-    avatarUrl: v.optional(v.string()),
-    coverUrl: v.optional(v.string()),
-    bio: v.optional(v.string()),
-    tagline: v.optional(v.string()),
-    location: v.optional(v.string()),
-    socials: v.optional(socialLinksValidator),
-    timezone: v.optional(v.string()),
-    subdomainEnabled: v.optional(v.boolean()),
-    customDomain: v.optional(v.string()),
-    legalSettings: v.optional(tenantLegalSettingsValidator),
-    seoSettings: v.optional(tenantSeoSettingsValidator),
-  },
+  args: updateArgsValidator,
   returns: nullableUserValidator,
-  handler: async (ctx, args) => {
-    const identity = await requireTenantAuth(ctx)
-    const user = await findDocById(ctx.db, "users", args.id)
-    if (!user) return null
-
-    const isSelf =
-      identity.userId === user.clerkUserId ||
-      Boolean(identity.tokenIdentifier && user.tokenIdentifier === identity.tokenIdentifier)
-    if (!isSelf) {
-      throw new Error("Acceso denegado: No tienes autorización para modificar este usuario.")
-    }
-
-    if (args.username !== undefined && args.username !== user.username) {
-      const matches = await ctx.db
-        .query("users")
-        .withIndex("by_username", (q) => q.eq("username", args.username!))
-        .collect()
-      if (matches.some((candidate) => candidate._id !== user._id)) {
-        throw new Error("Ese nombre de usuario ya está en uso.")
-      }
-    }
-
-    const updates: Partial<typeof user> = {}
-    if (args.username !== undefined) updates.username = args.username
-    if (args.name !== undefined) updates.name = args.name
-    if (args.email !== undefined) updates.email = args.email
-    if (args.avatarUrl !== undefined) updates.avatarUrl = args.avatarUrl
-    if (args.coverUrl !== undefined) updates.coverUrl = args.coverUrl
-    if (args.bio !== undefined) updates.bio = args.bio
-    if (args.tagline !== undefined) updates.tagline = args.tagline
-    if (args.location !== undefined) updates.location = args.location
-    if (args.socials !== undefined) updates.socials = args.socials
-    if (args.timezone !== undefined) updates.timezone = args.timezone
-    if (args.subdomainEnabled !== undefined) updates.subdomainEnabled = args.subdomainEnabled
-    if (args.customDomain !== undefined)
-      updates.customDomain = normalizeCustomDomainValue(args.customDomain)
-    if (args.legalSettings !== undefined) updates.legalSettings = args.legalSettings
-    if (args.seoSettings !== undefined) updates.seoSettings = args.seoSettings
-
-    await ctx.db.patch(user._id, updates)
-    return await ctx.db.get(user._id)
-  },
+  handler: updateUserHandler,
 })
 
 /** Asocia el perfil público del administrador con el tenant de su organización activa. */
@@ -454,61 +459,128 @@ export const setPublicTenantOrganization = mutation({
   },
 })
 
-export const syncFromClerk = mutation({
-  args: {
-    clerkUserId: v.string(),
-    name: v.string(),
-    email: v.string(),
-    username: v.optional(v.string()),
-    avatarUrl: v.optional(v.string()),
-  },
-  returns: nullableUserValidator,
-  handler: async (ctx, args) => {
-    const identity = await requireTenantAuth(ctx)
-    if (identity.userId !== args.clerkUserId) {
-      throw new Error("Acceso denegado: Solo puedes sincronizar tu propio perfil de Clerk.")
-    }
+const syncFromClerkArgsValidator = v.object({
+  clerkUserId: v.string(),
+  name: v.string(),
+  email: v.string(),
+  username: v.optional(v.string()),
+  avatarUrl: v.optional(v.string()),
+})
 
-    const existing = await ctx.db
+export async function syncFromClerkHandler(
+  ctx: MutationCtx,
+  args: Infer<typeof syncFromClerkArgsValidator>
+) {
+  const identity = await requireTenantAuth(ctx)
+  if (identity.userId !== args.clerkUserId) {
+    throw new Error("Acceso denegado: Solo puedes sincronizar tu propio perfil de Clerk.")
+  }
+
+  const profiles = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
+    .take(2)
+  if (profiles.length > 1) {
+    throw new Error("No se puede sincronizar: hay varios perfiles asociados a esta cuenta de Clerk.")
+  }
+
+  let existing = profiles[0]
+  if (!existing && identity.tokenIdentifier) {
+    const legacyProfiles = await ctx.db
       .query("users")
-      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
-      .first()
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        name: args.name,
-        email: args.email,
-        avatarUrl: args.avatarUrl || existing.avatarUrl,
-        username: args.username || existing.username,
-        tokenIdentifier: identity.tokenIdentifier ?? existing.tokenIdentifier,
-      })
-      return await ctx.db.get(existing._id)
+      .withIndex("by_token_identifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier!))
+      .take(2)
+    if (legacyProfiles.length > 1) {
+      throw new Error("No se puede migrar el perfil: la identidad heredada es ambigua.")
     }
 
-    const fallbackUsername =
-      args.username ||
-      args.email.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "") ||
-      `user_${Math.random().toString(36).substring(2, 8)}`
+    const legacyProfile = legacyProfiles[0]
+    if (legacyProfile) {
+      if (legacyProfile.clerkUserId && legacyProfile.clerkUserId !== identity.userId) {
+        throw new Error("No se puede migrar el perfil: ya está asociado a otra cuenta de Clerk.")
+      }
+      existing = legacyProfile
+    }
+  }
 
-    const docId = await ctx.db.insert("users", {
-      clerkUserId: args.clerkUserId,
-      tokenIdentifier: identity.tokenIdentifier ?? undefined,
-      username: fallbackUsername,
+  if (existing) {
+    let username = args.username || existing.username
+    if (username !== existing.username) {
+      const matches = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", username))
+        .collect()
+      if (matches.some((candidate) => candidate._id !== existing!._id)) {
+        // Clerk usernames are mutable profile data, not proof of identity or ownership.
+        // Keep the stored handle and let the owner choose another one in profile settings.
+        username = existing.username
+      }
+    }
+
+    await ctx.db.patch(existing._id, {
+      clerkUserId: identity.userId,
       name: args.name,
       email: args.email,
-      avatarUrl: args.avatarUrl || "/placeholder.svg?height=200&width=200",
-      coverUrl: "/placeholder.svg?height=400&width=1200",
-      bio: "",
-      tagline: "",
-      socials: {},
-      role: "owner",
-      joinedAt: getCurrentIsoDate(),
-      postCount: 0,
-      followerCount: 0,
-      timezone: "UTC",
-      subdomainEnabled: true,
+      avatarUrl: args.avatarUrl || existing.avatarUrl,
+      username,
+      tokenIdentifier: identity.tokenIdentifier ?? existing.tokenIdentifier,
     })
+    return await ctx.db.get(existing._id)
+  }
 
-    return await ctx.db.get(docId)
-  },
+  const requestedUsername =
+    args.username ||
+    args.email.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "") ||
+    `user_${Math.random().toString(36).substring(2, 8)}`
+  const usernameMatches = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", requestedUsername))
+    .take(1)
+  let fallbackUsername = requestedUsername
+  if (usernameMatches.length) {
+    const baseUsername = `user_${args.clerkUserId.replace(/[^a-zA-Z0-9_-]/g, "")}`
+    let hasAvailableUsername = false
+    for (let suffix = 0; suffix < 20; suffix += 1) {
+      const candidate = suffix === 0 ? baseUsername : `${baseUsername}_${suffix}`
+      const matches = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", candidate))
+        .take(1)
+      if (matches.length === 0) {
+        fallbackUsername = candidate
+        hasAvailableUsername = true
+        break
+      }
+    }
+    if (!hasAvailableUsername) {
+      throw new Error("No se pudo asignar un nombre de usuario único al perfil.")
+    }
+  }
+
+  const docId = await ctx.db.insert("users", {
+    clerkUserId: args.clerkUserId,
+    tokenIdentifier: identity.tokenIdentifier ?? undefined,
+    username: fallbackUsername,
+    name: args.name,
+    email: args.email,
+    avatarUrl: args.avatarUrl || "/placeholder.svg?height=200&width=200",
+    coverUrl: "/placeholder.svg?height=400&width=1200",
+    bio: "",
+    tagline: "",
+    socials: {},
+    role: "owner",
+    joinedAt: getCurrentIsoDate(),
+    postCount: 0,
+    followerCount: 0,
+    timezone: "UTC",
+    subdomainEnabled: true,
+  })
+
+  return await ctx.db.get(docId)
+}
+
+export const syncFromClerk = mutation({
+  args: syncFromClerkArgsValidator,
+  returns: nullableUserValidator,
+  handler: syncFromClerkHandler,
 })

@@ -185,6 +185,8 @@ El control de acceso se basa en la identidad autenticada mediante **Clerk JWT** 
    - Comentarios y narraciones de un post solo son visibles públicamente si el post está publicado. Sus dueños autenticados conservan la lectura editorial.
 2. **Mutaciones y Lecturas Privadas**:
    - `getEditorialById`, `getEditorialByAuthorId` y `getEditorialByOrganization` usan `requireTenantAuth(ctx)` y validan el tenant/propietario del recurso en Convex. Los IDs enviados por el cliente no conceden acceso.
+   - `users.update` y `users.getPrivateById` exigen que `users.clerkUserId` coincida con el subject de Clerk (`identity.userId`); el rol de organización no concede acceso al perfil personal de otro miembro. `syncFromClerk` puede asociar un perfil legacy solo cuando su `tokenIdentifier` coincide exactamente con el token autenticado, y persiste `clerkUserId` antes de permitir su edición.
+   - La asociación del blog público al tenant de la organización se gestiona por separado con `setPublicTenantOrganization`, que deriva el tenant de la sesión y exige un rol organizacional autorizado.
    - `requireTenantAuth(ctx, expectedTenantId)`: Valida la sesión activa de Clerk.
    - **Tenants Personales (`tenantType: "user"`)**:
      `identity.userId === targetTenantId` o `resource.authorId === identity.userId`.

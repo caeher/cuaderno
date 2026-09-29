@@ -12,6 +12,7 @@
     "convex:codegen": "convex codegen",
     "convex:export": "convex export",
     "test:contracts": "tsx scratch/run-contract-verification.ts",
+    "test:user-profile-security": "tsx scratch/test-users-update-security.ts",
     "test:narration": "tsx scratch/run-narration-verification.ts",
     "test:narration:faults": "tsx scratch/test-vapi-narration-fault-injection.ts",
     "test:narration:security": "tsx scratch/test-narration-security-and-isolation.ts",
