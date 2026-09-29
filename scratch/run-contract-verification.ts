@@ -10,6 +10,7 @@ import {
 } from "../lib/infrastructure/repositories"
 import { runConvexAuthAndSecurityTests } from "./contract-tests/convex-handler-tests"
 import { runPostReadSecurityTests } from "./contract-tests/post-read-security-tests"
+import { runUserCommentReadSecurityTests } from "./contract-tests/user-comment-read-security-tests"
 import { runRepositoryContractSuite } from "./contract-tests/repository-contract-suite"
 
 const shouldRunLiveConvexTests =
@@ -32,6 +33,10 @@ async function main() {
   const postReadResults = await runPostReadSecurityTests()
   grandTotalPassed += postReadResults.totalPassed
   grandTotalFailed += postReadResults.totalFailed
+
+  const userCommentResults = await runUserCommentReadSecurityTests()
+  grandTotalPassed += userCommentResults.totalPassed
+  grandTotalFailed += userCommentResults.totalFailed
 
   // 2. Verificación de Instanciación de Repositorios Convex
   console.log("==================================================")

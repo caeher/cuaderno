@@ -57,7 +57,49 @@ export interface User {
   seoSettings?: TenantSeoSettings
 }
 
-export interface AuthorWithStats extends User {
+/** Campos de autor que pueden aparecer en páginas públicas y props de React. */
+export type PublicAuthor = Pick<
+  User,
+  | "username"
+  | "name"
+  | "avatarUrl"
+  | "coverUrl"
+  | "bio"
+  | "tagline"
+  | "location"
+  | "socials"
+  | "joinedAt"
+  | "postCount"
+  | "followerCount"
+  | "subdomainEnabled"
+  | "customDomain"
+>
+
+export interface PublicTenantSeoSettings {
+  metaTitle?: string
+  metaDescription?: string
+  keywords?: string[]
+  geoCountry?: string
+  geoRegion?: string
+  geoCity?: string
+  geoCoordinates?: string
+  socialSharingImage?: string
+}
+
+export interface PublicLegalSettings {
+  companyName?: string
+  contactEmail?: string
+  taxId?: string
+  address?: string
+  jurisdiction?: string
+  dpoContact?: string
+  customPrivacyPolicy?: string
+  customTerms?: string
+  customCookiePolicy?: string
+  customLegalNotice?: string
+}
+
+export interface AuthorWithStats extends PublicAuthor {
   totalViews: number
   totalLikes: number
 }

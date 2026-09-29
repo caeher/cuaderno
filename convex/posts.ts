@@ -10,12 +10,29 @@ import {
   categoryAssignmentChanged,
   tagSlugsDiffer
 } from "./lib/taxonomyCounts"
+import { socialLinksValidator } from "./schema"
 
 const postStatusValidator = v.union(v.literal("draft"), v.literal("published"), v.literal("scheduled"))
 
+const publicAuthorValidator = v.object({
+  username: v.string(),
+  name: v.string(),
+  avatarUrl: v.string(),
+  coverUrl: v.string(),
+  bio: v.string(),
+  tagline: v.string(),
+  location: v.optional(v.string()),
+  socials: socialLinksValidator,
+  joinedAt: v.string(),
+  postCount: v.number(),
+  followerCount: v.number(),
+  subdomainEnabled: v.optional(v.boolean()),
+  customDomain: v.optional(v.string()),
+})
+
 const publishedPostValidator = v.object({
   id: v.id("posts"),
-  authorId: v.string(),
+  author: publicAuthorValidator,
   categoryId: v.union(v.string(), v.null()),
   title: v.string(),
   slug: v.string(),
@@ -70,7 +87,21 @@ const nullablePostDocValidator = v.union(postDocValidator, v.null())
 
 type PublishedPostRecord = {
   id: Doc<"posts">["_id"]
-  authorId: string
+  author: {
+    username: string
+    name: string
+    avatarUrl: string
+    coverUrl: string
+    bio: string
+    tagline: string
+    location?: string
+    socials: Doc<"users">["socials"]
+    joinedAt: string
+    postCount: number
+    followerCount: number
+    subdomainEnabled?: boolean
+    customDomain?: string
+  }
   categoryId: string | null
   title: string
   slug: string
@@ -88,10 +119,88 @@ type PublishedPostRecord = {
   featured: boolean
 }
 
-function toPublishedPost(post: Doc<"posts">): PublishedPostRecord {
+type PublicAuthorProjection = PublishedPostRecord["author"]
+type PublicAuthorResolver = (post: Doc<"posts">) => Promise<PublicAuthorProjection>
+
+async function getPublicAuthorForPost(ctx: QueryCtx, post: Doc<"posts">): Promise<PublicAuthorProjection> {
+  let author = post.authorDocId ? await ctx.db.get(post.authorDocId) : null
+  if (!author) {
+    const normalizedAuthorId = ctx.db.normalizeId("users", post.authorId)
+    if (normalizedAuthorId) author = await ctx.db.get(normalizedAuthorId)
+  }
+  if (!author) {
+    author = await ctx.db
+      .query("users")
+      .withIndex("by_legacy_id", (q) => q.eq("legacyId", post.authorId))
+      .first()
+  }
+  if (!author) {
+    author = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", post.authorId))
+      .first()
+  }
+  if (!author) {
+    author = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", post.authorId))
+      .first()
+  }
+
+  if (!author) {
+    return {
+      username: "autor",
+      name: "Autor",
+      avatarUrl: "/placeholder.svg?height=200&width=200",
+      coverUrl: "/placeholder.svg?height=400&width=1200",
+      bio: "",
+      tagline: "",
+      socials: {},
+      joinedAt: post.publishedAt ?? post.updatedAt,
+      postCount: 0,
+      followerCount: 0,
+      subdomainEnabled: false,
+    }
+  }
+
+  return {
+    username: author.username,
+    name: author.name,
+    avatarUrl: author.avatarUrl,
+    coverUrl: author.coverUrl,
+    bio: author.bio,
+    tagline: author.tagline,
+    ...(author.location !== undefined ? { location: author.location } : {}),
+    socials: author.socials,
+    joinedAt: author.joinedAt,
+    postCount: author.postCount,
+    followerCount: author.followerCount,
+    ...(author.subdomainEnabled !== undefined ? { subdomainEnabled: author.subdomainEnabled } : {}),
+    ...(author.customDomain !== undefined ? { customDomain: author.customDomain } : {}),
+  }
+}
+
+function createPublicAuthorResolver(ctx: QueryCtx): PublicAuthorResolver {
+  const cache = new Map<string, Promise<PublicAuthorProjection>>()
+  return (post) => {
+    const key = (post.authorDocId as string | undefined) ?? post.authorId
+    let author = cache.get(key)
+    if (!author) {
+      author = getPublicAuthorForPost(ctx, post)
+      cache.set(key, author)
+    }
+    return author
+  }
+}
+
+async function toPublishedPost(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+  resolveAuthor: PublicAuthorResolver = (record) => getPublicAuthorForPost(ctx, record)
+): Promise<PublishedPostRecord> {
   return {
     id: post._id,
-    authorId: post.authorId,
+    author: await resolveAuthor(post),
     categoryId: post.categoryId ?? null,
     title: post.title,
     slug: post.slug,
@@ -108,6 +217,11 @@ function toPublishedPost(post: Doc<"posts">): PublishedPostRecord {
     comments: post.comments,
     featured: post.featured
   }
+}
+
+async function toPublishedPosts(ctx: QueryCtx, posts: Doc<"posts">[]): Promise<PublishedPostRecord[]> {
+  const resolveAuthor = createPublicAuthorResolver(ctx)
+  return await Promise.all(posts.map((post) => toPublishedPost(ctx, post, resolveAuthor)))
 }
 
 function sortByPublishedDate(posts: Doc<"posts">[]) {
@@ -255,7 +369,7 @@ export async function listPublishedHandler(ctx: QueryCtx) {
     .query("posts")
     .withIndex("by_status", (q) => q.eq("status", "published"))
     .collect()
-  return sortByPublishedDate(posts).map(toPublishedPost)
+  return await toPublishedPosts(ctx, sortByPublishedDate(posts))
 }
 
 export const list = query({
@@ -271,7 +385,7 @@ export async function getPublishedByIdHandler(ctx: QueryCtx, args: { id: string;
     const author = await getTenantAuthor(ctx, args.tenantId)
     if (!isPostForTenant(post, args.tenantId, author)) return null
   }
-  return toPublishedPost(post)
+  return await toPublishedPost(ctx, post)
 }
 
 export const getById = query({
@@ -295,7 +409,7 @@ export async function getPublishedBySlugHandler(ctx: QueryCtx, args: { slug: str
     matching = tenantMatches
   }
   matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  return matching[0] ? toPublishedPost(matching[0]) : null
+  return matching[0] ? await toPublishedPost(ctx, matching[0]) : null
 }
 
 export const getBySlug = query({
@@ -305,7 +419,7 @@ export const getBySlug = query({
 })
 
 export async function getPublishedByAuthorIdHandler(ctx: QueryCtx, args: { authorId: string }) {
-  return (await collectPublishedByAuthor(ctx, args.authorId)).map(toPublishedPost)
+  return await toPublishedPosts(ctx, await collectPublishedByAuthor(ctx, args.authorId))
 }
 
 export const getByAuthorId = query({
@@ -314,14 +428,65 @@ export const getByAuthorId = query({
   handler: getPublishedByAuthorIdHandler
 })
 
+export const getByAuthorUsername = query({
+  args: { username: v.string() },
+  returns: publishedPostListValidator,
+  handler: async (ctx, args) => {
+    const author = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first()
+    if (!author) return []
+    const posts = await collectPublishedByAuthor(ctx, author._id as string)
+    return await toPublishedPosts(ctx, posts)
+  },
+})
+
 export async function getPublishedByTenantHandler(ctx: QueryCtx, args: { tenantId: string }) {
-  return (await collectPublishedByTenant(ctx, args.tenantId)).map(toPublishedPost)
+  return await toPublishedPosts(ctx, await collectPublishedByTenant(ctx, args.tenantId))
 }
 
 export const getPublishedByTenant = query({
   args: { tenantId: v.string() },
   returns: publishedPostListValidator,
   handler: getPublishedByTenantHandler
+})
+
+export const getPublishedByTenantSlug = query({
+  args: { username: v.string() },
+  returns: publishedPostListValidator,
+  handler: async (ctx, args) => {
+    const author = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first()
+    if (!author) return []
+    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
+    const posts = await collectPublishedByTenant(ctx, tenantId)
+    return await toPublishedPosts(ctx, posts)
+  },
+})
+
+export const getBySlugAndTenantSlug = query({
+  args: { slug: v.string(), username: v.string() },
+  returns: nullablePublishedPostValidator,
+  handler: async (ctx, args) => {
+    const author = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first()
+    if (!author) return null
+
+    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
+    const candidates = await ctx.db
+      .query("posts")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .collect()
+    const matching = candidates
+      .filter((post) => post.status === "published" && isPostForTenant(post, tenantId, author))
+      .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))[0]
+    return matching ? await toPublishedPost(ctx, matching) : null
+  },
 })
 
 export async function getEditorialByIdHandler(ctx: QueryCtx, args: { id: string }) {
@@ -403,7 +568,7 @@ export const getPublished = query({
       .withIndex("by_status", (q) => q.eq("status", "published"))
       .collect()
 
-    return sortByPublishedDate(posts).map(toPublishedPost)
+    return await toPublishedPosts(ctx, sortByPublishedDate(posts))
   }
 })
 
@@ -416,7 +581,7 @@ export const getFeatured = query({
       .withIndex("by_status_and_featured", (q) => q.eq("status", "published").eq("featured", true))
       .collect()
 
-    return sortByPublishedDate(posts).map(toPublishedPost)
+    return await toPublishedPosts(ctx, sortByPublishedDate(posts))
   }
 })
 
@@ -429,10 +594,9 @@ export const getByTag = query({
       .withIndex("by_status", (q) => q.eq("status", "published"))
       .collect()
 
-    return published
+    return await toPublishedPosts(ctx, published
       .filter((p) => p.tags && p.tags.includes(args.tagSlug))
-      .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-      .map(toPublishedPost)
+      .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || "")))
   }
 })
 
@@ -467,7 +631,10 @@ export const getByCategory = query({
       }
     }
 
-    return matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || "")).map(toPublishedPost)
+    return await toPublishedPosts(
+      ctx,
+      matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
+    )
   }
 })
 

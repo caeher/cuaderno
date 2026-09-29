@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { TenantTemplate, TemplateRevision } from "@/lib/domain/template-schema"
+import type { Comment, PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import {
   getTenantTemplateRevisionsAction,
   publishTenantTemplateAction,
@@ -153,16 +154,30 @@ function DesignerStudioInner({ template, tenantSlug }: DesignerStudioProps) {
     subdomainEnabled: true,
   }), [template.tenantId, tenantSlug])
 
+  const samplePublicAuthor = React.useMemo<PublicAuthor>(() => ({
+    username: sampleTenantUser.username,
+    name: sampleTenantUser.name,
+    avatarUrl: sampleTenantUser.avatarUrl,
+    coverUrl: sampleTenantUser.coverUrl,
+    bio: sampleTenantUser.bio,
+    tagline: sampleTenantUser.tagline,
+    socials: sampleTenantUser.socials,
+    joinedAt: sampleTenantUser.joinedAt,
+    postCount: sampleTenantUser.postCount,
+    followerCount: sampleTenantUser.followerCount,
+    subdomainEnabled: sampleTenantUser.subdomainEnabled,
+  }), [sampleTenantUser])
+
   const sampleCategories = React.useMemo(() => [
     { id: "cat_1", name: "Arquitectura", slug: "arquitectura", color: "#3b82f6", postCount: 6 },
     { id: "cat_2", name: "Tipografía", slug: "tipografia", color: "#8b5cf6", postCount: 4 },
     { id: "cat_3", name: "Producto", slug: "producto", color: "#10b981", postCount: 4 },
   ], [])
 
-  const samplePosts = React.useMemo(() => [
+  const samplePosts = React.useMemo<PublishedPost[]>(() => [
     {
       id: "post_sample_1",
-      authorId: sampleTenantUser.id,
+      author: samplePublicAuthor,
       title: "El renacer del diseño editorial en la era digital",
       slug: "renacer-diseno-editorial",
       excerpt: "Cómo las publicaciones web modernas recuperan la elegancia y el ritmo visual de las revistas clásicas.",
@@ -187,7 +202,6 @@ Cuando un lector se sumerge en un ensayo largo, el diseño debe acompañar la le
       status: "published" as const,
       featured: true,
       publishedAt: "2026-08-20T10:00:00Z",
-      createdAt: "2026-08-20T10:00:00Z",
       updatedAt: "2026-08-25T14:30:00Z",
       views: 1420,
       likes: 86,
@@ -196,7 +210,7 @@ Cuando un lector se sumerge en un ensayo largo, el diseño debe acompañar la le
     },
     {
       id: "post_sample_2",
-      authorId: sampleTenantUser.id,
+      author: samplePublicAuthor,
       title: "Tipografía Fluida y Sistemas de Espaciado",
       slug: "tipografia-fluida",
       excerpt: "Exploración práctica de unidades clamp() y ritmos verticales en interfaces contemporáneas.",
@@ -207,37 +221,26 @@ Cuando un lector se sumerge en un ensayo largo, el diseño debe acompañar la le
       status: "published" as const,
       featured: false,
       publishedAt: "2026-08-15T09:00:00Z",
-      createdAt: "2026-08-15T09:00:00Z",
       updatedAt: "2026-08-18T11:00:00Z",
       views: 940,
       likes: 42,
       readingTimeMinutes: 4,
       comments: 3,
     },
-  ], [sampleTenantUser.id])
+  ], [samplePublicAuthor])
 
-  const sampleComments = React.useMemo(() => [
+  const sampleComments = React.useMemo<Comment[]>(() => [
     {
-      id: "com_1",
-      postId: "post_sample_1",
-      authorId: "u_reader_1",
       authorName: "Carlos Vega",
       authorAvatarUrl: "/placeholder.svg",
       content: "Un artículo inspirador. Me encanta cómo se equilibran los espacios en blanco y la tipografía en esta maquetación.",
       createdAt: "2026-08-26T12:00:00Z",
-      updatedAt: "2026-08-26T12:00:00Z",
-      status: "approved" as const,
     },
     {
-      id: "com_2",
-      postId: "post_sample_1",
-      authorId: "u_reader_2",
       authorName: "Sofía Navarro",
       authorAvatarUrl: "/placeholder.svg",
       content: "Excelente estructura visual. Las citas y los puntos clave facilitan mucho la comprensión rápida.",
       createdAt: "2026-08-27T08:30:00Z",
-      updatedAt: "2026-08-27T08:30:00Z",
-      status: "approved" as const,
     },
   ], [])
 
@@ -247,14 +250,14 @@ Cuando un lector se sumerge en un ensayo largo, el diseño debe acompañar la le
         slotType: activeSlot,
         isStudioCanvas: true,
         global: {
-          tenant: sampleTenantUser,
+          tenant: samplePublicAuthor,
           homeUrl: `/${tenantSlug || "estudio"}`,
           isSubdomain: false,
           siteTitle: templateName || "Cuaderno",
           siteDescription: sampleTenantUser.bio,
         },
         home: {
-          tenant: sampleTenantUser,
+          tenant: samplePublicAuthor,
           homeUrl: `/${tenantSlug || "estudio"}`,
           isSubdomain: false,
           siteTitle: templateName || "Cuaderno",
@@ -264,11 +267,11 @@ Cuando un lector se sumerge en un ensayo largo, el diseño debe acompañar la le
           totalPosts: samplePosts.length,
         },
         post: {
-          tenant: sampleTenantUser,
+          tenant: samplePublicAuthor,
           homeUrl: `/${tenantSlug || "estudio"}`,
           isSubdomain: false,
           post: samplePosts[0],
-          author: sampleTenantUser,
+          author: samplePublicAuthor,
           comments: sampleComments,
           relatedPosts: [samplePosts[1]],
         },

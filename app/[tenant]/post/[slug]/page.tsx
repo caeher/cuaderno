@@ -3,9 +3,9 @@ import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import {
   getPostForReadingByTenant,
-  getPublishedTemplateForTenant,
+  getPublishedTemplateForTenantSlug,
+  getPublicTenantSeoSettings,
 } from "@/lib/application/blog-use-cases"
-import { userRepository } from "@/lib/infrastructure/repositories"
 import { ArticleContainer } from "@/components/layout"
 import { Separator } from "@/components/ui/separator"
 import { JsonLdScript } from "@/components/seo/json-ld-script"
@@ -32,15 +32,18 @@ interface TenantPostPageProps {
 
 export async function generateMetadata({ params }: TenantPostPageProps): Promise<Metadata> {
   const { tenant, slug } = await params
-  const data = await getPostForReadingByTenant(tenant, slug)
+  const [data, seo] = await Promise.all([
+    getPostForReadingByTenant(tenant, slug),
+    getPublicTenantSeoSettings(tenant),
+  ])
   if (!data) return { title: "Artículo no encontrado" }
 
   const { post, author } = data
 
   return constructSiteMetadata({
-    title: `${post.title} · ${author.name}`,
-    description: post.excerpt || `Lee ${post.title} por ${author.name} en su blog.`,
-    image: post.coverUrl,
+    title: seo?.metaTitle || `${post.title} · ${author.name}`,
+    description: seo?.metaDescription || post.excerpt || `Lee ${post.title} por ${author.name} en su blog.`,
+    image: seo?.socialSharingImage || post.coverUrl,
     canonicalPath: `/${tenant}/post/${post.slug}`,
     type: "article",
     publishedTime: post.publishedAt,
@@ -63,11 +66,7 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
   const isSubdomain = reqHeaders.get("x-is-subdomain") === "true"
 
   const { post, author, comments, relatedPosts } = data
-  const [allAuthors, publishedTemplate] = await Promise.all([
-    userRepository.findAll(),
-    getPublishedTemplateForTenant(author.id),
-  ])
-  const authorMap = new Map(allAuthors.map((u) => [u.id, u]))
+  const publishedTemplate = await getPublishedTemplateForTenantSlug(tenant)
 
   const baseUrl = `${SITE_CONFIG.url}/${tenant}`
   const articleJsonLd = generateArticleJsonLd(post, author, baseUrl, true)
@@ -89,7 +88,6 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
     author,
     comments,
     relatedPosts,
-    authorMap,
   }
 
   const classicFallback = (
@@ -127,7 +125,7 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
       <Separator className="my-10" />
       <AuthorBioCard author={author} />
       <PostCommentsSection comments={comments} postId={post.id} postSlug={post.slug} />
-      <RelatedPostsSection posts={relatedPosts} authorMap={authorMap} />
+      <RelatedPostsSection posts={relatedPosts} />
     </ArticleContainer>
   )
 
@@ -145,5 +143,3 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
     </>
   )
 }
-
-

@@ -1,15 +1,15 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { buildTenantUrl } from "@/lib/tenant-utils"
 import { cn } from "@/lib/utils"
 
 export interface PostCardProps {
-  post: Post
-  author: User
+  post: PublishedPost
+  author: PublicAuthor
   variant?: "default" | "compact"
   className?: string
 }
@@ -77,7 +77,7 @@ export function PostCard({ post, author, variant = "default", className }: PostC
   )
 }
 
-export function PostCardMeta({ post, author }: { post: Post; author: User }) {
+export function PostCardMeta({ post, author }: { post: PublishedPost; author: PublicAuthor }) {
   const authorUrl = buildTenantUrl({
     tenantSlug: author.username,
     path: `/author/${author.username}`,
@@ -115,4 +115,3 @@ export function PostCardMeta({ post, author }: { post: Post; author: User }) {
     </div>
   )
 }
-

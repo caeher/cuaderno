@@ -1,5 +1,5 @@
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { mutation, query, type QueryCtx } from "./_generated/server"
 import { getTenantIdentity, requireTenantAuth } from "./lib/auth"
 import { findDocById, getCurrentIsoDate } from "./lib/helpers"
 import {
@@ -8,38 +8,187 @@ import {
   tenantSeoSettingsValidator,
 } from "./schema"
 
-export const list = query({
+const publicAuthorValidator = v.object({
+  username: v.string(),
+  name: v.string(),
+  avatarUrl: v.string(),
+  coverUrl: v.string(),
+  bio: v.string(),
+  tagline: v.string(),
+  location: v.optional(v.string()),
+  socials: socialLinksValidator,
+  joinedAt: v.string(),
+  postCount: v.number(),
+  followerCount: v.number(),
+  subdomainEnabled: v.optional(v.boolean()),
+  customDomain: v.optional(v.string()),
+})
+
+const publicLegalSettingsValidator = tenantLegalSettingsValidator
+const publicSeoSettingsValidator = v.object({
+  metaTitle: v.optional(v.string()),
+  metaDescription: v.optional(v.string()),
+  keywords: v.optional(v.array(v.string())),
+  geoCountry: v.optional(v.string()),
+  geoRegion: v.optional(v.string()),
+  geoCity: v.optional(v.string()),
+  geoCoordinates: v.optional(v.string()),
+  socialSharingImage: v.optional(v.string()),
+})
+
+const userValidator = v.object({
+  _id: v.id("users"),
+  _creationTime: v.number(),
+  legacyId: v.optional(v.string()),
+  clerkUserId: v.optional(v.string()),
+  tokenIdentifier: v.optional(v.string()),
+  username: v.string(),
+  name: v.string(),
+  email: v.string(),
+  avatarUrl: v.string(),
+  coverUrl: v.string(),
+  bio: v.string(),
+  tagline: v.string(),
+  location: v.optional(v.string()),
+  socials: socialLinksValidator,
+  role: v.union(v.literal("owner"), v.literal("admin")),
+  joinedAt: v.string(),
+  postCount: v.number(),
+  followerCount: v.number(),
+  timezone: v.optional(v.string()),
+  subdomainEnabled: v.optional(v.boolean()),
+  customDomain: v.optional(v.string()),
+  legalSettings: v.optional(tenantLegalSettingsValidator),
+  seoSettings: v.optional(tenantSeoSettingsValidator),
+})
+const nullableUserValidator = v.union(userValidator, v.null())
+
+export function toPublicAuthor(user: {
+  username: string
+  name: string
+  avatarUrl: string
+  coverUrl: string
+  bio: string
+  tagline: string
+  location?: string
+  socials: { website?: string; twitter?: string; github?: string; linkedin?: string; instagram?: string }
+  joinedAt: string
+  postCount: number
+  followerCount: number
+  subdomainEnabled?: boolean
+  customDomain?: string
+}) {
+  return {
+    username: user.username,
+    name: user.name,
+    avatarUrl: user.avatarUrl,
+    coverUrl: user.coverUrl,
+    bio: user.bio,
+    tagline: user.tagline,
+    ...(user.location !== undefined ? { location: user.location } : {}),
+    socials: user.socials,
+    joinedAt: user.joinedAt,
+    postCount: user.postCount,
+    followerCount: user.followerCount,
+    ...(user.subdomainEnabled !== undefined ? { subdomainEnabled: user.subdomainEnabled } : {}),
+    ...(user.customDomain !== undefined ? { customDomain: user.customDomain } : {}),
+  }
+}
+
+export async function listPublicHandler(ctx: QueryCtx) {
+  return (await ctx.db.query("users").collect()).map(toPublicAuthor)
+}
+
+export const listPublic = query({
   args: {},
-  handler: async (ctx) => {
-    return await ctx.db.query("users").collect()
-  },
+  returns: v.array(publicAuthorValidator),
+  handler: listPublicHandler,
 })
 
-export const getById = query({
+export async function getPrivateByIdHandler(ctx: QueryCtx, args: { id: string }) {
+  const identity = await requireTenantAuth(ctx)
+  const user = await findDocById(ctx.db, "users", args.id)
+  if (!user) return null
+
+  const ownsProfile =
+    user.clerkUserId === identity.userId ||
+    Boolean(identity.tokenIdentifier && user.tokenIdentifier === identity.tokenIdentifier)
+  if (!ownsProfile) throw new Error("Acceso denegado: solo el propietario puede consultar su perfil privado.")
+  return user
+}
+
+export const getPrivateById = query({
   args: { id: v.string() },
-  handler: async (ctx, args) => {
-    return await findDocById(ctx.db, "users", args.id)
-  },
+  returns: nullableUserValidator,
+  handler: getPrivateByIdHandler,
 })
 
-export const getByUsername = query({
+export async function getCurrentHandler(ctx: QueryCtx) {
+  const identity = await requireTenantAuth(ctx)
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", identity.userId))
+    .first()
+}
+
+export const getCurrent = query({
+  args: {},
+  returns: nullableUserValidator,
+  handler: getCurrentHandler,
+})
+
+export async function getPublicByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", args.username))
+    .first()
+  return user ? toPublicAuthor(user) : null
+}
+
+export const getPublicByUsername = query({
   args: { username: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("users")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first()
-  },
+  returns: v.union(publicAuthorValidator, v.null()),
+  handler: getPublicByUsernameHandler,
 })
 
-export const getByClerkUserId = query({
-  args: { clerkUserId: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("users")
-      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", args.clerkUserId))
-      .first()
-  },
+export async function getPublicLegalSettingsByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", args.username))
+    .first()
+  return user?.legalSettings ?? null
+}
+
+export const getPublicLegalSettingsByUsername = query({
+  args: { username: v.string() },
+  returns: v.union(publicLegalSettingsValidator, v.null()),
+  handler: getPublicLegalSettingsByUsernameHandler,
+})
+
+export async function getPublicSeoSettingsByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", args.username))
+    .first()
+  const seo = user?.seoSettings
+  if (!seo) return null
+
+  return {
+    ...(seo.metaTitle !== undefined ? { metaTitle: seo.metaTitle } : {}),
+    ...(seo.metaDescription !== undefined ? { metaDescription: seo.metaDescription } : {}),
+    ...(seo.keywords !== undefined ? { keywords: seo.keywords } : {}),
+    ...(seo.geoCountry !== undefined ? { geoCountry: seo.geoCountry } : {}),
+    ...(seo.geoRegion !== undefined ? { geoRegion: seo.geoRegion } : {}),
+    ...(seo.geoCity !== undefined ? { geoCity: seo.geoCity } : {}),
+    ...(seo.geoCoordinates !== undefined ? { geoCoordinates: seo.geoCoordinates } : {}),
+    ...(seo.socialSharingImage !== undefined ? { socialSharingImage: seo.socialSharingImage } : {}),
+  }
+}
+
+export const getPublicSeoSettingsByUsername = query({
+  args: { username: v.string() },
+  returns: v.union(publicSeoSettingsValidator, v.null()),
+  handler: getPublicSeoSettingsByUsernameHandler,
 })
 
 /**
@@ -78,6 +227,7 @@ function normalizeCustomDomainValue(value: string | undefined | null): string | 
  */
 export const getByCustomDomain = query({
   args: { customDomain: v.string() },
+  returns: v.union(v.object({ username: v.string(), customDomain: v.union(v.string(), v.null()) }), v.null()),
   handler: async (ctx, args) => {
     const domain = normalizeCustomDomainValue(args.customDomain)
     if (!domain) return null
@@ -119,6 +269,7 @@ export const create = mutation({
     legalSettings: v.optional(tenantLegalSettingsValidator),
     seoSettings: v.optional(tenantSeoSettingsValidator),
   },
+  returns: nullableUserValidator,
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
 
@@ -132,6 +283,9 @@ export const create = mutation({
       .first()
 
     if (existing) {
+      if (existing.clerkUserId !== identity.userId) {
+        throw new Error("Ese nombre de usuario ya está en uso.")
+      }
       return existing
     }
 
@@ -182,6 +336,7 @@ export const update = mutation({
     legalSettings: v.optional(tenantLegalSettingsValidator),
     seoSettings: v.optional(tenantSeoSettingsValidator),
   },
+  returns: nullableUserValidator,
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     const user = await findDocById(ctx.db, "users", args.id)
@@ -189,11 +344,8 @@ export const update = mutation({
 
     const isSelf =
       identity.userId === user.clerkUserId ||
-      identity.userId === user.legacyId ||
-      identity.userId === (user._id as string) ||
-      identity.username === user.username
-    const isOrgAdmin = identity.tenantType === "organization" && identity.orgRole === "org:admin"
-    if (!isSelf && !isOrgAdmin) {
+      Boolean(identity.tokenIdentifier && user.tokenIdentifier === identity.tokenIdentifier)
+    if (!isSelf) {
       throw new Error("Acceso denegado: No tienes autorización para modificar este usuario.")
     }
 
@@ -227,6 +379,7 @@ export const syncFromClerk = mutation({
     username: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
   },
+  returns: nullableUserValidator,
   handler: async (ctx, args) => {
     const identity = await requireTenantAuth(ctx)
     if (identity.userId !== args.clerkUserId) {

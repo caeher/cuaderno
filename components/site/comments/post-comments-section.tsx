@@ -121,8 +121,8 @@ export function PostCommentsSection({
 
       {comments.length > 0 ? (
         <div className="mt-6 flex flex-col gap-6">
-          {comments.map((comment) => (
-            <CommentItem key={comment.id} comment={comment} />
+          {comments.map((comment, index) => (
+            <CommentItem key={`${comment.createdAt}-${comment.authorName}-${index}`} comment={comment} />
           ))}
         </div>
       ) : (

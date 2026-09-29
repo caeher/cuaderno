@@ -6,7 +6,7 @@
  */
 
 import type { BlockNode } from "./block-schema"
-import type { Category, Post, User, Comment } from "./entities"
+import type { Category, PublishedPost, PublicAuthor, Comment } from "./entities"
 
 export type TemplateSlotType = "home" | "post" | "header" | "footer"
 export type TemplateStatus = "draft" | "published"
@@ -40,6 +40,12 @@ export interface TenantTemplate {
   updatedAt: string
   createdAt: string
 }
+
+/** Published fields safe to serialize into public tenant pages. */
+export type PublicTenantTemplate = Pick<
+  TenantTemplate,
+  "name" | "version" | "publishedSlots" | "settings" | "isPublished"
+>
 
 /**
  * Domain alias for TenantTemplate
@@ -78,7 +84,7 @@ export interface UpdateTemplateDraftInput {
  */
 
 export interface GlobalTemplateContext {
-  tenant: User
+  tenant: PublicAuthor
   homeUrl: string
   isSubdomain: boolean
   siteTitle?: string
@@ -86,18 +92,17 @@ export interface GlobalTemplateContext {
 }
 
 export interface HomeSlotContext extends GlobalTemplateContext {
-  posts: Post[]
-  featuredPost?: Post | null
+  posts: PublishedPost[]
+  featuredPost?: PublishedPost | null
   categories: Category[]
   totalPosts: number
 }
 
 export interface PostSlotContext extends GlobalTemplateContext {
-  post: Post
-  author: User
+  post: PublishedPost
+  author: PublicAuthor
   comments: Comment[]
-  relatedPosts: Post[]
-  authorMap?: Map<string, User>
+  relatedPosts: PublishedPost[]
 }
 
 export function serializeSlotMap(slots: SlotBlocksMap): string {

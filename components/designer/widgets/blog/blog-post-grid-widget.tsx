@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import type { BlockNode } from "@/lib/domain/block-schema"
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { blockStyleToCss } from "../utils/style-converter"
 import { useTemplateContext } from "@/components/site/template-context"
 import { PostCard } from "@/components/site/post-card"
@@ -15,9 +15,21 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
   const columns = Number(node.props?.columns || 2)
   const limit = Number(node.props?.limit || node.props?.count || 10)
   const isPostSlot = slotType === "post" || node.type === "post_grid"
+  const studioAuthor = {
+    username: "elenamarti",
+    name: "Elena Martí",
+    avatarUrl: "/placeholder.svg",
+    coverUrl: "/placeholder.svg",
+    bio: "",
+    tagline: "",
+    socials: {},
+    joinedAt: "",
+    postCount: 2,
+    followerCount: 0,
+  } satisfies PublicAuthor
 
   // 1. Resolve posts depending on slot type (Home posts vs Post related posts)
-  let rawPosts: Post[] | undefined
+  let rawPosts: PublishedPost[] | undefined
   if (isPostSlot) {
     rawPosts = post?.relatedPosts
   } else {
@@ -27,7 +39,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
   const posts = rawPosts?.slice(0, limit) || (isStudioCanvas ? [
     {
       id: "demo_1",
-      authorId: "u1",
+      author: studioAuthor,
       title: "Arquitectura de Información para Blogs Multi-Tenant",
       slug: "arquitectura-multitenant",
       excerpt: "Cómo diseñar una plataforma donde cada organización posee su propio tema compartido.",
@@ -45,7 +57,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
     },
     {
       id: "demo_2",
-      authorId: "u1",
+      author: studioAuthor,
       title: "Tipografía Fluida y Sistemas de Espaciado",
       slug: "tipografia-fluida",
       excerpt: "Exploración práctica de unidades clamp() y ritmos verticales en Tailwind v4.",
@@ -63,11 +75,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
     },
   ] : [])
 
-  const defaultAuthor = post?.author || global?.tenant || home?.tenant || {
-    name: "Elena Martí",
-    avatarUrl: "/placeholder.svg",
-    username: "elenamarti",
-  }
+  const defaultAuthor = post?.author || global?.tenant || home?.tenant || studioAuthor
 
   const gridColsClass =
     columns === 1
@@ -101,9 +109,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
       )}
       <div className={cn("grid gap-6 w-full", gridColsClass)}>
         {posts.map((item) => {
-          const itemAuthor =
-            (post?.authorMap && post.authorMap.get(item.authorId)) ||
-            (defaultAuthor as User)
+          const itemAuthor = item.author || defaultAuthor
           return (
             <PostCard
               key={item.id}
@@ -116,4 +122,3 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
     </div>
   )
 }
-

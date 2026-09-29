@@ -57,7 +57,7 @@ async function runRenderingTests() {
   // --- Test 1: Fallback Rendering for Tenant Without Template ---
   console.log("▶ [Test 1] Fallback to Classic Theme when No Published Template Exists")
   {
-    const users = await userRepository.findAll()
+    const users = await userRepository.findAllPublic()
     assert(users.length > 0, "Existen usuarios en la base de datos para la prueba")
     const testUser = users[0]
 
@@ -113,10 +113,10 @@ async function runRenderingTests() {
   console.log("\n▶ [Test 3] Dynamic Route Data Resolution in Template Widgets")
   {
     const posts = await postRepository.findPublished()
-    const users = await userRepository.findAll()
+    const users = await userRepository.findAllPublic()
     assert(posts.length > 0, "Existen artículos publicados")
     const samplePost = posts[0]
-    const sampleAuthor = users.find((u) => u.id === samplePost.authorId) || users[0]
+    const sampleAuthor = samplePost.author
 
     // Create a published Post slot template
     const tenantPostSlot = "tenant_post_" + Math.random().toString(36).substring(2, 8)
@@ -148,8 +148,6 @@ async function runRenderingTests() {
       author: sampleAuthor,
       comments: [
         {
-          id: "comm_1",
-          postId: samplePost.id,
           authorName: "Lector Verificado",
           authorAvatarUrl: "",
           content: "Excelente artículo.",
@@ -157,7 +155,6 @@ async function runRenderingTests() {
         },
       ],
       relatedPosts: related,
-      authorMap: new Map(users.map((u) => [u.id, u])),
     }
 
     // Verify context holds expected data
@@ -186,7 +183,7 @@ async function runRenderingTests() {
   // --- Test 5: SEO, JSON-LD, LLMs.txt & Canonical Preservation ---
   console.log("\n▶ [Test 5] SEO Metadata, JSON-LD & Canonical Preservation Invariance")
   {
-    const users = await userRepository.findAll()
+    const users = await userRepository.findAllPublic()
     const testUser = users[0]
     const posts = await postRepository.findPublished()
     const testPost = posts[0]

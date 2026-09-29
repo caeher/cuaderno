@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getTenantBySlug } from "@/lib/application/blog-use-cases"
+import { getTenantBySlug, getPublicTenantLegalSettings } from "@/lib/application/blog-use-cases"
 import { LegalPage, type LegalSection } from "@/components/site/legal-page"
 
 interface AvisoLegalPageProps {
@@ -19,15 +19,18 @@ export async function generateMetadata({ params }: AvisoLegalPageProps): Promise
 
 export default async function TenantAvisoLegalPage({ params }: AvisoLegalPageProps) {
   const { tenant } = await params
-  const user = await getTenantBySlug(tenant)
+  const [user, legalSettings] = await Promise.all([
+    getTenantBySlug(tenant),
+    getPublicTenantLegalSettings(tenant),
+  ])
 
   if (!user) notFound()
 
-  const legal = user.legalSettings || {}
+  const legal = legalSettings || {}
   const companyName = legal.companyName || user.name
-  const contactEmail = legal.contactEmail || user.email
+  const contactEmail = legal.contactEmail || "No especificado"
   const taxId = legal.taxId || "No especificado"
-  const address = legal.address || user.location || "España / Internacional"
+  const address = legal.address || "No especificado"
 
   if (legal.customLegalNotice) {
     return (

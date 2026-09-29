@@ -1,1 +1,1 @@
-export { default, generateMetadata } from "../autor/[username]/page"
+export { default, generateMetadata } from "../../autor/[username]/page"

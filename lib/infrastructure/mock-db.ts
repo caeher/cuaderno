@@ -6,7 +6,7 @@
  * everything above the repository interfaces is unaware.
  */
 
-import type { Category, Comment, Post, Tag, User } from "@/lib/domain/entities"
+import type { Category, EditorialComment, Post, Tag, User } from "@/lib/domain/entities"
 
 export const MOCK_CATEGORIES: Category[] = [
   {
@@ -477,7 +477,7 @@ export const MOCK_POSTS: Post[] = [
 ]
 
 
-export const MOCK_COMMENTS: Comment[] = [
+export const MOCK_COMMENTS: EditorialComment[] = [
   {
     id: "c1",
     postId: "p1",

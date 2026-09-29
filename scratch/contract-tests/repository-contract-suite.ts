@@ -81,8 +81,8 @@ export async function runRepositoryContractSuite(
   const foundById = await repos.userRepository.findById(testUser.id)
   assert(foundById !== null && foundById.email === testUser.email, "UserRepository.findById recupera el usuario correctamente")
 
-  const foundByUsername = await repos.userRepository.findByUsername(testUser.username)
-  assert(foundByUsername !== null && foundByUsername.id === testUser.id, "UserRepository.findByUsername recupera el usuario por username")
+  const foundByUsername = await repos.userRepository.findPublicByUsername(testUser.username)
+  assert(foundByUsername !== null && foundByUsername.username === testUser.username, "UserRepository.findPublicByUsername devuelve la proyección pública")
 
   const updatedUser = await repos.userRepository.update(testUser.id, {
     bio: "Bio actualizada",
@@ -90,8 +90,8 @@ export async function runRepositoryContractSuite(
   })
   assert(updatedUser !== null && updatedUser.bio === "Bio actualizada", "UserRepository.update modifica campos y retorna el usuario actualizado")
 
-  const allUsers = await repos.userRepository.findAll()
-  assert(Array.isArray(allUsers) && allUsers.some((u) => u.username === testUser.username), "UserRepository.findAll retorna lista que contiene al usuario")
+  const allUsers = await repos.userRepository.findAllPublic()
+  assert(Array.isArray(allUsers) && allUsers.some((u) => u.username === testUser.username), "UserRepository.findAllPublic retorna perfiles públicos")
 
   // ----------------------------------------------------
   // 2. Contrato: CategoryRepository
@@ -172,8 +172,8 @@ export async function runRepositoryContractSuite(
   const foundPost = await repos.postRepository.findPublishedBySlug(postSlug)
   assert(foundPost !== null && foundPost.id === createdPost.id, "PostRepository.findPublishedBySlug recupera una publicación pública")
 
-  const authorPosts = await repos.postRepository.findPublishedByAuthorId(testUser.id)
-  assert(authorPosts.some((p) => p.slug === postSlug), "PostRepository.findPublishedByAuthorId recupera solo publicaciones públicas del autor")
+  const authorPosts = await repos.postRepository.findPublishedByAuthorUsername(testUser.username)
+  assert(authorPosts.some((p) => p.slug === postSlug), "PostRepository.findPublishedByAuthorUsername recupera publicaciones con autor público")
 
   const publishedPosts = await repos.postRepository.findPublished()
   assert(publishedPosts.some((p) => p.slug === postSlug), "PostRepository.findPublished incluye post publicado")
@@ -204,17 +204,18 @@ export async function runRepositoryContractSuite(
     authorAvatarUrl: `https://example.com/avatar_${uid}.png`,
     content: "¡Excelente artículo!",
   })
-  assert(createdComment.postId === createdPost.id, "CommentRepository.create persiste comentario")
+  assert(createdComment.content === "¡Excelente artículo!", "CommentRepository.create retorna solo el contenido público")
 
   // Verificar incremento de comments en el post
   const postWithComment = await repos.postRepository.findEditorialById(createdPost.id)
   assert((postWithComment?.comments ?? 0) >= 1, "CommentRepository.create incrementa atómicamente el contador comments en el post")
 
   const comments = await repos.commentRepository.findByPostId(createdPost.id)
-  assert(comments.length >= 1 && comments.some((c) => c.id === createdComment.id), "CommentRepository.findByPostId recupera comentarios del post")
+  assert(comments.length >= 1 && comments.some((c) => c.content === createdComment.content), "CommentRepository.findByPostId recupera comentarios públicos del post")
 
   // Borrar comentario
-  await repos.commentRepository.delete(createdComment.id)
+  const editorialComments = await repos.commentRepository.findEditorialByPostId(createdPost.id)
+  await repos.commentRepository.delete(editorialComments[0].id)
   const postAfterCommentDel = await repos.postRepository.findEditorialById(createdPost.id)
   assert((postAfterCommentDel?.comments ?? 0) === 0, "CommentRepository.delete decrementa atómicamente el contador comments en el post")
 

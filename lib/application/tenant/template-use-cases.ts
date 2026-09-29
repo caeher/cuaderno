@@ -1,5 +1,6 @@
 import type {
   TemplateRevision,
+  PublicTenantTemplate,
   TenantTemplate,
   UpdateTemplateDraftInput,
 } from "@/lib/domain/template-schema"
@@ -107,4 +108,10 @@ export async function getPublishedTemplateForTenant(tenantId: string): Promise<T
     return null
   }
   return template
+}
+
+export async function getPublishedTemplateForTenantSlug(
+  tenantSlug: string
+): Promise<PublicTenantTemplate | null> {
+  return templateRepository.findPublishedByTenantSlug(tenantSlug)
 }

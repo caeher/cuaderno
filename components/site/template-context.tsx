@@ -7,7 +7,7 @@ import type {
   PostSlotContext,
   TemplateSlotType,
 } from "@/lib/domain/template-schema"
-import type { User, Post } from "@/lib/domain/entities"
+import type { PublicAuthor, PublishedPost } from "@/lib/domain/entities"
 
 export interface TemplateContextValue {
   slotType: TemplateSlotType
@@ -44,7 +44,7 @@ export function useTemplateContext(): TemplateContextValue {
 /**
  * Convenience hook to get the active author / tenant context
  */
-export function useActiveAuthor(): Partial<User> | undefined {
+export function useActiveAuthor(): Partial<PublicAuthor> | undefined {
   const { post, global, home } = useTemplateContext()
   return post?.author || global?.tenant || home?.tenant
 }
@@ -52,7 +52,7 @@ export function useActiveAuthor(): Partial<User> | undefined {
 /**
  * Convenience hook to get the active post if in post slot
  */
-export function useActivePost(): Post | undefined {
+export function useActivePost(): PublishedPost | undefined {
   const { post } = useTemplateContext()
   return post?.post
 }

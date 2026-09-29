@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { PenLine } from "lucide-react"
-import type { User } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 
 interface TenantFooterProps {
-  tenant: User
+  tenant: PublicAuthor
   homeUrl: string
 }
 

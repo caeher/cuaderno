@@ -1,5 +1,6 @@
 import type {
   CreateTemplateInput,
+  PublicTenantTemplate,
   TemplateRevision,
   TenantTemplate,
   UpdateTemplateDraftInput,
@@ -7,6 +8,7 @@ import type {
 
 export interface TemplateRepository {
   findByTenantId(tenantId: string): Promise<TenantTemplate | null>
+  findPublishedByTenantSlug(tenantSlug: string): Promise<PublicTenantTemplate | null>
   create(input: CreateTemplateInput): Promise<TenantTemplate>
   saveDraft(tenantId: string, input: UpdateTemplateDraftInput): Promise<TenantTemplate>
   publish(tenantId: string, publishedBy?: string, changeSummary?: string): Promise<TenantTemplate>

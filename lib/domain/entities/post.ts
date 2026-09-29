@@ -1,5 +1,6 @@
 import type { Category } from "./taxonomy"
 import type { PostNarration } from "./narration"
+import type { PublicAuthor } from "./user"
 
 export type PostStatus = "draft" | "published" | "scheduled"
 
@@ -36,8 +37,12 @@ export interface Post {
  * Datos de una publicación visible públicamente. No contiene IDs de propietario
  * organizacional ni campos exclusivos del editor.
  */
-export type PublishedPost = Omit<Post, "status" | "organizationId" | "designData" | "editorMode"> & {
+export type PublishedPost = Omit<
+  Post,
+  "status" | "organizationId" | "designData" | "editorMode" | "authorId"
+> & {
   status: "published"
+  author: PublicAuthor
 }
 
 export interface CreatePostInput {

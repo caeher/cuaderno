@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
-import { getTenantBySlug, getPublishedTemplateForTenant } from "@/lib/application/blog-use-cases"
+import { getTenantBySlug, getPublishedTemplateForTenantSlug } from "@/lib/application/blog-use-cases"
 import { TenantNavbar, TenantFooter, TenantSlotRenderer } from "@/components/site"
 import { CookieConsentBanner } from "@/components/site/cookie-consent-banner"
 import type { GlobalTemplateContext } from "@/lib/domain/template-schema"
@@ -20,7 +20,7 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
 
   const [reqHeaders, publishedTemplate] = await Promise.all([
     headers(),
-    getPublishedTemplateForTenant(tenantUser.id),
+    getPublishedTemplateForTenantSlug(tenant),
   ])
 
   const isSubdomain = reqHeaders.get("x-is-subdomain") === "true"
@@ -53,4 +53,3 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
     </div>
   )
 }
-

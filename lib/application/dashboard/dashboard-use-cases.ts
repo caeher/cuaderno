@@ -34,7 +34,7 @@ export async function getDashboardData(scope: PanelTenantScope) {
   const avgReadingTime = published.length > 0 ? Math.round(totalReadingTime / published.length) : 0
   const engagementRate = totalViews > 0 ? Number((((totalLikes + totalComments) / totalViews) * 100).toFixed(1)) : 0
 
-  const commentLists = await Promise.all(posts.map((p) => commentRepository.findByPostId(p.id)))
+  const commentLists = await Promise.all(posts.map((p) => commentRepository.findEditorialByPostId(p.id)))
   const allComments = commentLists.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const postMap = new Map(posts.map((p) => [p.id, p]))
 

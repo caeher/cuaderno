@@ -1,14 +1,13 @@
-import type { Post } from "@/lib/domain/entities"
+import type { Post, PublishedPost } from "@/lib/domain/entities"
 import {
   categoryRepository,
   commentRepository,
   narrationRepository,
   postRepository,
-  userRepository,
 } from "@/lib/infrastructure/repositories"
 import { isNarrationPlaybackEnabled } from "@/lib/server/audio-config"
 
-export async function getFeaturedPosts(limit = 3): Promise<Post[]> {
+export async function getFeaturedPosts(limit = 3): Promise<PublishedPost[]> {
   const [featured, categories] = await Promise.all([
     postRepository.findFeaturedPublished(),
     categoryRepository.findAll(),
@@ -24,8 +23,8 @@ export async function getPublishedFeed(options?: {
   tag?: string
   category?: string
   query?: string
-}): Promise<Post[]> {
-  let posts: Post[] = []
+}): Promise<PublishedPost[]> {
+  let posts: PublishedPost[] = []
 
   if (options?.tag) {
     posts = await postRepository.findPublishedByTag(options.tag)
@@ -60,41 +59,7 @@ export async function getPostForReading(slug: string) {
   const post = await postRepository.findPublishedBySlug(slug)
   if (!post) return null
 
-  let author = await userRepository.findById(post.authorId)
-  if (!author) {
-    author = await userRepository.findByClerkUserId(post.authorId)
-  }
-  if (!author) {
-    author = await userRepository.findByUsername(post.authorId)
-  }
-  if (!author) {
-    const allUsers = await userRepository.findAll()
-    author = allUsers.find(
-      (u) =>
-        u.id === post.authorId ||
-        u.clerkUserId === post.authorId ||
-        u.legacyId === post.authorId ||
-        u.username === post.authorId
-    ) ?? null
-  }
-
-  if (!author) {
-    author = {
-      id: post.authorId,
-      username: "autor",
-      name: "Autor",
-      email: "",
-      avatarUrl: "",
-      coverUrl: "",
-      bio: "",
-      tagline: "",
-      socials: {},
-      role: "owner",
-      joinedAt: new Date().toISOString(),
-      postCount: 1,
-      followerCount: 0,
-    }
-  }
+  const author = post.author
 
   const [comments, allPublished, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
@@ -125,33 +90,13 @@ export async function getPostForReading(slug: string) {
 }
 
 export async function getPostForReadingByTenant(tenantSlug: string, postSlug: string) {
-  let author = await userRepository.findByUsername(tenantSlug)
-  if (!author) {
-    author = await userRepository.findByClerkUserId(tenantSlug)
-  }
-  if (!author) {
-    author = await userRepository.findById(tenantSlug)
-  }
-  if (!author) {
-    const allUsers = await userRepository.findAll()
-    author = allUsers.find(
-      (u) =>
-        u.username.toLowerCase() === tenantSlug.toLowerCase() ||
-        u.clerkUserId === tenantSlug ||
-        u.legacyId === tenantSlug ||
-        u.id === tenantSlug
-    ) ?? null
-  }
-
-  if (!author) return null
-
-  const tenantId = author.clerkUserId ?? author.legacyId ?? author.id
-  const post = await postRepository.findPublishedBySlug(postSlug, tenantId)
+  const post = await postRepository.findPublishedBySlugAndTenantSlug(postSlug, tenantSlug)
   if (!post) return null
+  const author = post.author
 
   const [comments, allAuthorPosts, postCategory, narration] = await Promise.all([
     commentRepository.findByPostId(post.id),
-    postRepository.findPublishedByTenant(tenantId).catch(() => []),
+    postRepository.findPublishedByTenantSlug(tenantSlug).catch(() => []),
     post.categoryId ? categoryRepository.findById(post.categoryId) : Promise.resolve(null),
     narrationRepository.findByPostId(post.id),
   ])

@@ -3,7 +3,9 @@ import type { CreatePostInput, Post, PostStatus, PublishedPost, UpdatePostInput 
 export interface PostRepository {
   findPublishedById(id: string, tenantId?: string): Promise<PublishedPost | null>
   findPublishedBySlug(slug: string, tenantId?: string): Promise<PublishedPost | null>
-  findPublishedByAuthorId(authorId: string): Promise<PublishedPost[]>
+  findPublishedByTenantSlug(tenantSlug: string): Promise<PublishedPost[]>
+  findPublishedBySlugAndTenantSlug(slug: string, tenantSlug: string): Promise<PublishedPost | null>
+  findPublishedByAuthorUsername(username: string): Promise<PublishedPost[]>
   findPublishedByTenant(tenantId: string): Promise<PublishedPost[]>
   findPublished(): Promise<PublishedPost[]>
   findFeaturedPublished(): Promise<PublishedPost[]>

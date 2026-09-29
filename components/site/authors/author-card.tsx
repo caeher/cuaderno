@@ -1,13 +1,13 @@
 import * as React from "react"
 import Link from "next/link"
-import type { User } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 import { formatCompactNumber, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { buildTenantUrl } from "@/lib/tenant-utils"
 import { cn } from "@/lib/utils"
 
 export interface AuthorCardProps extends React.HTMLAttributes<HTMLAnchorElement> {
-  author: User
+  author: PublicAuthor
 }
 
 export function AuthorCard({ author, className, ...props }: AuthorCardProps) {

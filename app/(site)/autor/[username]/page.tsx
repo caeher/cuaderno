@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getAuthorProfile } from "@/lib/application/blog-use-cases"
+import { getPublicTenantSeoSettings } from "@/lib/application/blog-use-cases"
 import { PageContainer } from "@/components/layout"
 import { JsonLdScript } from "@/components/seo/json-ld-script"
 import { generateAuthorJsonLd, generateBreadcrumbsJsonLd } from "@/lib/seo/json-ld"
@@ -14,15 +15,18 @@ interface AuthorPageProps {
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
   const { username } = await params
-  const data = await getAuthorProfile(username)
+  const [data, seo] = await Promise.all([
+    getAuthorProfile(username),
+    getPublicTenantSeoSettings(username),
+  ])
   if (!data) return { title: "Autor no encontrado" }
 
   const { author } = data
 
   return constructSiteMetadata({
-    title: `${author.name} — Perfil de autor`,
-    description: author.bio || author.tagline || `Artículos y notas de ${author.name} en Cuaderno.`,
-    image: author.coverUrl || author.avatarUrl,
+    title: seo?.metaTitle || `${author.name} — Perfil de autor`,
+    description: seo?.metaDescription || author.bio || author.tagline || `Artículos y notas de ${author.name} en Cuaderno.`,
+    image: seo?.socialSharingImage || author.coverUrl || author.avatarUrl,
     canonicalPath: `/autor/${author.username}`,
     type: "profile",
     location: author.location,
@@ -58,4 +62,3 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
     </>
   )
 }
-

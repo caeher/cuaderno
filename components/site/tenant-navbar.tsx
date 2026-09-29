@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitials } from "@/lib/format"
-import type { User } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 
 interface TenantNavbarProps {
-  tenant: User
+  tenant: PublicAuthor
   homeUrl: string
 }
 

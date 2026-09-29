@@ -1,28 +1,49 @@
 import { api } from "@/convex/_generated/api"
-import type { UpdateUserInput, User } from "@/lib/domain/entities"
+import type {
+  PublicAuthor,
+  PublicLegalSettings,
+  PublicTenantSeoSettings,
+  UpdateUserInput,
+  User,
+} from "@/lib/domain/entities"
 import type { SyncFromClerkInput, UserRepository } from "@/lib/domain/repositories"
 import { convexMutation, convexQuery } from "../client"
-import { convexDocToUser } from "../mappers"
+import {
+  convexDocToPublicAuthor,
+  convexDocToPublicLegalSettings,
+  convexDocToPublicSeoSettings,
+  convexDocToUser,
+} from "../mappers"
 
 export class ConvexUserRepository implements UserRepository {
-  async findAll(): Promise<User[]> {
-    const docs = await convexQuery(api.users.list)
-    return (docs || []).map(convexDocToUser)
+  async findAllPublic(): Promise<PublicAuthor[]> {
+    const docs = await convexQuery(api.users.listPublic)
+    return (docs || []).map(convexDocToPublicAuthor)
   }
 
   async findById(id: string): Promise<User | null> {
-    const doc = await convexQuery(api.users.getById, { id })
+    const doc = await convexQuery(api.users.getPrivateById, { id })
     return doc ? convexDocToUser(doc) : null
   }
 
-  async findByUsername(username: string): Promise<User | null> {
-    const doc = await convexQuery(api.users.getByUsername, { username })
+  async findCurrent(): Promise<User | null> {
+    const doc = await convexQuery(api.users.getCurrent)
     return doc ? convexDocToUser(doc) : null
   }
 
-  async findByClerkUserId(clerkUserId: string): Promise<User | null> {
-    const doc = await convexQuery(api.users.getByClerkUserId, { clerkUserId })
-    return doc ? convexDocToUser(doc) : null
+  async findPublicByUsername(username: string): Promise<PublicAuthor | null> {
+    const doc = await convexQuery(api.users.getPublicByUsername, { username })
+    return doc ? convexDocToPublicAuthor(doc) : null
+  }
+
+  async findPublicLegalSettings(username: string): Promise<PublicLegalSettings | null> {
+    const doc = await convexQuery(api.users.getPublicLegalSettingsByUsername, { username })
+    return doc ? convexDocToPublicLegalSettings(doc) : null
+  }
+
+  async findPublicSeoSettings(username: string): Promise<PublicTenantSeoSettings | null> {
+    const doc = await convexQuery(api.users.getPublicSeoSettingsByUsername, { username })
+    return doc ? convexDocToPublicSeoSettings(doc) : null
   }
 
   async syncFromClerk(input: SyncFromClerkInput): Promise<User> {

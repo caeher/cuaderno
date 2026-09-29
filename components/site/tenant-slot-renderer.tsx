@@ -4,7 +4,7 @@ import type {
   HomeSlotContext,
   PostSlotContext,
   TemplateSlotType,
-  TenantTemplate,
+  PublicTenantTemplate,
 } from "@/lib/domain/template-schema"
 import { validateAndNormalizeBlockTree } from "@/lib/domain/template-validator"
 import { BlockRenderer } from "./block-renderer"
@@ -12,7 +12,7 @@ import { TemplateContextProvider, type TemplateContextValue } from "./template-c
 
 export interface TenantSlotRendererProps {
   slotType: TemplateSlotType
-  template: TenantTemplate | null | undefined
+  template: PublicTenantTemplate | null | undefined
   context: HomeSlotContext | PostSlotContext | GlobalTemplateContext
   fallback: React.ReactNode
   className?: string

@@ -12,13 +12,11 @@ export async function GET() {
   try {
     const [posts, authors, categories] = await Promise.all([
       postRepository.findPublished(),
-      userRepository.findAll(),
+      userRepository.findAllPublic(),
       categoryRepository.findAll(),
     ])
 
     const baseUrl = SITE_CONFIG.url
-    const authorMap = new Map(authors.map((u) => [u.id, u]))
-
     const lines: string[] = [
       `# ${SITE_CONFIG.name}`,
       "",
@@ -48,8 +46,7 @@ export async function GET() {
 
     lines.push("", "## Artículos Recientes", "")
     for (const post of posts) {
-      const author = authorMap.get(post.authorId)
-      const authorName = author ? author.name : "Redacción"
+      const authorName = post.author.name || "Redacción"
       const date = post.publishedAt || post.updatedAt
       const excerpt = post.excerpt ? ` — ${post.excerpt}` : ""
       lines.push(

@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getPostForReading } from "@/lib/application/blog-use-cases"
-import { userRepository } from "@/lib/infrastructure/repositories"
 import { ArticleContainer } from "@/components/layout"
 import { Separator } from "@/components/ui/separator"
 import { JsonLdScript } from "@/components/seo/json-ld-script"
@@ -50,9 +49,6 @@ export default async function PostPage({ params }: PostPageProps) {
   if (!data) notFound()
 
   const { post, author, comments, relatedPosts } = data
-  const allAuthors = await userRepository.findAll()
-  const authorMap = new Map(allAuthors.map((u) => [u.id, u]))
-
   const articleJsonLd = generateArticleJsonLd(post, author)
   const breadcrumbsJsonLd = generateBreadcrumbsJsonLd([
     { name: "Inicio", url: "/" },
@@ -102,9 +98,8 @@ export default async function PostPage({ params }: PostPageProps) {
         <Separator className="my-10" />
         <AuthorBioCard author={author} />
         <PostCommentsSection comments={comments} postId={post.id} postSlug={post.slug} />
-        <RelatedPostsSection posts={relatedPosts} authorMap={authorMap} />
+        <RelatedPostsSection posts={relatedPosts} />
       </ArticleContainer>
     </>
   )
 }
-

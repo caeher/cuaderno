@@ -6,7 +6,7 @@
  * Organization, and BreadcrumbList.
  */
 
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { resolveGeoLocation, SITE_CONFIG } from "./config"
 
 export interface BreadcrumbItem {
@@ -18,8 +18,8 @@ export interface BreadcrumbItem {
  * Generates Schema.org `BlogPosting` structured data for articles
  */
 export function generateArticleJsonLd(
-  post: Post,
-  author: User,
+  post: PublishedPost,
+  author: PublicAuthor,
   baseUrl: string = SITE_CONFIG.url,
   isTenant = false
 ) {
@@ -147,7 +147,7 @@ export function generateArticleJsonLd(
  * Generates Schema.org `Person` & `ProfilePage` structured data for authors
  */
 export function generateAuthorJsonLd(
-  author: User,
+  author: PublicAuthor,
   baseUrl: string = SITE_CONFIG.url,
   isTenant = false
 ) {

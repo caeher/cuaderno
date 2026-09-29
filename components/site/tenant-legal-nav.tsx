@@ -12,16 +12,16 @@ import {
   Sliders,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { User } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 
 interface TenantLegalNavProps {
-  tenant: User
+  tenant: PublicAuthor
   baseLegalUrl: string
 }
 
 export function TenantLegalNav({ tenant, baseLegalUrl }: TenantLegalNavProps) {
   const pathname = usePathname()
-  const contactEmail = tenant.legalSettings?.contactEmail || tenant.email || "contacto@ejemplo.com"
+  const contactEmail = "contacto@ejemplo.com"
 
   const documents = [
     {

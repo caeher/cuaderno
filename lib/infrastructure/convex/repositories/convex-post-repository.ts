@@ -66,11 +66,26 @@ export class ConvexPostRepository implements PostRepository {
     return (docs || []).map(convexPublishedPostToDomain)
   }
 
+  async findPublishedByAuthorUsername(username: string): Promise<PublishedPost[]> {
+    const docs = await convexQuery(api.posts.getByAuthorUsername, { username })
+    return (docs || []).map(convexPublishedPostToDomain)
+  }
+
   async findPublishedByTenant(tenantId: string): Promise<PublishedPost[]> {
     const docs = await convexQuery(api.posts.getPublishedByTenant, {
       tenantId
     })
     return (docs || []).map(convexPublishedPostToDomain)
+  }
+
+  async findPublishedByTenantSlug(tenantSlug: string): Promise<PublishedPost[]> {
+    const docs = await convexQuery(api.posts.getPublishedByTenantSlug, { username: tenantSlug })
+    return (docs || []).map(convexPublishedPostToDomain)
+  }
+
+  async findPublishedBySlugAndTenantSlug(slug: string, tenantSlug: string): Promise<PublishedPost | null> {
+    const doc = await convexQuery(api.posts.getBySlugAndTenantSlug, { slug, username: tenantSlug })
+    return doc ? convexPublishedPostToDomain(doc) : null
   }
 
   async findEditorialById(id: string): Promise<Post | null> {

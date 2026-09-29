@@ -1,5 +1,4 @@
 import { getAllAuthorsWithStats, getFeaturedPosts } from "@/lib/application/blog-use-cases"
-import { userRepository } from "@/lib/infrastructure/repositories"
 import {
   LandingHero,
   LandingFeatures,
@@ -13,13 +12,11 @@ export default async function LandingPage() {
     getFeaturedPosts(3),
     getAllAuthorsWithStats(),
   ])
-  const authorMap = new Map((await userRepository.findAll()).map((u) => [u.id, u]))
-
   return (
     <>
       <LandingHero featuredPost={featuredPosts[0]} topAuthors={authors.slice(0, 4)} />
       <LandingFeatures />
-      <FeaturedPostsSection posts={featuredPosts} authorMap={authorMap} />
+      <FeaturedPostsSection posts={featuredPosts} />
       <AuthorShowcaseSection authors={authors} />
       <LandingCtaBanner />
     </>

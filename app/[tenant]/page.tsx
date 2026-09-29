@@ -3,7 +3,8 @@ import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import {
   getTenantProfile,
-  getPublishedTemplateForTenant,
+  getPublishedTemplateForTenantSlug,
+  getPublicTenantSeoSettings,
   getAllCategories,
 } from "@/lib/application/blog-use-cases"
 import { PageContainer } from "@/components/layout"
@@ -22,15 +23,18 @@ interface TenantHomePageProps {
 
 export async function generateMetadata({ params }: TenantHomePageProps): Promise<Metadata> {
   const { tenant } = await params
-  const data = await getTenantProfile(tenant)
+  const [data, seo] = await Promise.all([
+    getTenantProfile(tenant),
+    getPublicTenantSeoSettings(tenant),
+  ])
   if (!data) return { title: "Blog no encontrado" }
 
   const { author } = data
 
   return constructSiteMetadata({
-    title: `${author.name} — Blog`,
-    description: author.bio || author.tagline || `Blog personal de ${author.name}`,
-    image: author.coverUrl || author.avatarUrl,
+    title: seo?.metaTitle || `${author.name} — Blog`,
+    description: seo?.metaDescription || author.bio || author.tagline || `Blog personal de ${author.name}`,
+    image: seo?.socialSharingImage || author.coverUrl || author.avatarUrl,
     canonicalPath: `/${tenant}`,
     type: "profile",
     location: author.location,
@@ -50,7 +54,7 @@ export default async function TenantHomePage({ params }: TenantHomePageProps) {
   const { author, posts } = data
 
   const [publishedTemplate, categories] = await Promise.all([
-    getPublishedTemplateForTenant(author.id),
+    getPublishedTemplateForTenantSlug(tenant),
     getAllCategories(),
   ])
 
@@ -100,5 +104,3 @@ export default async function TenantHomePage({ params }: TenantHomePageProps) {
     </>
   )
 }
-
-

@@ -1,4 +1,4 @@
-import type { Comment, CreateCommentInput, Post } from "@/lib/domain/entities"
+import type { CreateCommentInput, EditorialComment, Post } from "@/lib/domain/entities"
 import { commentRepository, postRepository } from "@/lib/infrastructure/repositories"
 
 export async function addComment(input: CreateCommentInput) {
@@ -14,7 +14,7 @@ export async function getAllCommentsForAdmin(scope: {
   authorId: string
   tenantType: "organization" | "user"
 }): Promise<{
-  comments: Comment[]
+  comments: EditorialComment[]
   postMap: Map<string, Post>
   posts: Post[]
 }> {
@@ -24,7 +24,7 @@ export async function getAllCommentsForAdmin(scope: {
       : await postRepository.findEditorialByAuthorId(scope.authorId)
 
   const postMap = new Map(posts.map((p) => [p.id, p]))
-  const commentLists = await Promise.all(posts.map((p) => commentRepository.findByPostId(p.id)))
+  const commentLists = await Promise.all(posts.map((p) => commentRepository.findEditorialByPostId(p.id)))
   const comments = commentLists.flat().sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   return { comments, postMap, posts }

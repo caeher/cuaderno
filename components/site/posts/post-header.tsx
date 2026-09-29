@@ -1,14 +1,14 @@
 import * as React from "react"
 import Link from "next/link"
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { formatDate, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { SharePopover } from "@/components/common/share-popover"
 
 export interface PostHeaderProps {
-  post: Post
-  author: User
+  post: PublishedPost
+  author: PublicAuthor
 }
 
 export function PostHeader({ post, author }: PostHeaderProps) {

@@ -63,7 +63,22 @@ function user(input: { id: string; legacyId: string; clerkUserId: string; userna
     _creationTime: 1,
     legacyId: input.legacyId,
     clerkUserId: input.clerkUserId,
-    username: input.username
+    tokenIdentifier: `issuer|${input.clerkUserId}`,
+    username: input.username,
+    name: `Autor ${input.username}`,
+    email: `${input.username}-private@example.test`,
+    avatarUrl: `https://example.test/${input.username}.png`,
+    coverUrl: `https://example.test/${input.username}-cover.png`,
+    bio: `Bio ${input.username}`,
+    tagline: `Notas de ${input.username}`,
+    location: "San Salvador",
+    socials: { website: `https://${input.username}.example.test` },
+    role: "owner",
+    joinedAt: "2026-01-01",
+    postCount: 3,
+    followerCount: 7,
+    subdomainEnabled: true,
+    customDomain: `${input.username}.example.test`,
   }
 }
 
@@ -322,11 +337,25 @@ export async function runPostReadSecurityTests(): Promise<{
     }).then((item) => item?.id === "posts:b-published"),
     "el lookup por slug devuelve el post del segundo tenant"
   )
+  const publicTenantPosts = await getPublishedByTenantHandler(anonymous, { tenantId: "user-a" })
   assert(
-    await getPublishedByTenantHandler(anonymous, { tenantId: "user-a" }).then((items) =>
-      items.every((item) => item.status === "published" && item.authorId === "legacy-author-a")
-    ),
+    publicTenantPosts.every((item) => item.status === "published" && item.author.username === "a"),
     "el blog del tenant solo recibe publicaciones propias"
+  )
+  const publicPostKeys = [
+    "id", "author", "categoryId", "title", "slug", "excerpt", "content", "coverUrl", "tags",
+    "status", "publishedAt", "updatedAt", "readingTimeMinutes", "views", "likes", "comments", "featured",
+  ]
+  const publicAuthorKeys = [
+    "username", "name", "avatarUrl", "coverUrl", "bio", "tagline", "location", "socials",
+    "joinedAt", "postCount", "followerCount", "subdomainEnabled", "customDomain",
+  ]
+  assert(
+    publicTenantPosts.every((item) =>
+      Object.keys(item).sort().join(",") === [...publicPostKeys].sort().join(",") &&
+      Object.keys(item.author).sort().join(",") === [...publicAuthorKeys].sort().join(",")
+    ),
+    "la respuesta de posts publicados no serializa authorId ni campos privados del autor"
   )
 
   const anonymousAuthorPosts = await getPublishedByAuthorIdHandler(anonymous, {
@@ -412,8 +441,8 @@ export async function runPostReadSecurityTests(): Promise<{
     postId: "posts:a-draft"
   })
   assert(
-    draftComments.length === 1 && !("authorEmail" in (draftComments[0] ?? {})),
-    "el propietario consulta comentarios del draft sin recibir email privado"
+    draftComments.length === 0,
+    "la lectura pública no devuelve comentarios de draft ni al propietario"
   )
   const draftNarration = await getNarrationForPostHandler(personalA, {
     postId: "posts:a-draft"

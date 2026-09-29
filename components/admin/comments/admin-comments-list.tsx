@@ -15,7 +15,7 @@ import {
   MessageCircle,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { Comment, Post } from "@/lib/domain/entities"
+import type { EditorialComment, Post } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -27,7 +27,7 @@ import { ConfirmDialog } from "@/components/common/confirm-dialog"
 import { deleteCommentAction } from "@/app/actions/blog-actions"
 
 export interface AdminCommentsListProps {
-  comments: Comment[]
+  comments: EditorialComment[]
   postMap: Map<string, Post>
   posts?: Post[]
 }
@@ -37,11 +37,11 @@ export function AdminCommentsList({
   postMap,
   posts = [],
 }: AdminCommentsListProps) {
-  const [comments, setComments] = React.useState<Comment[]>(initialComments)
+  const [comments, setComments] = React.useState<EditorialComment[]>(initialComments)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [selectedPostId, setSelectedPostId] = React.useState<string>("all")
   const [sortBy, setSortBy] = React.useState<"newest" | "oldest">("newest")
-  const [deleteDialogComment, setDeleteDialogComment] = React.useState<Comment | null>(null)
+  const [deleteDialogComment, setDeleteDialogComment] = React.useState<EditorialComment | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
   React.useEffect(() => {
@@ -297,4 +297,3 @@ export function AdminCommentsList({
     </div>
   )
 }
-

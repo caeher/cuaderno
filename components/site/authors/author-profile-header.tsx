@@ -1,6 +1,7 @@
 import * as React from "react"
 import { MapPin } from "lucide-react"
-import type { AuthorWithStats, User } from "@/lib/domain/entities"
+import type { AuthorWithStats } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 import { formatCompactNumber, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -8,7 +9,7 @@ import { SocialLinks } from "@/components/common/social-links"
 import { StatBadgeGroup } from "@/components/common/stat-badge-group"
 
 export interface AuthorProfileHeaderProps {
-  author: AuthorWithStats | User
+  author: AuthorWithStats | PublicAuthor
   postsCount?: number
   onFollow?: () => void
 }

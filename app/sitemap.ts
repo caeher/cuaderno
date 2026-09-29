@@ -8,7 +8,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const [posts, authors, categories, tags] = await Promise.all([
       postRepository.findPublished(),
-      userRepository.findAll(),
+      userRepository.findAllPublic(),
       categoryRepository.findAll(),
       tagRepository.findAll(),
     ])

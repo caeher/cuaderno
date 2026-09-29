@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getTenantBySlug } from "@/lib/application/blog-use-cases"
+import { getTenantBySlug, getPublicTenantLegalSettings } from "@/lib/application/blog-use-cases"
 import { LegalPage, type LegalSection } from "@/components/site/legal-page"
 
 interface TerminosPageProps {
@@ -19,11 +19,14 @@ export async function generateMetadata({ params }: TerminosPageProps): Promise<M
 
 export default async function TenantTerminosPage({ params }: TerminosPageProps) {
   const { tenant } = await params
-  const user = await getTenantBySlug(tenant)
+  const [user, legalSettings] = await Promise.all([
+    getTenantBySlug(tenant),
+    getPublicTenantLegalSettings(tenant),
+  ])
 
   if (!user) notFound()
 
-  const legal = user.legalSettings || {}
+  const legal = legalSettings || {}
   const companyName = legal.companyName || user.name
 
   if (legal.customTerms) {

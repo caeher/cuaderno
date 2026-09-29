@@ -3,6 +3,7 @@ import type {
   AudioFormat,
   Category,
   Comment,
+  EditorialComment,
   ComposerArtifact,
   ComposerArtifactKind,
   ComposerBrief,
@@ -22,6 +23,7 @@ import type {
   Tag,
   User
 } from "@/lib/domain/entities"
+import type { PublicAuthor, PublicLegalSettings, PublicTenantSeoSettings } from "@/lib/domain/entities"
 import type { TemplateRevision, TenantTemplate, TenantTemplateSettings } from "@/lib/domain/template-schema"
 
 export function convexDocToUser(doc: any): User {
@@ -47,6 +49,52 @@ export function convexDocToUser(doc: any): User {
     customDomain: doc.customDomain || undefined,
     legalSettings: doc.legalSettings || {},
     seoSettings: doc.seoSettings || {}
+  }
+}
+
+export function convexDocToPublicAuthor(doc: any): PublicAuthor {
+  return {
+    username: doc.username,
+    name: doc.name,
+    avatarUrl: doc.avatarUrl,
+    coverUrl: doc.coverUrl,
+    bio: doc.bio || "",
+    tagline: doc.tagline || "",
+    location: doc.location || undefined,
+    socials: doc.socials || {},
+    joinedAt: doc.joinedAt,
+    postCount: doc.postCount || 0,
+    followerCount: doc.followerCount || 0,
+    subdomainEnabled: doc.subdomainEnabled ?? true,
+    customDomain: doc.customDomain || undefined,
+  }
+}
+
+export function convexDocToPublicLegalSettings(doc: any): PublicLegalSettings {
+  return {
+    companyName: doc.companyName,
+    contactEmail: doc.contactEmail,
+    taxId: doc.taxId,
+    address: doc.address,
+    jurisdiction: doc.jurisdiction,
+    dpoContact: doc.dpoContact,
+    customPrivacyPolicy: doc.customPrivacyPolicy,
+    customTerms: doc.customTerms,
+    customCookiePolicy: doc.customCookiePolicy,
+    customLegalNotice: doc.customLegalNotice,
+  }
+}
+
+export function convexDocToPublicSeoSettings(doc: any): PublicTenantSeoSettings {
+  return {
+    metaTitle: doc.metaTitle,
+    metaDescription: doc.metaDescription,
+    keywords: doc.keywords,
+    geoCountry: doc.geoCountry,
+    geoRegion: doc.geoRegion,
+    geoCity: doc.geoCity,
+    geoCoordinates: doc.geoCoordinates,
+    socialSharingImage: doc.socialSharingImage,
   }
 }
 
@@ -104,7 +152,7 @@ export function convexDocToPost(doc: any): Post {
 export function convexPublishedPostToDomain(doc: any): PublishedPost {
   return {
     id: doc.id,
-    authorId: doc.authorId,
+    author: convexDocToPublicAuthor(doc.author),
     categoryId: doc.categoryId ?? null,
     title: doc.title,
     slug: doc.slug,
@@ -125,12 +173,23 @@ export function convexPublishedPostToDomain(doc: any): PublishedPost {
 
 export function convexDocToComment(doc: any): Comment {
   return {
-    id: doc._id,
-    postId: doc.postId,
     authorName: doc.authorName,
     authorAvatarUrl: doc.authorAvatarUrl || "/placeholder.svg?height=200&width=200",
     content: doc.content,
     createdAt: doc.createdAt
+  }
+}
+
+export function convexDocToEditorialComment(doc: any): EditorialComment {
+  return {
+    id: doc.id,
+    postId: doc.postId,
+    authorName: doc.authorName,
+    authorAvatarUrl: doc.authorAvatarUrl || "/placeholder.svg?height=200&width=200",
+    authorEmail: doc.authorEmail || undefined,
+    authorUserId: doc.authorUserId || undefined,
+    content: doc.content,
+    createdAt: doc.createdAt,
   }
 }
 

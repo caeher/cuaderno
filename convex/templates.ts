@@ -49,6 +49,44 @@ export const getPublishedForTenant = query({
   },
 })
 
+export const getPublishedForTenantSlug = query({
+  args: { username: v.string() },
+  returns: v.union(
+    v.object({
+      name: v.string(),
+      version: v.number(),
+      publishedSlots: v.record(v.string(), v.any()),
+      settings: tenantTemplateSettingsValidator,
+      isPublished: v.boolean(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const author = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", args.username))
+      .first()
+    if (!author) return null
+
+    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
+    const template = await ctx.db
+      .query("tenantTemplates")
+      .withIndex("by_tenant_and_published", (q) =>
+        q.eq("tenantId", tenantId).eq("isPublished", true)
+      )
+      .first()
+    if (!template) return null
+
+    return {
+      name: template.name,
+      version: template.version,
+      publishedSlots: template.publishedSlots,
+      settings: template.settings,
+      isPublished: template.isPublished,
+    }
+  },
+})
+
 export const getRevisions = query({
   args: { tenantId: v.string() },
   handler: async (ctx, args) => {

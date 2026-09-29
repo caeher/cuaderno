@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import { getAllCategories, getAllTags, getPublishedFeed } from "@/lib/application/blog-use-cases"
-import { userRepository } from "@/lib/infrastructure/repositories"
 import { PageContainer, PageHeader } from "@/components/layout"
 import { PostSearchFilter, PostGrid } from "@/components/site/posts"
 
@@ -38,13 +37,11 @@ export async function generateMetadata({ searchParams }: ExplorarPageProps): Pro
 
 export default async function ExplorarPage({ searchParams }: ExplorarPageProps) {
   const { tag, category, q } = await searchParams
-  const [posts, tags, categories, authors] = await Promise.all([
+  const [posts, tags, categories] = await Promise.all([
     getPublishedFeed({ tag, category, query: q }),
     getAllTags(),
     getAllCategories(),
-    userRepository.findAll(),
   ])
-  const authorMap = new Map(authors.map((a) => [a.id, a]))
 
   const breadcrumbsJsonLd = generateBreadcrumbsJsonLd([
     { name: "Inicio", url: "/" },
@@ -71,7 +68,6 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
           />
           <PostGrid
             posts={posts}
-            authorMap={authorMap}
             emptyStatePreset="search"
             className="mt-6"
           />
@@ -80,4 +76,3 @@ export default async function ExplorarPage({ searchParams }: ExplorarPageProps) 
     </>
   )
 }
-

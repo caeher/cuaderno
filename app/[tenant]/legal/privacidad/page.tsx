@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import { getTenantBySlug } from "@/lib/application/blog-use-cases"
+import { getTenantBySlug, getPublicTenantLegalSettings } from "@/lib/application/blog-use-cases"
 import { LegalPage, type LegalSection } from "@/components/site/legal-page"
 
 interface PrivacidadPageProps {
@@ -19,13 +19,16 @@ export async function generateMetadata({ params }: PrivacidadPageProps): Promise
 
 export default async function TenantPrivacidadPage({ params }: PrivacidadPageProps) {
   const { tenant } = await params
-  const user = await getTenantBySlug(tenant)
+  const [user, legalSettings] = await Promise.all([
+    getTenantBySlug(tenant),
+    getPublicTenantLegalSettings(tenant),
+  ])
 
   if (!user) notFound()
 
-  const legal = user.legalSettings || {}
+  const legal = legalSettings || {}
   const companyName = legal.companyName || user.name
-  const contactEmail = legal.contactEmail || user.email
+  const contactEmail = legal.contactEmail || "No especificado"
   const dpoContact = legal.dpoContact || contactEmail
 
   if (legal.customPrivacyPolicy) {

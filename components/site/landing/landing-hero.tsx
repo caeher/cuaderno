@@ -2,14 +2,14 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, FileText, Sparkles } from "lucide-react"
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { getInitials } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export interface LandingHeroProps {
-  featuredPost?: Post | null
-  topAuthors?: User[]
+  featuredPost?: PublishedPost | null
+  topAuthors?: PublicAuthor[]
   readerCountText?: string
 }
 
@@ -46,7 +46,7 @@ export function LandingHero({
             <div className="mt-10 flex items-center gap-4">
               <div className="flex -space-x-2">
                 {topAuthors.map((author) => (
-                  <Avatar key={author.id} className="size-8 border-2 border-background">
+                  <Avatar key={author.username} className="size-8 border-2 border-background">
                     <AvatarImage src={author.avatarUrl || "/placeholder.svg"} alt={author.name} />
                     <AvatarFallback className="text-[10px]">{getInitials(author.name)}</AvatarFallback>
                   </Avatar>

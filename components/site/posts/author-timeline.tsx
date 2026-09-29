@@ -1,13 +1,13 @@
 import * as React from "react"
 import Link from "next/link"
-import type { Post } from "@/lib/domain/entities"
+import type { PublishedPost } from "@/lib/domain/entities"
 import { formatDate, formatCompactNumber } from "@/lib/format"
 import { Badge } from "@/components/ui/badge"
 import { EmptyState } from "@/components/common/empty-state"
 import { cn } from "@/lib/utils"
 
 export interface AuthorTimelineProps {
-  posts: Post[]
+  posts: PublishedPost[]
   authorName: string
   tenantSlug?: string
   className?: string

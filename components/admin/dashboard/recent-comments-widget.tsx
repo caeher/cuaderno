@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { MessageSquare, ArrowRight, Trash2 } from "lucide-react"
 import { toast } from "sonner"
-import type { Comment, Post } from "@/lib/domain/entities"
+import type { EditorialComment, Post } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,12 +13,12 @@ import { EmptyState } from "@/components/common/empty-state"
 import { deleteCommentAction } from "@/app/actions/blog-actions"
 
 export interface RecentCommentsWidgetProps {
-  comments: Comment[]
+  comments: EditorialComment[]
   postMap: Map<string, Post>
 }
 
 export function RecentCommentsWidget({ comments: initialComments, postMap }: RecentCommentsWidgetProps) {
-  const [comments, setComments] = React.useState<Comment[]>(initialComments)
+  const [comments, setComments] = React.useState<EditorialComment[]>(initialComments)
   const [deletingId, setDeletingId] = React.useState<string | null>(null)
 
   React.useEffect(() => {

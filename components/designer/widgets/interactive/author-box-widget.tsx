@@ -30,7 +30,7 @@ export function AuthorBoxBlock({ node }: { node: BlockNode }) {
   const role =
     node.props?.role ||
     currentAuthor?.tagline ||
-    (currentAuthor?.role === "owner" ? "Autor Principal" : "")
+    ""
 
   return (
     <div
@@ -54,4 +54,3 @@ export function AuthorBoxBlock({ node }: { node: BlockNode }) {
     </div>
   )
 }
-

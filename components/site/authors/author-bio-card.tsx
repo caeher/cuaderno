@@ -1,13 +1,13 @@
 import * as React from "react"
 import Link from "next/link"
-import type { User } from "@/lib/domain/entities"
+import type { PublicAuthor } from "@/lib/domain/entities"
 import { getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export interface AuthorBioCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  author: User
+  author: PublicAuthor
 }
 
 export function AuthorBioCard({ author, className, ...props }: AuthorBioCardProps) {

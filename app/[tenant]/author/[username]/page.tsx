@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getAuthorProfile } from "@/lib/application/blog-use-cases"
+import { getPublicTenantSeoSettings } from "@/lib/application/blog-use-cases"
 import { PageContainer } from "@/components/layout"
 import { AuthorHeroCover, AuthorProfileHeader } from "@/components/site/authors"
 import { AuthorTimeline } from "@/components/site/posts"
@@ -11,16 +12,21 @@ interface AuthorPageProps {
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
   const { username } = await params
-  const data = await getAuthorProfile(username)
+  const [data, seo] = await Promise.all([
+    getAuthorProfile(username),
+    getPublicTenantSeoSettings(username),
+  ])
   if (!data) return { title: "Autor no encontrado" }
 
   return {
-    title: `${data.author.name} · Autor`,
-    description: data.author.bio,
+    title: seo?.metaTitle || `${data.author.name} · Autor`,
+    description: seo?.metaDescription || data.author.bio,
     openGraph: {
-      title: `${data.author.name} · Autor`,
-      description: data.author.bio,
-      images: data.author.coverUrl ? [{ url: data.author.coverUrl }] : undefined,
+      title: seo?.metaTitle || `${data.author.name} · Autor`,
+      description: seo?.metaDescription || data.author.bio,
+      images: (seo?.socialSharingImage || data.author.coverUrl)
+        ? [{ url: seo?.socialSharingImage || data.author.coverUrl }]
+        : undefined,
     },
   }
 }

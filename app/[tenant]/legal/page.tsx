@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { headers } from "next/headers"
 import { ShieldCheck, Scale, FileText, Cookie, Mail, Building2, MapPin } from "lucide-react"
-import { getTenantBySlug } from "@/lib/application/blog-use-cases"
+import { getTenantBySlug, getPublicTenantLegalSettings } from "@/lib/application/blog-use-cases"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -24,7 +24,10 @@ export async function generateMetadata({ params }: TenantLegalPageProps): Promis
 
 export default async function TenantLegalPage({ params }: TenantLegalPageProps) {
   const { tenant } = await params
-  const user = await getTenantBySlug(tenant)
+  const [user, legalSettings] = await Promise.all([
+    getTenantBySlug(tenant),
+    getPublicTenantLegalSettings(tenant),
+  ])
 
   if (!user) notFound()
 
@@ -32,11 +35,11 @@ export default async function TenantLegalPage({ params }: TenantLegalPageProps) 
   const isSubdomain = reqHeaders.get("x-is-subdomain") === "true"
   const baseLegalUrl = isSubdomain ? "/legal" : `/${tenant}/legal`
 
-  const legal = user.legalSettings || {}
+  const legal = legalSettings || {}
   const companyName = legal.companyName || user.name
-  const contactEmail = legal.contactEmail || user.email
+  const contactEmail = legal.contactEmail
   const taxId = legal.taxId || "No especificado"
-  const address = legal.address || user.location || "No especificada"
+  const address = legal.address || "No especificada"
 
   const cards = [
     {
@@ -113,9 +116,11 @@ export default async function TenantLegalPage({ params }: TenantLegalPageProps) 
             <span className="text-muted-foreground block flex items-center gap-1">
               <Mail className="size-3" /> Contacto Legal:
             </span>
-            <a href={`mailto:${contactEmail}`} className="font-mono text-primary hover:underline">
-              {contactEmail}
-            </a>
+            {contactEmail ? (
+              <a href={`mailto:${contactEmail}`} className="font-mono text-primary hover:underline">
+                {contactEmail}
+              </a>
+            ) : <span className="font-medium text-foreground">No especificado</span>}
           </div>
           <div>
             <span className="text-muted-foreground block flex items-center gap-1">

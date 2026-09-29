@@ -1,18 +1,12 @@
-import type { AuthorWithStats, Post, UpdateUserInput, User } from "@/lib/domain/entities"
+import type { AuthorWithStats, PublishedPost, UpdateUserInput, User } from "@/lib/domain/entities"
 import { categoryRepository, postRepository, userRepository } from "@/lib/infrastructure/repositories"
 
 export async function getAllAuthorsWithStats(): Promise<AuthorWithStats[]> {
-  const authors = await userRepository.findAll()
+  const authors = await userRepository.findAllPublic()
   const posts = await postRepository.findPublished()
 
   return authors.map((author) => {
-    const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
-    const authorPosts = posts.filter(
-      (p) =>
-        p.authorId === authorKey ||
-        p.authorId === author.id ||
-        p.authorId === author.legacyId
-    )
+    const authorPosts = posts.filter((post) => post.author.username === author.username)
     return {
       ...author,
       totalViews: authorPosts.reduce((sum, p) => sum + p.views, 0),
@@ -32,7 +26,7 @@ export async function getCurrentUser(): Promise<User | null> {
     return null
   }
 
-  const existing = await userRepository.findByClerkUserId(session.userId)
+  const existing = await userRepository.findCurrent()
   if (existing) {
     return existing
   }
@@ -80,14 +74,13 @@ export async function resolveClerkTenantId(): Promise<string | null> {
 
 export async function getAuthorProfile(username: string): Promise<{
   author: AuthorWithStats
-  posts: Post[]
+  posts: PublishedPost[]
 } | null> {
-  const author = await userRepository.findByUsername(username)
+  const author = await userRepository.findPublicByUsername(username)
   if (!author) return null
 
-  const authorKey = author.clerkUserId ?? author.legacyId ?? author.id
   const [posts, categories] = await Promise.all([
-    postRepository.findPublishedByAuthorId(authorKey),
+    postRepository.findPublishedByAuthorUsername(username),
     categoryRepository.findAll(),
   ])
   const catMap = new Map(categories.map((c) => [c.id, c]))

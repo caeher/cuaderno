@@ -2,6 +2,7 @@ import { api } from "@/convex/_generated/api"
 import type { TemplateRepository } from "@/lib/domain/repositories"
 import type {
   CreateTemplateInput,
+  PublicTenantTemplate,
   TemplateRevision,
   TenantTemplate,
   UpdateTemplateDraftInput,
@@ -14,6 +15,18 @@ export class ConvexTemplateRepository implements TemplateRepository {
   async findByTenantId(tenantId: string): Promise<TenantTemplate | null> {
     const doc = await convexQuery(api.templates.getByTenantId, { tenantId })
     return doc ? convexDocToTenantTemplate(doc) : null
+  }
+
+  async findPublishedByTenantSlug(tenantSlug: string): Promise<PublicTenantTemplate | null> {
+    const doc = await convexQuery(api.templates.getPublishedForTenantSlug, { username: tenantSlug })
+    if (!doc) return null
+    return {
+      name: doc.name,
+      version: doc.version,
+      publishedSlots: doc.publishedSlots,
+      settings: doc.settings,
+      isPublished: doc.isPublished,
+    }
   }
 
   async create(input: CreateTemplateInput): Promise<TenantTemplate> {

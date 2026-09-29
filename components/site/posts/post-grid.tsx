@@ -1,12 +1,11 @@
 import * as React from "react"
-import type { Post, User } from "@/lib/domain/entities"
+import type { PublishedPost } from "@/lib/domain/entities"
 import { PostCard } from "@/components/site/posts/post-card"
 import { EmptyState, type EmptyPreset } from "@/components/common/empty-state"
 import { cn } from "@/lib/utils"
 
 export interface PostGridProps extends React.HTMLAttributes<HTMLDivElement> {
-  posts: Post[]
-  authorMap: Map<string, User>
+  posts: PublishedPost[]
   columns?: 2 | 3 | 4
   emptyStatePreset?: EmptyPreset
   emptyTitle?: string
@@ -21,7 +20,6 @@ const columnClasses = {
 
 export function PostGrid({
   posts,
-  authorMap,
   columns = 3,
   emptyStatePreset = "posts",
   emptyTitle,
@@ -46,9 +44,7 @@ export function PostGrid({
       {...props}
     >
       {posts.map((post) => {
-        const author = authorMap.get(post.authorId)
-        if (!author) return null
-        return <PostCard key={post.id} post={post} author={author} />
+        return <PostCard key={post.id} post={post} author={post.author} />
       })}
     </div>
   )
