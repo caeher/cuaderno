@@ -65,9 +65,16 @@ Artículos y publicaciones del blog.
 
 ### 2.4 `comments`
 Comentarios de lectores asociados a una publicación.
-- **Campos**: `postId: string`, `postDocId?: Id<"posts">`, `authorName`, `authorAvatarUrl?`, `authorEmail?`, `authorUserId?`, `content`, `createdAt`.
+- **Campos**: `postId: string`, `postDocId?: Id<"posts">`, `tenantId?`, `authorName`, `authorAvatarUrl?`, `authorEmail?`, `authorUserId?`, `content`, `createdAt`.
+- Los comentarios nuevos guardan `postDocId` y `tenantId` canónicos. El tenant se usa para moderar de forma segura los comentarios cuyo post fue eliminado.
 
-### 2.5 `tenantTemplates` y `tenantTemplateRevisions`
+### 2.5 `commentRateLimits`
+Ventanas de frecuencia para proteger `comments.create`, incluidas las llamadas directas a Convex.
+- **Índice**: `by_tenant_actor` localiza un único contador por tenant y actor.
+- Usuarios autenticados tienen hasta 5 comentarios por tenant en una ventana móvil de 10 minutos; anónimos comparten un límite de 8 por tenant en la misma ventana.
+- Las escrituras de frecuencia, comentario y contador del post comparten la transacción Convex.
+
+### 2.6 `tenantTemplates` y `tenantTemplateRevisions`
 Plantillas visuales modulares para personalización de páginas por tenant.
 - **Estructura AST de Bloques Nativos**: `draftSlots: Record<string, any>`, `publishedSlots: Record<string, any>`, `slotsSnapshot: Record<string, any>`.
 - **Ajustes Nativos**: `settings`: `{ primaryColor?, accentColor?, fontHeading?, fontBody?, customCss?, containerMaxWidth? }`.

@@ -52,7 +52,7 @@ export function PostCommentsSection({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!postId || !authorName.trim() || !content.trim()) {
-      toast.error("Por favor completa tu nombre y comentario")
+      toast.error("Escribe tu nombre o alias y un comentario")
       return
     }
 
@@ -70,7 +70,7 @@ export function PostCommentsSection({
         setContent("")
         toast.success("¡Comentario publicado con éxito!")
       } else {
-        toast.error("No se pudo publicar el comentario")
+        toast.error(res.error ?? "No se pudo publicar el comentario")
       }
     } catch {
       toast.error("Ocurrió un error inesperado al comentar")
@@ -98,6 +98,7 @@ export function PostCommentsSection({
               value={authorName}
               onChange={(e) => setAuthorName(e.target.value)}
               placeholder="Tu nombre o alias"
+              maxLength={80}
               required
               className="text-sm"
             />
@@ -106,6 +107,7 @@ export function PostCommentsSection({
               onChange={(e) => setContent(e.target.value)}
               placeholder="Escribe tu opinión o reflexión..."
               rows={3}
+              maxLength={5000}
               required
               className="text-sm"
             />

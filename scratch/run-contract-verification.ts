@@ -11,6 +11,7 @@ import {
 import { runConvexAuthAndSecurityTests } from "./contract-tests/convex-handler-tests"
 import { runPostReadSecurityTests } from "./contract-tests/post-read-security-tests"
 import { runUserCommentReadSecurityTests } from "./contract-tests/user-comment-read-security-tests"
+import { runCommentMutationSecurityTests } from "./contract-tests/comment-mutation-security-tests"
 import { runRepositoryContractSuite } from "./contract-tests/repository-contract-suite"
 import { runPostTenantMigrationTests } from "./contract-tests/post-tenant-migration-tests"
 
@@ -42,6 +43,10 @@ async function main() {
   const userCommentResults = await runUserCommentReadSecurityTests()
   grandTotalPassed += userCommentResults.totalPassed
   grandTotalFailed += userCommentResults.totalFailed
+
+  const commentMutationResults = await runCommentMutationSecurityTests()
+  grandTotalPassed += commentMutationResults.totalPassed
+  grandTotalFailed += commentMutationResults.totalFailed
 
   // 2. Verificación de Instanciación de Repositorios Convex
   console.log("==================================================")

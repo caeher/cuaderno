@@ -224,6 +224,7 @@ export default defineSchema({
     legacyId: v.optional(v.string()),
     postId: v.string(),
     postDocId: v.optional(v.id("posts")),
+    tenantId: v.optional(v.string()),
     authorName: v.string(),
     authorAvatarUrl: v.optional(v.string()),
     authorEmail: v.optional(v.string()),
@@ -234,6 +235,15 @@ export default defineSchema({
     .index("by_post", ["postId", "createdAt"])
     .index("by_post_doc", ["postDocId", "createdAt"])
     .index("by_legacy_id", ["legacyId"]),
+
+  /**
+   * Ventanas de frecuencia de comentarios. Se conserva un único documento por actor y tenant.
+   */
+  commentRateLimits: defineTable({
+    tenantId: v.string(),
+    actorId: v.string(),
+    timestamps: v.array(v.number()),
+  }).index("by_tenant_actor", ["tenantId", "actorId"]),
 
   /**
    * Colección: TenantTemplates (Plantillas visuales activas a nivel de tenant)
