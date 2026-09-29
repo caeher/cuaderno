@@ -4,24 +4,30 @@ import Image from "next/image"
 import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { formatShortDate, getInitials } from "@/lib/format"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { buildTenantUrl } from "@/lib/tenant-utils"
+import { buildTenantPostUrl, buildTenantUrl } from "@/lib/tenant-utils"
 import { cn } from "@/lib/utils"
 
 export interface PostCardProps {
   post: PublishedPost
   author: PublicAuthor
+  tenantAuthor?: PublicAuthor
+  tenantSlug?: string
   variant?: "default" | "compact"
   className?: string
 }
 
-export function PostCard({ post, author, variant = "default", className }: PostCardProps) {
-  const postUrl = buildTenantUrl({
-    tenantSlug: author.username,
-    path: `/posts/${post.slug}`,
-    subdomainEnabled: author.subdomainEnabled ?? true,
-    customDomain: author.customDomain,
-    absolute: author.subdomainEnabled ?? false,
-  })
+export function PostCard({ post, author, tenantAuthor, tenantSlug, variant = "default", className }: PostCardProps) {
+  const routeTenant = tenantAuthor ?? post.tenant
+  const routeSlug = tenantSlug ?? routeTenant?.username
+  const postUrl = routeSlug && routeTenant
+    ? buildTenantPostUrl(routeSlug, post.slug, {
+        subdomainEnabled: routeTenant.subdomainEnabled ?? true,
+        customDomain: routeTenant.customDomain,
+        absolute: routeTenant.subdomainEnabled ?? false,
+      })
+    : tenantSlug
+      ? `/${tenantSlug}/post/${post.slug}`
+      : `/post/${post.slug}`
 
   if (variant === "compact") {
     return (

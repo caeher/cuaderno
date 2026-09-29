@@ -43,6 +43,8 @@ export type PublishedPost = Omit<
 > & {
   status: "published"
   author: PublicAuthor
+  /** Identidad visual del blog que publica, distinta del autor real si corresponde. */
+  tenant?: PublicAuthor | null
 }
 
 export interface CreatePostInput {

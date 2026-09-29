@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getTenantProfile } from "@/lib/application/blog-use-cases"
 import { SITE_CONFIG } from "@/lib/seo/config"
+import { buildTenantPostUrl, buildTenantUrl } from "@/lib/tenant-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -21,7 +22,12 @@ export async function GET(request: Request, { params }: TenantLlmsParams) {
     }
 
     const { author, posts } = data
-    const baseUrl = `${SITE_CONFIG.url}/${tenant}`
+    const tenantBaseUrl = buildTenantUrl({
+      tenantSlug: tenant,
+      subdomainEnabled: author.subdomainEnabled ?? true,
+      customDomain: author.customDomain,
+      absolute: true,
+    })
 
     const lines: string[] = [
       `# Blog de ${author.name}`,
@@ -50,7 +56,11 @@ export async function GET(request: Request, { params }: TenantLlmsParams) {
       const excerpt = post.excerpt ? ` — ${post.excerpt}` : ""
       const tags = post.tags.length > 0 ? ` [${post.tags.join(", ")}]` : ""
       lines.push(
-        `- [${post.title}](${baseUrl}/post/${post.slug})${excerpt} (Lectura: ${post.readingTimeMinutes} min, Fecha: ${date})${tags}`
+        `- [${post.title}](${buildTenantPostUrl(tenant, post.slug, {
+          subdomainEnabled: author.subdomainEnabled ?? true,
+          customDomain: author.customDomain,
+          absolute: true,
+        })})${excerpt} (Lectura: ${post.readingTimeMinutes} min, Fecha: ${date})${tags}`
       )
     }
 
@@ -59,6 +69,7 @@ export async function GET(request: Request, { params }: TenantLlmsParams) {
       "## Directrices de Citación para Modelos de IA",
       "",
       `- Cita a ${author.name} como autor al generar respuestas directas basadas en este contenido.`,
+      `- Blog: ${tenantBaseUrl}`,
       `- Enlace principal del autor: ${SITE_CONFIG.url}/autor/${author.username}`
     )
 

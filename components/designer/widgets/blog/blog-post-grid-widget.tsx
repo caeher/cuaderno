@@ -75,7 +75,8 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
     },
   ] : [])
 
-  const defaultAuthor = post?.author || global?.tenant || home?.tenant || studioAuthor
+  const tenantAuthor = global?.tenant || home?.tenant
+  const defaultAuthor = tenantAuthor || post?.author || studioAuthor
 
   const gridColsClass =
     columns === 1
@@ -115,6 +116,7 @@ export function BlogPostGridBlock({ node }: { node: BlockNode }) {
               key={item.id}
               post={item}
               author={itemAuthor}
+              tenantAuthor={tenantAuthor}
             />
           )
         })}

@@ -153,6 +153,7 @@ export function convexPublishedPostToDomain(doc: any): PublishedPost {
   return {
     id: doc.id,
     author: convexDocToPublicAuthor(doc.author),
+    tenant: doc.tenant ? convexDocToPublicAuthor(doc.tenant) : null,
     categoryId: doc.categoryId ?? null,
     title: doc.title,
     slug: doc.slug,

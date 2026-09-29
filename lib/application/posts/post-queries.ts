@@ -4,6 +4,7 @@ import {
   commentRepository,
   narrationRepository,
   postRepository,
+  userRepository,
 } from "@/lib/infrastructure/repositories"
 import { isNarrationPlaybackEnabled } from "@/lib/server/audio-config"
 
@@ -90,8 +91,12 @@ export async function getPostForReading(slug: string) {
 }
 
 export async function getPostForReadingByTenant(tenantSlug: string, postSlug: string) {
+  const tenant = await userRepository.findPublicByUsername(tenantSlug)
+  if (!tenant) return null
+
   const post = await postRepository.findPublishedBySlugAndTenantSlug(postSlug, tenantSlug)
   if (!post) return null
+  const postTenant = post.tenant ?? tenant
   const author = post.author
 
   const [comments, allAuthorPosts, postCategory, narration] = await Promise.all([
@@ -119,7 +124,7 @@ export async function getPostForReadingByTenant(tenantSlug: string, postSlug: st
       category: p.categoryId ? catMap.get(p.categoryId) ?? null : null,
     }))
 
-  return { post, author, comments, relatedPosts }
+  return { post, author, tenant: postTenant, comments, relatedPosts }
 }
 
 export async function getPostForEditing(postId: string): Promise<Post | null> {

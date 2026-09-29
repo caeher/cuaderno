@@ -10,6 +10,7 @@ export interface AuthorTimelineProps {
   posts: PublishedPost[]
   authorName: string
   tenantSlug?: string
+  tenantHost?: boolean
   className?: string
 }
 
@@ -17,6 +18,7 @@ export function AuthorTimeline({
   posts,
   authorName,
   tenantSlug,
+  tenantHost = false,
   className,
 }: AuthorTimelineProps) {
   if (posts.length === 0) {
@@ -33,7 +35,13 @@ export function AuthorTimeline({
     <div className={cn("py-10", className)}>
       <div className="flex flex-col divide-y divide-border/70">
         {posts.map((post) => {
-          const postHref = tenantSlug ? `/${tenantSlug}/posts/${post.slug}` : `/posts/${post.slug}`
+          const postHref = tenantHost
+            ? `/post/${post.slug}`
+            : tenantSlug
+              ? `/${tenantSlug}/post/${post.slug}`
+              : post.tenant
+                ? `/${post.tenant.username}/post/${post.slug}`
+                : `/post/${post.slug}`
 
           return (
             <article key={post.id} className="group py-6 first:pt-0">

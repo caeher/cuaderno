@@ -62,13 +62,22 @@ export const getPublishedForTenantSlug = query({
     v.null()
   ),
   handler: async (ctx, args) => {
-    const author = await ctx.db
+    const authors = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first()
-    if (!author) return null
+      .collect()
+    if (authors.length !== 1) return null
+    const author = authors[0]!
 
-    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
+    if (author.publicTenantId) {
+      const mappedProfiles = await ctx.db
+        .query("users")
+        .withIndex("by_public_tenant_id", (q) => q.eq("publicTenantId", author.publicTenantId!))
+        .collect()
+      if (mappedProfiles.length !== 1 || mappedProfiles[0]?._id !== author._id) return null
+    }
+
+    const tenantId = author.publicTenantId ?? author.clerkUserId ?? author.legacyId ?? (author._id as string)
     const template = await ctx.db
       .query("tenantTemplates")
       .withIndex("by_tenant_and_published", (q) =>

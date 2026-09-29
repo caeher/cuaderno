@@ -41,6 +41,7 @@ const userValidator = v.object({
   _creationTime: v.number(),
   legacyId: v.optional(v.string()),
   clerkUserId: v.optional(v.string()),
+  publicTenantId: v.optional(v.string()),
   tokenIdentifier: v.optional(v.string()),
   username: v.string(),
   name: v.string(),
@@ -62,6 +63,10 @@ const userValidator = v.object({
   seoSettings: v.optional(tenantSeoSettingsValidator),
 })
 const nullableUserValidator = v.union(userValidator, v.null())
+const publicTenantOrganizationStatusValidator = v.union(
+  v.object({ username: v.string(), isMappedToCurrentOrganization: v.boolean(), mappedElsewhere: v.boolean() }),
+  v.null()
+)
 
 export function toPublicAuthor(user: {
   username: string
@@ -138,10 +143,12 @@ export const getCurrent = query({
 })
 
 export async function getPublicByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
-  const user = await ctx.db
+  const users = await ctx.db
     .query("users")
     .withIndex("by_username", (q) => q.eq("username", args.username))
-    .first()
+    .collect()
+  if (users.length !== 1) return null
+  const user = users[0]!
   return user ? toPublicAuthor(user) : null
 }
 
@@ -152,10 +159,12 @@ export const getPublicByUsername = query({
 })
 
 export async function getPublicLegalSettingsByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
-  const user = await ctx.db
+  const users = await ctx.db
     .query("users")
     .withIndex("by_username", (q) => q.eq("username", args.username))
-    .first()
+    .collect()
+  if (users.length !== 1) return null
+  const user = users[0]!
   return user?.legalSettings ?? null
 }
 
@@ -166,10 +175,12 @@ export const getPublicLegalSettingsByUsername = query({
 })
 
 export async function getPublicSeoSettingsByUsernameHandler(ctx: QueryCtx, args: { username: string }) {
-  const user = await ctx.db
+  const users = await ctx.db
     .query("users")
     .withIndex("by_username", (q) => q.eq("username", args.username))
-    .first()
+    .collect()
+  if (users.length !== 1) return null
+  const user = users[0]!
   const seo = user?.seoSettings
   if (!seo) return null
 
@@ -349,6 +360,16 @@ export const update = mutation({
       throw new Error("Acceso denegado: No tienes autorización para modificar este usuario.")
     }
 
+    if (args.username !== undefined && args.username !== user.username) {
+      const matches = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", args.username!))
+        .collect()
+      if (matches.some((candidate) => candidate._id !== user._id)) {
+        throw new Error("Ese nombre de usuario ya está en uso.")
+      }
+    }
+
     const updates: Partial<typeof user> = {}
     if (args.username !== undefined) updates.username = args.username
     if (args.name !== undefined) updates.name = args.name
@@ -368,6 +389,68 @@ export const update = mutation({
 
     await ctx.db.patch(user._id, updates)
     return await ctx.db.get(user._id)
+  },
+})
+
+/** Asocia el perfil público del administrador con el tenant de su organización activa. */
+export const getPublicTenantOrganizationStatus = query({
+  args: {},
+  returns: publicTenantOrganizationStatusValidator,
+  handler: async (ctx) => {
+    const identity = await requireTenantAuth(ctx)
+    const profiles = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", identity.userId))
+      .collect()
+    if (profiles.length !== 1) return null
+
+    const profile = profiles[0]!
+    const isMappedToCurrentOrganization =
+      identity.tenantType === "organization" && profile.publicTenantId === identity.tenantId
+    return {
+      username: profile.username,
+      isMappedToCurrentOrganization,
+      mappedElsewhere: Boolean(profile.publicTenantId && !isMappedToCurrentOrganization),
+    }
+  },
+})
+
+export const setPublicTenantOrganization = mutation({
+  args: {},
+  returns: v.union(v.object({ username: v.string(), isMapped: v.boolean() }), v.null()),
+  handler: async (ctx) => {
+    const identity = await requireTenantAuth(ctx)
+    if (
+      identity.tenantType !== "organization" ||
+      !["org:admin", "org:owner"].includes(identity.orgRole ?? "")
+    ) {
+      throw new Error("Solo un administrador de la organización activa puede asociar el blog público.")
+    }
+
+    const profiles = await ctx.db
+      .query("users")
+      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", identity.userId))
+      .collect()
+    if (profiles.length !== 1) return null
+
+    const profile = profiles[0]!
+    if (profile.publicTenantId && profile.publicTenantId !== identity.tenantId) {
+      throw new Error("Este perfil público ya está asociado a otro tenant.")
+    }
+
+    const mappedProfiles = await ctx.db
+      .query("users")
+      .withIndex("by_public_tenant_id", (q) => q.eq("publicTenantId", identity.tenantId))
+      .collect()
+    if (mappedProfiles.some((candidate) => candidate._id !== profile._id)) {
+      throw new Error("Este tenant ya está asociado a otro perfil público.")
+    }
+
+    if (profile.publicTenantId !== identity.tenantId) {
+      await ctx.db.patch(profile._id, { publicTenantId: identity.tenantId })
+    }
+
+    return { username: profile.username, isMapped: true }
   },
 })
 

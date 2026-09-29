@@ -1,6 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { toast } from "sonner"
+import { useMutation, useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import {
   Building2,
   Users,
@@ -29,15 +32,37 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ConvexAuthStatus } from "@/components/admin/convex-auth-status"
+import { Button } from "@/components/ui/button"
 
 export function OrganizationSettingsSection() {
   const { user, isLoaded: isUserLoaded } = useUser()
   const { organization, isLoaded: isOrgLoaded, membership } = useOrganization()
+  const publicTenantStatus = useQuery(api.users.getPublicTenantOrganizationStatus)
+  const linkPublicTenant = useMutation(api.users.setPublicTenantOrganization)
+  const [isLinkingPublicTenant, setIsLinkingPublicTenant] = React.useState(false)
   const { userMemberships, isLoaded: isOrgListLoaded } = useOrganizationList({
     userMemberships: {
       infinite: true,
     },
   })
+
+  const canManagePublicTenant = membership?.role === "org:admin" || membership?.role === "org:owner"
+
+  async function handleLinkPublicTenant() {
+    setIsLinkingPublicTenant(true)
+    try {
+      const result = await linkPublicTenant({})
+      if (!result) {
+        toast.error("No se encontró un perfil público único para tu cuenta.")
+        return
+      }
+      toast.success(`El perfil @${result.username} ya representa esta organización.`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo vincular el perfil público.")
+    } finally {
+      setIsLinkingPublicTenant(false)
+    }
+  }
 
   // In case Clerk is not configured in env
   if (!isUserLoaded) {
@@ -114,6 +139,29 @@ export function OrganizationSettingsSection() {
               <p>
                 Los cambios que realices a continuación se aplicarán a todos los autores y miembros de este blog.
               </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-background p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-foreground">Perfil público del blog</p>
+                  {publicTenantStatus === undefined ? (
+                    <p>Comprobando la asociación del perfil...</p>
+                  ) : publicTenantStatus === null ? (
+                    <p>No se encontró un perfil público único para tu cuenta.</p>
+                  ) : publicTenantStatus.isMappedToCurrentOrganization ? (
+                    <p>El perfil @{publicTenantStatus.username} está vinculado a esta organización.</p>
+                  ) : publicTenantStatus.mappedElsewhere ? (
+                    <p>El perfil @{publicTenantStatus.username} ya está vinculado a otra organización.</p>
+                  ) : (
+                    <p>Vincula el perfil @{publicTenantStatus.username} para publicar aquí los artículos del equipo.</p>
+                  )}
+                </div>
+                {canManagePublicTenant && publicTenantStatus &&
+                !publicTenantStatus.isMappedToCurrentOrganization &&
+                !publicTenantStatus.mappedElsewhere ? (
+                  <Button size="sm" onClick={handleLinkPublicTenant} disabled={isLinkingPublicTenant}>
+                    {isLinkingPublicTenant ? "Vinculando…" : "Vincular perfil"}
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
         ) : (

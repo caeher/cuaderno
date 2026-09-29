@@ -21,15 +21,14 @@ export function generateArticleJsonLd(
   post: PublishedPost,
   author: PublicAuthor,
   baseUrl: string = SITE_CONFIG.url,
-  isTenant = false
+  isTenant = false,
+  tenantContext?: { blogName?: string; tenantUsername?: string }
 ) {
-  const postUrl = isTenant
-    ? `${baseUrl}/post/${post.slug}`
-    : `${baseUrl}/post/${post.slug}`
+  const postUrl = `${baseUrl}/post/${post.slug}`
 
-  const authorUrl = isTenant
+  const authorUrl = isTenant && author.username === tenantContext?.tenantUsername
     ? `${baseUrl}/#autor`
-    : `${baseUrl}/autor/${author.username}`
+    : `${SITE_CONFIG.url}/autor/${author.username}`
 
   const wordCount = post.content ? post.content.split(/\s+/).filter(Boolean).length : 0
   const geo = resolveGeoLocation(author.location)
@@ -59,7 +58,7 @@ export function generateArticleJsonLd(
     isPartOf: {
       "@type": "Blog",
       "@id": `${baseUrl}#blog`,
-      name: isTenant ? `${author.name} — Blog` : SITE_CONFIG.name,
+      name: isTenant ? tenantContext?.blogName || `${author.name} — Blog` : SITE_CONFIG.name,
       publisher: {
         "@type": "Organization",
         name: SITE_CONFIG.name,

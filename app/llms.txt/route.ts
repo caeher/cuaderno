@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { categoryRepository, postRepository, userRepository } from "@/lib/infrastructure/repositories"
 import { SITE_CONFIG } from "@/lib/seo/config"
+import { buildTenantPostUrl } from "@/lib/tenant-utils"
 
 export const dynamic = "force-dynamic"
 
@@ -46,11 +47,16 @@ export async function GET() {
 
     lines.push("", "## Artículos Recientes", "")
     for (const post of posts) {
+      if (!post.tenant) continue
       const authorName = post.author.name || "Redacción"
       const date = post.publishedAt || post.updatedAt
       const excerpt = post.excerpt ? ` — ${post.excerpt}` : ""
       lines.push(
-        `- [${post.title}](${baseUrl}/post/${post.slug})${excerpt} (Autor: ${authorName}, Lectura: ${post.readingTimeMinutes} min, Fecha: ${date})`
+        `- [${post.title}](${buildTenantPostUrl(post.tenant.username, post.slug, {
+          subdomainEnabled: post.tenant.subdomainEnabled ?? true,
+          customDomain: post.tenant.customDomain,
+          absolute: true,
+        })})${excerpt} (Autor: ${authorName}, Lectura: ${post.readingTimeMinutes} min, Fecha: ${date})`
       )
     }
 

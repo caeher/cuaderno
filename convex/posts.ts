@@ -33,6 +33,7 @@ const publicAuthorValidator = v.object({
 const publishedPostValidator = v.object({
   id: v.id("posts"),
   author: publicAuthorValidator,
+  tenant: v.union(publicAuthorValidator, v.null()),
   categoryId: v.union(v.string(), v.null()),
   title: v.string(),
   slug: v.string(),
@@ -85,23 +86,26 @@ const postDocListValidator = v.array(postDocValidator)
 const nullablePublishedPostValidator = v.union(publishedPostValidator, v.null())
 const nullablePostDocValidator = v.union(postDocValidator, v.null())
 
+type PublicAuthorProjection = {
+  username: string
+  name: string
+  avatarUrl: string
+  coverUrl: string
+  bio: string
+  tagline: string
+  location?: string
+  socials: Doc<"users">["socials"]
+  joinedAt: string
+  postCount: number
+  followerCount: number
+  subdomainEnabled?: boolean
+  customDomain?: string
+}
+
 type PublishedPostRecord = {
   id: Doc<"posts">["_id"]
-  author: {
-    username: string
-    name: string
-    avatarUrl: string
-    coverUrl: string
-    bio: string
-    tagline: string
-    location?: string
-    socials: Doc<"users">["socials"]
-    joinedAt: string
-    postCount: number
-    followerCount: number
-    subdomainEnabled?: boolean
-    customDomain?: string
-  }
+  author: PublicAuthorProjection
+  tenant: PublicAuthorProjection | null
   categoryId: string | null
   title: string
   slug: string
@@ -119,33 +123,42 @@ type PublishedPostRecord = {
   featured: boolean
 }
 
-type PublicAuthorProjection = PublishedPostRecord["author"]
 type PublicAuthorResolver = (post: Doc<"posts">) => Promise<PublicAuthorProjection>
 
+async function getUniqueUserByIdentity(ctx: QueryCtx, identity: string): Promise<Doc<"users"> | null> {
+  const normalizedId = ctx.db.normalizeId("users", identity)
+  if (normalizedId) return await ctx.db.get(normalizedId)
+
+  const candidates = new Map<string, Doc<"users">>()
+  const byLegacyId = await ctx.db
+    .query("users")
+    .withIndex("by_legacy_id", (q) => q.eq("legacyId", identity))
+    .collect()
+  if (byLegacyId.length > 1) return null
+  if (byLegacyId[0]) candidates.set(byLegacyId[0]._id, byLegacyId[0])
+
+  const byClerkUserId = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", identity))
+    .collect()
+  if (byClerkUserId.length > 1) return null
+  if (byClerkUserId[0]) candidates.set(byClerkUserId[0]._id, byClerkUserId[0])
+
+  const byUsername = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", identity))
+    .collect()
+  if (byUsername.length > 1) return null
+  if (byUsername[0]) candidates.set(byUsername[0]._id, byUsername[0])
+  return candidates.size === 1 ? candidates.values().next().value! : null
+}
+
 async function getPublicAuthorForPost(ctx: QueryCtx, post: Doc<"posts">): Promise<PublicAuthorProjection> {
-  let author = post.authorDocId ? await ctx.db.get(post.authorDocId) : null
-  if (!author) {
-    const normalizedAuthorId = ctx.db.normalizeId("users", post.authorId)
-    if (normalizedAuthorId) author = await ctx.db.get(normalizedAuthorId)
-  }
-  if (!author) {
-    author = await ctx.db
-      .query("users")
-      .withIndex("by_legacy_id", (q) => q.eq("legacyId", post.authorId))
-      .first()
-  }
-  if (!author) {
-    author = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", post.authorId))
-      .first()
-  }
-  if (!author) {
-    author = await ctx.db
-      .query("users")
-      .withIndex("by_username", (q) => q.eq("username", post.authorId))
-      .first()
-  }
+  const authorFromDoc = post.authorDocId ? await ctx.db.get(post.authorDocId) : null
+  const authorFromId = await getUniqueUserByIdentity(ctx, post.authorId)
+  const author = authorFromDoc && authorFromId && authorFromDoc._id !== authorFromId._id
+    ? null
+    : authorFromDoc ?? authorFromId
 
   if (!author) {
     return {
@@ -163,6 +176,10 @@ async function getPublicAuthorForPost(ctx: QueryCtx, post: Doc<"posts">): Promis
     }
   }
 
+  return toPublicAuthorProjection(author)
+}
+
+function toPublicAuthorProjection(author: Doc<"users">): PublicAuthorProjection {
   return {
     username: author.username,
     name: author.name,
@@ -177,6 +194,51 @@ async function getPublicAuthorForPost(ctx: QueryCtx, post: Doc<"posts">): Promis
     followerCount: author.followerCount,
     ...(author.subdomainEnabled !== undefined ? { subdomainEnabled: author.subdomainEnabled } : {}),
     ...(author.customDomain !== undefined ? { customDomain: author.customDomain } : {}),
+  }
+}
+
+function getCanonicalPublicTenantId(author: Doc<"users">) {
+  return author.publicTenantId ?? author.clerkUserId ?? author.legacyId ?? (author._id as string)
+}
+
+function getPublicTenantKeys(tenantId: string, author: Doc<"users"> | null) {
+  return author?.publicTenantId ? new Set([author.publicTenantId]) : authorKeys(tenantId, author)
+}
+
+async function getPublicTenantForPost(ctx: QueryCtx, post: Doc<"posts">): Promise<PublicAuthorProjection | null> {
+  const tenantId = post.tenantId || post.organizationId
+
+  if (tenantId) {
+    const mappedProfiles = await ctx.db
+      .query("users")
+      .withIndex("by_public_tenant_id", (q) => q.eq("publicTenantId", tenantId))
+      .collect()
+    if (mappedProfiles.length > 1) return null
+    if (mappedProfiles[0]) return toPublicAuthorProjection(mappedProfiles[0])
+
+    const profile = await getUniqueTenantProfileByIdentity(ctx, tenantId)
+    if (!profile || (profile.publicTenantId && profile.publicTenantId !== tenantId)) return null
+    return toPublicAuthorProjection(profile)
+  }
+
+  const authorFromDoc = post.authorDocId ? await ctx.db.get(post.authorDocId) : null
+  const authorFromId = await getUniqueUserByIdentity(ctx, post.authorId)
+  if (!authorFromDoc || !authorFromId || authorFromDoc._id !== authorFromId._id) return null
+  const author = authorFromDoc
+  if (!author || author.publicTenantId) return null
+  return toPublicAuthorProjection(author)
+}
+
+function createPublicTenantResolver(ctx: QueryCtx) {
+  const cache = new Map<string, Promise<PublicAuthorProjection | null>>()
+  return (post: Doc<"posts">) => {
+    const key = post.tenantId || post.organizationId || `legacy:${post.authorDocId ?? post.authorId}`
+    let tenant = cache.get(key)
+    if (!tenant) {
+      tenant = getPublicTenantForPost(ctx, post)
+      cache.set(key, tenant)
+    }
+    return tenant
   }
 }
 
@@ -196,11 +258,14 @@ function createPublicAuthorResolver(ctx: QueryCtx): PublicAuthorResolver {
 async function toPublishedPost(
   ctx: QueryCtx,
   post: Doc<"posts">,
-  resolveAuthor: PublicAuthorResolver = (record) => getPublicAuthorForPost(ctx, record)
+  resolveAuthor: PublicAuthorResolver = (record) => getPublicAuthorForPost(ctx, record),
+  resolveTenant: (record: Doc<"posts">) => Promise<PublicAuthorProjection | null> = (record) =>
+    getPublicTenantForPost(ctx, record)
 ): Promise<PublishedPostRecord> {
   return {
     id: post._id,
     author: await resolveAuthor(post),
+    tenant: await resolveTenant(post),
     categoryId: post.categoryId ?? null,
     title: post.title,
     slug: post.slug,
@@ -221,7 +286,8 @@ async function toPublishedPost(
 
 async function toPublishedPosts(ctx: QueryCtx, posts: Doc<"posts">[]): Promise<PublishedPostRecord[]> {
   const resolveAuthor = createPublicAuthorResolver(ctx)
-  return await Promise.all(posts.map((post) => toPublishedPost(ctx, post, resolveAuthor)))
+  const resolveTenant = createPublicTenantResolver(ctx)
+  return await Promise.all(posts.map((post) => toPublishedPost(ctx, post, resolveAuthor, resolveTenant)))
 }
 
 function sortByPublishedDate(posts: Doc<"posts">[]) {
@@ -233,7 +299,40 @@ function sortByUpdatedDate(posts: Doc<"posts">[]) {
 }
 
 async function getTenantAuthor(ctx: QueryCtx, tenantId: string) {
-  return findDocById(ctx.db, "users", tenantId)
+  return getPublicTenantAuthorById(ctx, tenantId)
+}
+
+async function getPublicTenantAuthorById(ctx: QueryCtx, tenantId: string) {
+  const mappedProfiles = await ctx.db
+    .query("users")
+    .withIndex("by_public_tenant_id", (q) => q.eq("publicTenantId", tenantId))
+    .collect()
+  if (mappedProfiles.length > 1) return null
+  if (mappedProfiles[0]) return mappedProfiles[0]
+  return getUniqueTenantProfileByIdentity(ctx, tenantId)
+}
+
+async function getUniqueTenantProfileByIdentity(ctx: QueryCtx, tenantId: string) {
+  const profile = await getUniqueUserByIdentity(ctx, tenantId)
+  if (!profile || (profile.publicTenantId && profile.publicTenantId !== tenantId)) return null
+  return profile
+}
+
+async function getUniquePublicTenantByUsername(ctx: QueryCtx, username: string) {
+  const authors = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", username))
+    .collect()
+  if (authors.length !== 1) return null
+  const author = authors[0]!
+  if (author.publicTenantId) {
+    const mappedProfiles = await ctx.db
+      .query("users")
+      .withIndex("by_public_tenant_id", (q) => q.eq("publicTenantId", author.publicTenantId!))
+      .collect()
+    if (mappedProfiles.length !== 1 || mappedProfiles[0]?._id !== author._id) return null
+  }
+  return author
 }
 
 function authorKeys(authorId: string, author: Doc<"users"> | null) {
@@ -245,12 +344,31 @@ function authorKeys(authorId: string, author: Doc<"users"> | null) {
   ])
 }
 
-function isPostForTenant(post: Doc<"posts">, tenantId: string, author: Doc<"users"> | null) {
-  if (post.tenantId) return post.tenantId === tenantId
-  if (post.organizationId) return post.organizationId === tenantId
+async function isPostForTenant(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+  tenantId: string,
+  author: Doc<"users"> | null
+) {
+  const keys = getPublicTenantKeys(tenantId, author)
+  if (post.tenantId) return keys.has(post.tenantId)
+  if (post.organizationId) return keys.has(post.organizationId)
+  if (!author?.publicTenantId && author) {
+    return await isUnambiguousLegacyPostForTenant(ctx, post, author)
+  }
+  return false
+}
 
-  const keys = authorKeys(tenantId, author)
-  return keys.has(post.authorId) || Boolean(author && post.authorDocId === author._id)
+async function isUnambiguousLegacyPostForTenant(
+  ctx: QueryCtx,
+  post: Doc<"posts">,
+  tenantAuthor: Doc<"users">
+) {
+  if (post.tenantId || post.organizationId) return false
+
+  const authorFromDoc = post.authorDocId ? await ctx.db.get(post.authorDocId) : null
+  const authorFromId = await getUniqueUserByIdentity(ctx, post.authorId)
+  return Boolean(authorFromDoc && authorFromId && authorFromDoc._id === authorFromId._id && authorFromDoc._id === tenantAuthor._id)
 }
 
 async function collectPublishedByAuthor(ctx: QueryCtx, authorId: string) {
@@ -279,37 +397,42 @@ async function collectPublishedByAuthor(ctx: QueryCtx, authorId: string) {
   return sortByPublishedDate(Array.from(postsById.values()))
 }
 
-async function collectPublishedByTenant(ctx: QueryCtx, tenantId: string) {
-  const author = await getTenantAuthor(ctx, tenantId)
-  const keys = authorKeys(tenantId, author)
+async function collectPublishedByTenant(
+  ctx: QueryCtx,
+  tenantId: string,
+  publicTenantAuthor?: Doc<"users">
+) {
+  const author = publicTenantAuthor ?? (await getPublicTenantAuthorById(ctx, tenantId))
+  const keys = getPublicTenantKeys(tenantId, author)
   const postsById = new Map<string, Doc<"posts">>()
   const add = (posts: Doc<"posts">[]) => {
     for (const post of posts) postsById.set(post._id, post)
   }
 
-  add(
-    await ctx.db
-      .query("posts")
-      .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", tenantId).eq("status", "published"))
-      .collect()
-  )
-  add(
-    await ctx.db
-      .query("posts")
-      .withIndex("by_org_and_status", (q) => q.eq("organizationId", tenantId).eq("status", "published"))
-      .collect()
-  )
-
   for (const key of keys) {
     add(
       await ctx.db
         .query("posts")
-        .withIndex("by_author_and_status", (q) => q.eq("authorId", key).eq("status", "published"))
+        .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", key).eq("status", "published"))
         .collect()
     )
+    add(
+      await ctx.db
+        .query("posts")
+        .withIndex("by_org_and_status", (q) => q.eq("organizationId", key).eq("status", "published"))
+        .collect()
+    )
+    if (!author?.publicTenantId) {
+      add(
+        await ctx.db
+          .query("posts")
+          .withIndex("by_author_and_status", (q) => q.eq("authorId", key).eq("status", "published"))
+          .collect()
+      )
+    }
   }
 
-  if (author?._id) {
+  if (author?._id && !author.publicTenantId) {
     const byDoc = await ctx.db
       .query("posts")
       .withIndex("by_author_doc", (q) => q.eq("authorDocId", author._id))
@@ -319,7 +442,7 @@ async function collectPublishedByTenant(ctx: QueryCtx, tenantId: string) {
 
   const matching: Doc<"posts">[] = []
   for (const post of postsById.values()) {
-    if (post.status === "published" && isPostForTenant(post, tenantId, author)) {
+    if (post.status === "published" && (await isPostForTenant(ctx, post, tenantId, author))) {
       matching.push(post)
     }
   }
@@ -382,8 +505,8 @@ export async function getPublishedByIdHandler(ctx: QueryCtx, args: { id: string;
   const post = await findDocById(ctx.db, "posts", args.id)
   if (!post || post.status !== "published") return null
   if (args.tenantId) {
-    const author = await getTenantAuthor(ctx, args.tenantId)
-    if (!isPostForTenant(post, args.tenantId, author)) return null
+    const author = await getPublicTenantAuthorById(ctx, args.tenantId)
+    if (!(await isPostForTenant(ctx, post, args.tenantId, author))) return null
   }
   return await toPublishedPost(ctx, post)
 }
@@ -395,21 +518,75 @@ export const getById = query({
 })
 
 export async function getPublishedBySlugHandler(ctx: QueryCtx, args: { slug: string; tenantId?: string }) {
-  const candidates = await ctx.db
-    .query("posts")
-    .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-    .collect()
-  let matching = candidates.filter((post) => post.status === "published")
   if (args.tenantId) {
     const author = await getTenantAuthor(ctx, args.tenantId)
-    const tenantMatches: Doc<"posts">[] = []
-    for (const post of matching) {
-      if (isPostForTenant(post, args.tenantId, author)) tenantMatches.push(post)
+    if (!author) return null
+
+    const tenantKeys = getPublicTenantKeys(args.tenantId, author)
+    const candidates = new Map<string, Doc<"posts">>()
+    for (const tenantId of tenantKeys) {
+      const tenantPosts = await ctx.db
+        .query("posts")
+        .withIndex("by_tenant_and_slug", (q) => q.eq("tenantId", tenantId).eq("slug", args.slug))
+        .collect()
+      for (const post of tenantPosts) {
+        if (post.status === "published") candidates.set(post._id, post)
+      }
+
+      const organizationPosts = await ctx.db
+        .query("posts")
+        .withIndex("by_org_and_slug", (q) => q.eq("organizationId", tenantId).eq("slug", args.slug))
+        .collect()
+      for (const post of organizationPosts) {
+        if (post.status === "published") candidates.set(post._id, post)
+      }
+
+      if (!author.publicTenantId) {
+        const legacyPosts = await ctx.db
+          .query("posts")
+          .withIndex("by_author_and_slug", (q) => q.eq("authorId", tenantId).eq("slug", args.slug))
+          .collect()
+        for (const post of legacyPosts) {
+          if (
+            post.status === "published" &&
+            post.slug === args.slug &&
+            await isUnambiguousLegacyPostForTenant(ctx, post, author)
+          ) {
+            candidates.set(post._id, post)
+          }
+        }
+      }
     }
-    matching = tenantMatches
+
+    if (!author.publicTenantId) {
+      const legacyAuthorDocs = await ctx.db
+        .query("posts")
+        .withIndex("by_author_doc_and_slug", (q) => q.eq("authorDocId", author._id).eq("slug", args.slug))
+        .collect()
+      for (const post of legacyAuthorDocs) {
+        if (
+          post.status === "published" &&
+          post.slug === args.slug &&
+          await isUnambiguousLegacyPostForTenant(ctx, post, author)
+        ) {
+          candidates.set(post._id, post)
+        }
+      }
+    }
+
+    if (candidates.size !== 1) return null
+    const post = candidates.values().next().value as Doc<"posts"> | undefined
+    return post ? await toPublishedPost(ctx, post) : null
   }
-  matching.sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))
-  return matching[0] ? await toPublishedPost(ctx, matching[0]) : null
+
+  const matching = (await ctx.db
+    .query("posts")
+    .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+    .collect()).filter((post) => post.status === "published")
+
+  // Las URLs históricas /post/[slug] solo sobreviven si identifican un único post.
+  if (matching.length !== 1) return null
+  return await toPublishedPost(ctx, matching[0]!)
 }
 
 export const getBySlug = query({
@@ -432,11 +609,12 @@ export const getByAuthorUsername = query({
   args: { username: v.string() },
   returns: publishedPostListValidator,
   handler: async (ctx, args) => {
-    const author = await ctx.db
+    const authors = await ctx.db
       .query("users")
       .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first()
-    if (!author) return []
+      .collect()
+    if (authors.length !== 1) return []
+    const author = authors[0]!
     const posts = await collectPublishedByAuthor(ctx, author._id as string)
     return await toPublishedPosts(ctx, posts)
   },
@@ -456,38 +634,170 @@ export const getPublishedByTenantSlug = query({
   args: { username: v.string() },
   returns: publishedPostListValidator,
   handler: async (ctx, args) => {
-    const author = await ctx.db
-      .query("users")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first()
+    const author = await getUniquePublicTenantByUsername(ctx, args.username)
     if (!author) return []
-    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
-    const posts = await collectPublishedByTenant(ctx, tenantId)
+    const tenantId = getCanonicalPublicTenantId(author)
+    const posts = await collectPublishedByTenant(ctx, tenantId, author)
     return await toPublishedPosts(ctx, posts)
   },
 })
 
+export async function getPublishedBySlugAndTenantSlugHandler(
+  ctx: QueryCtx,
+  args: { slug: string; username: string }
+) {
+  // Primero se resuelve el blog público. Un slug de post nunca puede decidir qué
+  // identidad de tenant usar como alternativa.
+  const author = await getUniquePublicTenantByUsername(ctx, args.username)
+  if (!author) return null
+
+  const tenantId = getCanonicalPublicTenantId(author)
+  const keys = getPublicTenantKeys(tenantId, author)
+  const candidates = new Map<string, Doc<"posts">>()
+
+  // Consulta compuesta para las filas normalizadas. Se prueban los identificadores
+  // históricos del mismo perfil mientras termina la migración, sin mezclar tenants.
+  for (const key of keys) {
+    const tenantPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_tenant_and_slug", (q) => q.eq("tenantId", key).eq("slug", args.slug))
+      .collect()
+    for (const post of tenantPosts) {
+      if (post.status === "published") candidates.set(post._id, post)
+    }
+
+    const organizationPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_org_and_slug", (q) => q.eq("organizationId", key).eq("slug", args.slug))
+      .collect()
+    for (const post of organizationPosts) {
+      if (post.status === "published") candidates.set(post._id, post)
+    }
+
+    if (!author.publicTenantId) {
+      const legacyAuthorPosts = await ctx.db
+        .query("posts")
+        .withIndex("by_author_and_slug", (q) => q.eq("authorId", key).eq("slug", args.slug))
+        .collect()
+      for (const post of legacyAuthorPosts) {
+        if (
+          post.status === "published" &&
+          post.slug === args.slug &&
+          !post.tenantId &&
+          !post.organizationId &&
+          await isUnambiguousLegacyPostForTenant(ctx, post, author)
+        ) {
+          candidates.set(post._id, post)
+        }
+      }
+    }
+  }
+
+  if (!author.publicTenantId) {
+    const legacyAuthorDocPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_author_doc_and_slug", (q) => q.eq("authorDocId", author._id).eq("slug", args.slug))
+      .collect()
+    for (const post of legacyAuthorDocPosts) {
+      if (
+        post.status === "published" &&
+        post.slug === args.slug &&
+        !post.tenantId &&
+        !post.organizationId &&
+        await isUnambiguousLegacyPostForTenant(ctx, post, author)
+      ) {
+        candidates.set(post._id, post)
+      }
+    }
+  }
+
+  // Una colisión heredada tampoco se resuelve escogiendo el primero.
+  if (candidates.size !== 1) return null
+  const post = candidates.values().next().value as Doc<"posts"> | undefined
+  return post ? await toPublishedPost(ctx, post) : null
+}
+
 export const getBySlugAndTenantSlug = query({
   args: { slug: v.string(), username: v.string() },
   returns: nullablePublishedPostValidator,
-  handler: async (ctx, args) => {
-    const author = await ctx.db
-      .query("users")
-      .withIndex("by_username", (q) => q.eq("username", args.username))
-      .first()
-    if (!author) return null
-
-    const tenantId = author.clerkUserId ?? author.legacyId ?? (author._id as string)
-    const candidates = await ctx.db
-      .query("posts")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .collect()
-    const matching = candidates
-      .filter((post) => post.status === "published" && isPostForTenant(post, tenantId, author))
-      .sort((a, b) => (b.publishedAt || "").localeCompare(a.publishedAt || ""))[0]
-    return matching ? await toPublishedPost(ctx, matching) : null
-  },
+  handler: getPublishedBySlugAndTenantSlugHandler,
 })
+
+type PostSlugAvailabilityArgs = {
+  tenantId: string
+  slug: string
+  organizationId?: string
+  excludePostId?: string
+  authorId?: string
+  authorDocId?: Doc<"users">["_id"]
+}
+
+/** Valida unicidad por tenant e incorpora candidatos legacy mientras se normalizan. */
+export async function assertPostSlugAvailable(ctx: QueryCtx, args: PostSlugAvailabilityArgs) {
+  const candidates = new Map<string, Doc<"posts">>()
+  const tenant = await getTenantAuthor(ctx, args.tenantId)
+  const tenantKeys = getPublicTenantKeys(args.tenantId, tenant)
+
+  for (const tenantId of tenantKeys) {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_tenant_and_slug", (q) => q.eq("tenantId", tenantId).eq("slug", args.slug))
+      .collect()
+    for (const post of posts) candidates.set(post._id, post)
+  }
+
+  if (args.organizationId) {
+    const orgPosts = await ctx.db
+      .query("posts")
+      .withIndex("by_org_and_slug", (q) => q.eq("organizationId", args.organizationId!).eq("slug", args.slug))
+      .collect()
+    for (const post of orgPosts) candidates.set(post._id, post)
+  }
+
+  for (const authorId of new Set([...tenantKeys, ...(args.authorId ? [args.authorId] : [])])) {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_author_and_slug", (q) => q.eq("authorId", authorId).eq("slug", args.slug))
+      .collect()
+    for (const post of posts) {
+      if (!post.tenantId && !post.organizationId) {
+        candidates.set(post._id, post)
+      }
+    }
+  }
+
+  const authorDocIds = new Set<Doc<"users">["_id"]>([
+    ...(tenant?._id ? [tenant._id] : []),
+    ...(args.authorDocId ? [args.authorDocId] : []),
+  ])
+  for (const authorDocId of authorDocIds) {
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_author_doc_and_slug", (q) => q.eq("authorDocId", authorDocId).eq("slug", args.slug))
+      .collect()
+    for (const post of posts) {
+      if (!post.tenantId && !post.organizationId) {
+        candidates.set(post._id, post)
+      }
+    }
+  }
+
+  for (const post of candidates.values()) {
+    if (post._id === args.excludePostId) continue
+    if (post.tenantId && tenantKeys.has(post.tenantId)) {
+      throw new Error("Ya existe un artículo con ese slug en este blog.")
+    }
+    if (args.organizationId && post.organizationId === args.organizationId) {
+      throw new Error("Ya existe un artículo con ese slug en este blog.")
+    }
+    if (!post.tenantId && !post.organizationId) {
+      const matchesTenant = await isPostForTenant(ctx, post, args.tenantId, tenant)
+      if (matchesTenant) {
+        throw new Error("Ya existe un artículo con ese slug en este blog.")
+      }
+    }
+  }
+}
 
 export async function getEditorialByIdHandler(ctx: QueryCtx, args: { id: string }) {
   const identity = await requireTenantAuth(ctx)
@@ -682,6 +992,14 @@ export const create = mutation({
     const resolvedAuthorId = authorDoc?.clerkUserId || authorDoc?.legacyId || args.authorId
     const authorDocId = authorDoc?._id
 
+    await assertPostSlugAvailable(ctx, {
+      tenantId: effectiveTenantId,
+      organizationId: effectiveOrgId ?? args.organizationId,
+      slug: args.slug,
+      authorId: resolvedAuthorId,
+      authorDocId,
+    })
+
     let categoryDocId = undefined
     if (args.categoryId) {
       const category = await findDocById(ctx.db, "categories", args.categoryId)
@@ -761,6 +1079,19 @@ export const update = mutation({
     const now = getCurrentIsoDate()
     const updates: Partial<typeof post> = {
       updatedAt: now
+    }
+
+    if (args.slug !== undefined && args.slug !== post.slug) {
+      const tenantId = post.tenantId || post.organizationId || identity.tenantId
+      await assertPostSlugAvailable(ctx, {
+        tenantId,
+        organizationId: post.organizationId,
+        slug: args.slug,
+        excludePostId: post._id,
+        authorId: post.authorId,
+        authorDocId: post.authorDocId,
+      })
+      if (!post.tenantId && !post.organizationId) updates.tenantId = identity.tenantId
     }
 
     if (args.title !== undefined) updates.title = args.title

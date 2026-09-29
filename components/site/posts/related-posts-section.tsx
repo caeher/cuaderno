@@ -1,16 +1,18 @@
 import * as React from "react"
-import type { PublishedPost } from "@/lib/domain/entities"
+import type { PublishedPost, PublicAuthor } from "@/lib/domain/entities"
 import { PostCard } from "@/components/site/posts/post-card"
 import { cn } from "@/lib/utils"
 
 export interface RelatedPostsSectionProps {
   posts: PublishedPost[]
+  tenant?: PublicAuthor
   title?: string
   className?: string
 }
 
 export function RelatedPostsSection({
   posts,
+  tenant,
   title = "Quizás también te interese",
   className,
 }: RelatedPostsSectionProps) {
@@ -26,6 +28,7 @@ export function RelatedPostsSection({
               key={relatedPost.id}
               post={relatedPost}
               author={relatedPost.author}
+              tenantAuthor={tenant}
               variant="compact"
             />
           )

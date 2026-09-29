@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next"
 import { categoryRepository, postRepository, tagRepository, userRepository } from "@/lib/infrastructure/repositories"
 import { SITE_CONFIG } from "@/lib/seo/config"
+import { buildTenantPostUrl } from "@/lib/tenant-utils"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_CONFIG.url
@@ -62,13 +63,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]
 
     // 2. Published Blog Posts
-    const postRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
-      url: `${baseUrl}/post/${post.slug}`,
-      lastModified: post.updatedAt ? new Date(post.updatedAt) : now,
-      changeFrequency: "weekly",
-      priority: post.featured ? 0.9 : 0.8,
-      images: post.coverUrl ? [post.coverUrl.startsWith("http") ? post.coverUrl : `${baseUrl}${post.coverUrl}`] : undefined,
-    }))
+    const postRoutes: MetadataRoute.Sitemap = posts.flatMap((post) =>
+      post.tenant
+        ? [{
+            url: buildTenantPostUrl(post.tenant.username, post.slug, {
+              subdomainEnabled: post.tenant.subdomainEnabled ?? true,
+              customDomain: post.tenant.customDomain,
+              absolute: true,
+            }),
+            lastModified: post.updatedAt ? new Date(post.updatedAt) : now,
+            changeFrequency: "weekly",
+            priority: post.featured ? 0.9 : 0.8,
+            images: post.coverUrl
+              ? [post.coverUrl.startsWith("http") ? post.coverUrl : `${baseUrl}${post.coverUrl}`]
+              : undefined,
+          }]
+        : []
+    )
 
     // 3. Author Profiles & Tenant Blog Homepages
     const authorRoutes: MetadataRoute.Sitemap = authors.map((author) => ({

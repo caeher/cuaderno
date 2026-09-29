@@ -294,7 +294,7 @@ export function buildTenantPostUrl(
   return buildTenantUrl({
     ...options,
     tenantSlug,
-    path: `/posts/${postSlug}`,
+    path: `/post/${postSlug}`,
   })
 }
 
@@ -323,4 +323,3 @@ export function buildTenantLegalUrl(
     path,
   })
 }
-

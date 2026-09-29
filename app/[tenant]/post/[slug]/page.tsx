@@ -12,6 +12,7 @@ import { JsonLdScript } from "@/components/seo/json-ld-script"
 import { generateArticleJsonLd, generateBreadcrumbsJsonLd } from "@/lib/seo/json-ld"
 import { constructSiteMetadata } from "@/lib/seo/metadata"
 import { SITE_CONFIG } from "@/lib/seo/config"
+import { buildTenantPostUrl, buildTenantUrl } from "@/lib/tenant-utils"
 import {
   PostHeader,
   PostCoverImage,
@@ -38,13 +39,24 @@ export async function generateMetadata({ params }: TenantPostPageProps): Promise
   ])
   if (!data) return { title: "Artículo no encontrado" }
 
-  const { post, author } = data
+  const { post, author, tenant: tenantAuthor } = data
+  const tenantBaseUrl = buildTenantUrl({
+    tenantSlug: tenant,
+    subdomainEnabled: tenantAuthor.subdomainEnabled ?? true,
+    customDomain: tenantAuthor.customDomain,
+    absolute: true,
+  })
+  const canonicalPostUrl = buildTenantPostUrl(tenant, post.slug, {
+    subdomainEnabled: tenantAuthor.subdomainEnabled ?? true,
+    customDomain: tenantAuthor.customDomain,
+    absolute: true,
+  })
 
   return constructSiteMetadata({
-    title: seo?.metaTitle || `${post.title} · ${author.name}`,
-    description: seo?.metaDescription || post.excerpt || `Lee ${post.title} por ${author.name} en su blog.`,
-    image: seo?.socialSharingImage || post.coverUrl,
-    canonicalPath: `/${tenant}/post/${post.slug}`,
+    title: seo?.metaTitle || `${post.title} · ${tenantAuthor.name}`,
+    description: seo?.metaDescription || post.excerpt || `Lee ${post.title} en el blog de ${tenantAuthor.name}.`,
+    image: seo?.socialSharingImage || post.coverUrl || tenantAuthor.coverUrl,
+    canonicalPath: canonicalPostUrl,
     type: "article",
     publishedTime: post.publishedAt,
     modifiedTime: post.updatedAt,
@@ -63,27 +75,40 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
   }
 
   const reqHeaders = await headers()
-  const isSubdomain = reqHeaders.get("x-is-subdomain") === "true"
+  const isTenantHost = reqHeaders.get("x-is-subdomain") === "true"
 
-  const { post, author, comments, relatedPosts } = data
+  const { post, author, tenant: tenantAuthor, comments, relatedPosts } = data
   const publishedTemplate = await getPublishedTemplateForTenantSlug(tenant)
 
-  const baseUrl = `${SITE_CONFIG.url}/${tenant}`
-  const articleJsonLd = generateArticleJsonLd(post, author, baseUrl, true)
+  const tenantBaseUrl = buildTenantUrl({
+    tenantSlug: tenant,
+    subdomainEnabled: tenantAuthor.subdomainEnabled ?? true,
+    customDomain: tenantAuthor.customDomain,
+    absolute: true,
+  })
+  const canonicalPostUrl = buildTenantPostUrl(tenant, post.slug, {
+    subdomainEnabled: tenantAuthor.subdomainEnabled ?? true,
+    customDomain: tenantAuthor.customDomain,
+    absolute: true,
+  })
+  const articleJsonLd = generateArticleJsonLd(post, author, tenantBaseUrl, true, {
+    blogName: `${tenantAuthor.name} — Blog`,
+    tenantUsername: tenantAuthor.username,
+  })
   const breadcrumbsJsonLd = generateBreadcrumbsJsonLd([
-    { name: author.name, url: isSubdomain ? "/" : `/${tenant}` },
+    { name: tenantAuthor.name, url: tenantBaseUrl },
     ...(post.category
-      ? [{ name: post.category.name, url: `/explorar?category=${post.category.slug}` }]
+      ? [{ name: post.category.name, url: `${SITE_CONFIG.url}/explorar?category=${post.category.slug}` }]
       : []),
-    { name: post.title, url: isSubdomain ? `/post/${post.slug}` : `/${tenant}/post/${post.slug}` },
+    { name: post.title, url: canonicalPostUrl },
   ])
 
   const postContext: PostSlotContext = {
-    tenant: author,
-    homeUrl: isSubdomain ? "/" : `/${tenant}`,
-    isSubdomain,
-    siteTitle: `${author.name} — Blog`,
-    siteDescription: author.bio || author.tagline,
+    tenant: tenantAuthor,
+    homeUrl: isTenantHost ? "/" : `/${tenant}`,
+    isSubdomain: isTenantHost,
+    siteTitle: `${tenantAuthor.name} — Blog`,
+    siteDescription: tenantAuthor.bio || tenantAuthor.tagline,
     post,
     author,
     comments,
@@ -125,7 +150,7 @@ export default async function TenantPostPage({ params }: TenantPostPageProps) {
       <Separator className="my-10" />
       <AuthorBioCard author={author} />
       <PostCommentsSection comments={comments} postId={post.id} postSlug={post.slug} />
-      <RelatedPostsSection posts={relatedPosts} />
+      <RelatedPostsSection posts={relatedPosts} tenant={tenantAuthor} />
     </ArticleContainer>
   )
 

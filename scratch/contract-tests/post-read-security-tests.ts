@@ -6,11 +6,15 @@ import {
   getPublishedByAuthorIdHandler,
   getPublishedByIdHandler,
   getPublishedBySlugHandler,
+  getPublishedBySlugAndTenantSlugHandler,
   getPublishedByTenantHandler,
+  assertPostSlugAvailable,
   listPublishedHandler
 } from "@/convex/posts"
 import { getCommentsForPostHandler } from "@/convex/comments"
 import { getNarrationForPostHandler } from "@/convex/narrations"
+import { buildTenantPostUrl, buildTenantUrl } from "@/lib/tenant-utils"
+import { generateArticleJsonLd } from "@/lib/seo/json-ld"
 
 type FixtureTable = "posts" | "users" | "categories" | "comments" | "postNarrations"
 type FixtureDoc = Record<string, unknown> & {
@@ -57,12 +61,19 @@ function post(input: {
   }
 }
 
-function user(input: { id: string; legacyId: string; clerkUserId: string; username: string }): FixtureDoc {
+function user(input: {
+  id: string
+  legacyId: string
+  clerkUserId: string
+  username: string
+  publicTenantId?: string
+}): FixtureDoc {
   return {
     _id: input.id,
     _creationTime: 1,
     legacyId: input.legacyId,
     clerkUserId: input.clerkUserId,
+    publicTenantId: input.publicTenantId,
     tokenIdentifier: `issuer|${input.clerkUserId}`,
     username: input.username,
     name: `Autor ${input.username}`,
@@ -164,6 +175,25 @@ const docs: Record<FixtureTable, FixtureDoc[]> = {
       legacyId: "legacy-member-b",
       clerkUserId: "member-b",
       username: "member-b"
+    }),
+    user({
+      id: "users:organization-a-profile",
+      legacyId: "legacy-organization-a-profile",
+      clerkUserId: "organization-admin-a",
+      username: "organization-a",
+      publicTenantId: "org-a"
+    }),
+    user({
+      id: "users:duplicate-a",
+      legacyId: "legacy-duplicate-a",
+      clerkUserId: "duplicate-a",
+      username: "duplicated"
+    }),
+    user({
+      id: "users:duplicate-b",
+      legacyId: "legacy-duplicate-b",
+      clerkUserId: "duplicate-b",
+      username: "duplicated"
     })
   ],
   posts: [
@@ -179,7 +209,8 @@ const docs: Record<FixtureTable, FixtureDoc[]> = {
       legacyId: "legacy-post-a-scheduled",
       authorId: "legacy-author-a",
       authorDocId: "users:author-a",
-      status: "scheduled"
+      status: "scheduled",
+      slug: "same-slug"
     }),
     post({
       id: "posts:a-published",
@@ -203,6 +234,56 @@ const docs: Record<FixtureTable, FixtureDoc[]> = {
       slug: "same-slug"
     }),
     post({
+      id: "posts:a-written-by-b",
+      authorId: "user-b",
+      authorDocId: "users:author-b",
+      tenantId: "user-a",
+      status: "published",
+      slug: "written-by-b"
+    }),
+    post({
+      id: "posts:legacy-author-mismatch",
+      authorId: "user-a",
+      authorDocId: "users:author-b",
+      status: "published",
+      slug: "legacy-author-mismatch"
+    }),
+    post({
+      id: "posts:member-a-personal-slug",
+      authorId: "member-a",
+      authorDocId: "users:member-a",
+      status: "published",
+      slug: "shared-admin-slug"
+    }),
+    post({
+      id: "posts:b-exclusive",
+      authorId: "user-b",
+      tenantId: "user-b",
+      status: "published",
+      slug: "exclusive-to-b"
+    }),
+    post({
+      id: "posts:a-collision-one",
+      authorId: "user-a",
+      tenantId: "user-a",
+      status: "published",
+      slug: "same-tenant-collision"
+    }),
+    post({
+      id: "posts:a-collision-two",
+      authorId: "user-a",
+      tenantId: "user-a",
+      status: "published",
+      slug: "same-tenant-collision"
+    }),
+    post({
+      id: "posts:a-only-slug",
+      authorId: "user-a",
+      tenantId: "user-a",
+      status: "published",
+      slug: "only-in-a"
+    }),
+    post({
       id: "posts:org-a-draft",
       authorId: "member-a",
       tenantId: "org-a",
@@ -222,6 +303,15 @@ const docs: Record<FixtureTable, FixtureDoc[]> = {
       tenantId: "org-a",
       organizationId: "org-a",
       status: "published"
+    }),
+    post({
+      id: "posts:org-a-written-by-b",
+      authorId: "user-b",
+      authorDocId: "users:author-b",
+      tenantId: "org-a",
+      organizationId: "org-a",
+      status: "published",
+      slug: "org-written-by-b"
     }),
     post({
       id: "posts:org-b-draft",
@@ -320,8 +410,12 @@ export async function runPostReadSecurityTests(): Promise<{
     "getById anónimo oculta un scheduled con ID heredado"
   )
   assert(
-    (await getPublishedBySlugHandler(anonymous, { slug: "same-slug" })) !== null,
-    "getBySlug anónimo encuentra contenido publicado aunque exista un draft con el mismo slug"
+    (await getPublishedBySlugHandler(anonymous, { slug: "same-slug" })) === null,
+    "la ruta legacy global no elige arbitrariamente entre dos tenants con el mismo slug"
+  )
+  assert(
+    (await getPublishedBySlugHandler(anonymous, { slug: "exclusive-to-b" }))?.id === "posts:b-exclusive",
+    "la URL legacy global se conserva cuando el slug publicado es inequívoco"
   )
   assert(
     await getPublishedBySlugHandler(anonymous, {
@@ -337,13 +431,141 @@ export async function runPostReadSecurityTests(): Promise<{
     }).then((item) => item?.id === "posts:b-published"),
     "el lookup por slug devuelve el post del segundo tenant"
   )
+  assert(
+    await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "same-slug", username: "a" })
+      .then((item) => item?.id === "posts:a-published"),
+    "dos blogs con el mismo slug reciben su propio post publicado por la ruta tenant"
+  )
+  assert(
+    await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "same-slug", username: "b" })
+      .then((item) => item?.id === "posts:b-published"),
+    "la segunda ruta tenant recibe el artículo con el mismo slug de B"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "exclusive-to-b", username: "a" })) === null,
+    "un slug exclusivo de B devuelve no encontrado bajo A"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "only-in-a", username: "b" })) === null,
+    "un slug exclusivo de A devuelve no encontrado bajo B"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "exclusive-to-b", username: "tenant-inexistente" })) === null,
+    "un tenant público inexistente devuelve no encontrado sin buscar el post global"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, {
+      slug: "legacy-author-mismatch",
+      username: "a",
+    })) === null,
+    "un post legacy con authorId y authorDocId discrepantes no se atribuye al tenant A"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "same-slug", username: "duplicated" })) === null,
+    "un identificador público de tenant duplicado se trata como ambiguo"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "same-tenant-collision", username: "a" })) === null,
+    "la ruta tenant tampoco escoge arbitrariamente entre colisiones heredadas del mismo blog"
+  )
+  assert(
+    await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "written-by-b", username: "a" })
+      .then((item) => item?.author.username === "b" && item.tenant?.username === "a"),
+    "la proyección conserva al autor real B dentro del blog visual A"
+  )
+  assert(
+    await getPublishedBySlugAndTenantSlugHandler(anonymous, {
+      slug: "org-written-by-b",
+      username: "organization-a",
+    }).then((item) => item?.author.username === "b" && item.tenant?.username === "organization-a"),
+    "un blog organizacional resuelve su tenant público y mantiene separado al autor real"
+  )
+  assert(
+    (await getPublishedBySlugAndTenantSlugHandler(anonymous, { slug: "same-slug", username: "a" }))?.status === "published",
+    "la ruta tenant omite draft y scheduled aunque compartan el slug publicado"
+  )
+  assert(
+    await rejects(() => assertPostSlugAvailable(anonymous, { tenantId: "user-a", slug: "same-slug" })),
+    "la creación o actualización rechaza un slug ya usado en el mismo tenant"
+  )
+  assert(
+    await rejects(() => assertPostSlugAvailable(anonymous, {
+      tenantId: "org-a",
+      organizationId: "org-a",
+      slug: "org-written-by-b",
+      authorId: "member-a",
+    })),
+    "la unicidad organizacional detecta el slug aunque el autor real sea otro miembro"
+  )
+  let organizationSlugAvailable = true
+  try {
+    await assertPostSlugAvailable(anonymous, {
+      tenantId: "org-a",
+      organizationId: "org-a",
+      slug: "shared-admin-slug",
+      authorId: "member-a",
+    })
+  } catch {
+    organizationSlugAvailable = false
+  }
+  assert(
+    organizationSlugAvailable,
+    "la unicidad organizacional no confunde un post personal del mismo autor con un post del equipo"
+  )
+  let crossTenantSlugAvailable = true
+  try {
+    await assertPostSlugAvailable(anonymous, { tenantId: "user-b", slug: "only-in-a" })
+  } catch {
+    crossTenantSlugAvailable = false
+  }
+  assert(crossTenantSlugAvailable, "la unicidad permite repetir slug entre tenants distintos")
+
+  const pathModePostUrl = buildTenantPostUrl("a", "same-slug", { subdomainEnabled: false, absolute: true })
+  const subdomainPostUrl = buildTenantPostUrl("a", "same-slug", { subdomainEnabled: true, absolute: true })
+  const customDomainPostUrl = buildTenantPostUrl("a", "same-slug", {
+    customDomain: "blog-a.example.test",
+    absolute: true,
+  })
+  assert(
+    pathModePostUrl.endsWith("/a/post/same-slug") && subdomainPostUrl.endsWith("/post/same-slug") &&
+      customDomainPostUrl.endsWith("blog-a.example.test/post/same-slug"),
+    "las URLs de ruta amigable, subdominio y dominio propio conservan el tenant y slug"
+  )
+  const tenantData = await getPublishedBySlugAndTenantSlugHandler(anonymous, {
+    slug: "written-by-b",
+    username: "a",
+  })
+  if (tenantData) {
+    const tenant = docs.users.find((candidate) => candidate.username === "a")!
+    const tenantBaseUrl = buildTenantUrl({
+      tenantSlug: "a",
+      customDomain: tenant.customDomain as string,
+      absolute: true,
+    })
+    const structuredData = generateArticleJsonLd(tenantData, tenantData.author, tenantBaseUrl, true, {
+      blogName: "Autor a — Blog",
+      tenantUsername: "a",
+    })
+    assert(
+      structuredData.url === `${tenantBaseUrl}/post/written-by-b` &&
+        structuredData.isPartOf.name === "Autor a — Blog" &&
+        structuredData.author.name === "Autor b" &&
+        structuredData.author.url.endsWith("/autor/b"),
+      "JSON-LD separa el blog tenant A del autor real B y usa la URL canónica del artículo"
+    )
+  } else {
+    assert(false, "JSON-LD separa el blog tenant A del autor real B y usa la URL canónica del artículo")
+  }
   const publicTenantPosts = await getPublishedByTenantHandler(anonymous, { tenantId: "user-a" })
   assert(
-    publicTenantPosts.every((item) => item.status === "published" && item.author.username === "a"),
-    "el blog del tenant solo recibe publicaciones propias"
+      publicTenantPosts.every((item) => item.status === "published") &&
+      publicTenantPosts.some((item) => item.id === "posts:a-written-by-b" && item.author.username === "b") &&
+      !publicTenantPosts.some((item) => item.id === "posts:legacy-author-mismatch") &&
+      publicTenantPosts.every((item) => item.id !== "posts:b-published"),
+    "el blog A lista solo sus posts publicados y conserva al autor real B cuando difiere"
   )
   const publicPostKeys = [
-    "id", "author", "categoryId", "title", "slug", "excerpt", "content", "coverUrl", "tags",
+    "id", "author", "tenant", "categoryId", "title", "slug", "excerpt", "content", "coverUrl", "tags",
     "status", "publishedAt", "updatedAt", "readingTimeMinutes", "views", "likes", "comments", "featured",
   ]
   const publicAuthorKeys = [
@@ -353,7 +575,8 @@ export async function runPostReadSecurityTests(): Promise<{
   assert(
     publicTenantPosts.every((item) =>
       Object.keys(item).sort().join(",") === [...publicPostKeys].sort().join(",") &&
-      Object.keys(item.author).sort().join(",") === [...publicAuthorKeys].sort().join(",")
+      Object.keys(item.author).sort().join(",") === [...publicAuthorKeys].sort().join(",") &&
+      (item.tenant === null || Object.keys(item.tenant).sort().join(",") === [...publicAuthorKeys].sort().join(","))
     ),
     "la respuesta de posts publicados no serializa authorId ni campos privados del autor"
   )
@@ -362,12 +585,15 @@ export async function runPostReadSecurityTests(): Promise<{
     authorId: "user-a"
   })
   assert(
-    anonymousAuthorPosts.length === 1 && anonymousAuthorPosts[0]?.status === "published",
+    anonymousAuthorPosts.length > 0 &&
+      anonymousAuthorPosts.every((item) => item.status === "published") &&
+      !anonymousAuthorPosts.some((item) => item.id === "posts:a-draft" || item.id === "posts:a-scheduled"),
     "getByAuthorId nunca mezcla draft ni scheduled, incluso en authorDocId heredado"
   )
   assert(
-    anonymousAuthorPosts[0]?.id === "posts:a-published",
-    "getByAuthorId resuelve autor por ID nativo, Clerk y legacy"
+    anonymousAuthorPosts.some((item) => item.id === "posts:a-published") &&
+      !anonymousAuthorPosts.some((item) => item.id === "posts:b-published"),
+    "getByAuthorId resuelve autor por ID nativo, Clerk y legacy sin traer otro tenant"
   )
 
   assert(
@@ -414,7 +640,7 @@ export async function runPostReadSecurityTests(): Promise<{
     status: "published"
   })
   assert(
-    publishedOnly.length === 1 && publishedOnly[0]?.status === "published",
+    publishedOnly.length > 0 && publishedOnly.every((item) => item.status === "published"),
     "status=published filtra también la rama por authorDocId"
   )
   assert(

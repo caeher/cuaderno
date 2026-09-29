@@ -95,6 +95,7 @@ export default defineSchema({
   users: defineTable({
     legacyId: v.optional(v.string()),
     clerkUserId: v.optional(v.string()),
+    publicTenantId: v.optional(v.string()),
     tokenIdentifier: v.optional(v.string()),
     username: v.string(),
     name: v.string(),
@@ -118,6 +119,7 @@ export default defineSchema({
     .index("by_username", ["username"])
     .index("by_email", ["email"])
     .index("by_clerk_user_id", ["clerkUserId"])
+    .index("by_public_tenant_id", ["publicTenantId"])
     .index("by_token_identifier", ["tokenIdentifier"])
     .index("by_legacy_id", ["legacyId"])
     .index("by_custom_domain", ["customDomain"]),
@@ -200,12 +202,16 @@ export default defineSchema({
     contentStorageId: v.optional(v.id("_storage")),
   })
     .index("by_slug", ["slug"])
+    .index("by_tenant_and_slug", ["tenantId", "slug"])
+    .index("by_org_and_slug", ["organizationId", "slug"])
     .index("by_status", ["status"])
     .index("by_status_and_publishedAt", ["status", "publishedAt"])
     .index("by_status_and_featured", ["status", "featured", "publishedAt"])
     .index("by_author", ["authorId"])
+    .index("by_author_and_slug", ["authorId", "slug"])
     .index("by_author_and_status", ["authorId", "status", "updatedAt"])
     .index("by_author_doc", ["authorDocId"])
+    .index("by_author_doc_and_slug", ["authorDocId", "slug"])
     .index("by_org_and_status", ["organizationId", "status", "updatedAt"])
     .index("by_tenant_and_status", ["tenantId", "status", "publishedAt"])
     .index("by_category_and_status", ["categoryId", "status"])
@@ -477,4 +483,3 @@ export default defineSchema({
     .index("by_session", ["sessionId"])
     .index("by_tenant_and_created", ["tenantId", "createdAt"]),
 });
-

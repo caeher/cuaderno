@@ -11,7 +11,7 @@ import { PageContainer } from "@/components/layout"
 import { JsonLdScript } from "@/components/seo/json-ld-script"
 import { generateAuthorJsonLd } from "@/lib/seo/json-ld"
 import { constructSiteMetadata } from "@/lib/seo/metadata"
-import { SITE_CONFIG } from "@/lib/seo/config"
+import { buildTenantUrl } from "@/lib/tenant-utils"
 import { AuthorHeroCover, AuthorProfileHeader } from "@/components/site/authors"
 import { AuthorTimeline } from "@/components/site/posts"
 import { TenantSlotRenderer } from "@/components/site/tenant-slot-renderer"
@@ -30,12 +30,18 @@ export async function generateMetadata({ params }: TenantHomePageProps): Promise
   if (!data) return { title: "Blog no encontrado" }
 
   const { author } = data
+  const tenantUrl = buildTenantUrl({
+    tenantSlug: tenant,
+    subdomainEnabled: author.subdomainEnabled ?? true,
+    customDomain: author.customDomain,
+    absolute: true,
+  })
 
   return constructSiteMetadata({
     title: seo?.metaTitle || `${author.name} — Blog`,
     description: seo?.metaDescription || author.bio || author.tagline || `Blog personal de ${author.name}`,
     image: seo?.socialSharingImage || author.coverUrl || author.avatarUrl,
-    canonicalPath: `/${tenant}`,
+    canonicalPath: tenantUrl,
     type: "profile",
     location: author.location,
   })
@@ -50,7 +56,7 @@ export default async function TenantHomePage({ params }: TenantHomePageProps) {
   }
 
   const reqHeaders = await headers()
-  const isSubdomain = reqHeaders.get("x-is-subdomain") === "true"
+  const isTenantHost = reqHeaders.get("x-is-subdomain") === "true"
   const { author, posts } = data
 
   const [publishedTemplate, categories] = await Promise.all([
@@ -58,13 +64,18 @@ export default async function TenantHomePage({ params }: TenantHomePageProps) {
     getAllCategories(),
   ])
 
-  const baseUrl = `${SITE_CONFIG.url}/${tenant}`
-  const authorJsonLd = generateAuthorJsonLd(author, baseUrl, true)
+  const tenantBaseUrl = buildTenantUrl({
+    tenantSlug: tenant,
+    subdomainEnabled: author.subdomainEnabled ?? true,
+    customDomain: author.customDomain,
+    absolute: true,
+  })
+  const authorJsonLd = generateAuthorJsonLd(author, tenantBaseUrl, true)
 
   const homeContext: HomeSlotContext = {
     tenant: author,
-    homeUrl: isSubdomain ? "/" : `/${tenant}`,
-    isSubdomain,
+    homeUrl: isTenantHost ? "/" : `/${tenant}`,
+    isSubdomain: isTenantHost,
     siteTitle: `${author.name} — Blog`,
     siteDescription: author.bio || author.tagline,
     posts,
@@ -84,7 +95,8 @@ export default async function TenantHomePage({ params }: TenantHomePageProps) {
           <AuthorTimeline
             posts={posts}
             authorName={author.name}
-            tenantSlug={isSubdomain ? undefined : tenant}
+            tenantSlug={isTenantHost ? undefined : tenant}
+            tenantHost={isTenantHost}
           />
         </div>
       </PageContainer>

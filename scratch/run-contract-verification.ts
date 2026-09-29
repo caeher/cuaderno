@@ -12,6 +12,7 @@ import { runConvexAuthAndSecurityTests } from "./contract-tests/convex-handler-t
 import { runPostReadSecurityTests } from "./contract-tests/post-read-security-tests"
 import { runUserCommentReadSecurityTests } from "./contract-tests/user-comment-read-security-tests"
 import { runRepositoryContractSuite } from "./contract-tests/repository-contract-suite"
+import { runPostTenantMigrationTests } from "./contract-tests/post-tenant-migration-tests"
 
 const shouldRunLiveConvexTests =
   Boolean(process.env.NEXT_PUBLIC_CONVEX_URL) &&
@@ -33,6 +34,10 @@ async function main() {
   const postReadResults = await runPostReadSecurityTests()
   grandTotalPassed += postReadResults.totalPassed
   grandTotalFailed += postReadResults.totalFailed
+
+  const postTenantMigrationResults = await runPostTenantMigrationTests()
+  grandTotalPassed += postTenantMigrationResults.totalPassed
+  grandTotalFailed += postTenantMigrationResults.totalFailed
 
   const userCommentResults = await runUserCommentReadSecurityTests()
   grandTotalPassed += userCommentResults.totalPassed

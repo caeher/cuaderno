@@ -81,8 +81,8 @@ Plantillas visuales modulares para personalización de páginas por tenant.
 | :--- | :--- | :--- | :--- | :--- |
 | **Página Principal / Feed Público** (`/`, `/explorar`) | `list` / `getPublished` | `posts` | `by_status` | Agrega publicaciones públicas de varios tenants y devuelve una proyección mínima. |
 | **Posts Destacados** (Home / Widgets) | `getFeaturedPosts` | `posts` | `by_status_and_featured` | Filtra `status == "published"` y `featured == true`. |
-| **Lectura de Post** (`/post/[slug]`) | `getBySlug` | `posts` | `by_slug` | Devuelve una proyección de posts `published`; nunca incluye campos editoriales. |
-| **Lectura de Post por Tenant** (`/[tenant]/post/[slug]`) | `getBySlug` con `tenantId` | `posts` | `by_slug` | Exige estado `published` y coincidencia con el tenant canónico o su propietario heredado. |
+| **Lectura legacy de Post** (`/post/[slug]`) | `getBySlug` | `posts` | `by_slug` | Solo resuelve si existe exactamente un post publicado con ese slug; los slugs ambiguos devuelven no encontrado. |
+| **Lectura de Post por Tenant** (`/[tenant]/post/[slug]`) | `getBySlugAndTenantSlug` | `users`, `posts` | `by_username`, `by_public_tenant_id`, `by_tenant_and_slug`, `by_org_and_slug` | Primero valida el perfil público y su ID canónico (incluida la asociación organizacional); después exige estado `published`. Slugs ambiguos no eligen un resultado. |
 | **Feed de Tenant** (`/[tenant]`) | `getPublishedByTenant` | `posts` | `by_tenant_and_status` | Recupera publicaciones `published` que pertenecen al tenant resuelto. |
 | **Perfil de Autor / Tenant** (`/autor/[username]`) | `getAuthorProfile` | `users` | `by_username` | Búsqueda directa del usuario por su handle (`username`). |
 | **Panel: Listado de Posts del Autor** (`/panel/posts`) | `getEditorialByAuthorId` | `posts` | `by_author_and_status` | Exige identidad personal coincidente, filtra por estado y ordena por `updatedAt`. |
@@ -90,7 +90,7 @@ Plantillas visuales modulares para personalización de páginas por tenant.
 | **Panel: Post por ID** (`/panel/posts/[id]`) | `getEditorialById` | `posts` | `_id` / `legacyId` | Resuelve IDs nativos y heredados y comprueba el tenant propietario en Convex. |
 | **Comentarios de un Post** (Lectura y Widget) | `getPostComments` | `comments` | `by_post` | Obtiene comentarios para un `postId` ordenados cronológicamente (`createdAt`). |
 | **Taxonomías por Organización/Tenant** | `getCategories`, `getTags` | `categories`, `tags` | `by_tenant`, `by_slug_and_tenant` | Recupera categorías/tags asociadas al tenant o slug específico. |
-| **Plantilla Activa del Tenant** (Diseñador y SSR) | `getTenantTemplate` | `tenantTemplates` | `by_tenant` | Recupera la plantilla exacta configurada para el tenant (`org_...` o `user_...`). |
+| **Plantilla Activa del Tenant** (Diseñador y SSR) | `getTenantTemplate` | `tenantTemplates` | `by_tenant` | Recupera la plantilla exacta configurada para el ID canónico público del tenant (`org_...` o `user_...`). |
 | **Historial de Revisiones de Plantilla** | `getTemplateRevisions` | `tenantTemplateRevisions` | `by_tenant_and_version` | Lista el historial ordenado por número de versión descendente. |
 | **Importación / Preservación de Enlaces** | `importFromSql` | Todas | `by_legacy_id` | Mapeo instantáneo de IDs relacionales del sistema anterior. |
 
