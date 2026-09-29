@@ -113,6 +113,8 @@ export default defineSchema({
     timezone: v.optional(v.string()),
     subdomainEnabled: v.optional(v.boolean()),
     customDomain: v.optional(v.string()),
+    // Read projection written only by customDomains.completeVerificationInternal.
+    verifiedCustomDomain: v.optional(v.string()),
     legalSettings: v.optional(tenantLegalSettingsValidator),
     seoSettings: v.optional(tenantSeoSettingsValidator),
   })
@@ -121,8 +123,32 @@ export default defineSchema({
     .index("by_clerk_user_id", ["clerkUserId"])
     .index("by_public_tenant_id", ["publicTenantId"])
     .index("by_token_identifier", ["tokenIdentifier"])
-    .index("by_legacy_id", ["legacyId"])
-    .index("by_custom_domain", ["customDomain"]),
+    .index("by_legacy_id", ["legacyId"]),
+
+  /**
+   * Reclamaciones DNS de dominios personalizados. La mutación `beginClaim` consulta
+   * `by_hostname` y escribe la reclamación en la misma transacción: Convex vuelve a
+   * ejecutar una transacción concurrente si su rango leído cambió, por lo que solo
+   * una reclamación puede mantener un hostname activo.
+   */
+  customDomainClaims: defineTable({
+    tenantId: v.string(),
+    userId: v.id("users"),
+    hostname: v.string(),
+    verificationHost: v.string(),
+    challenge: v.string(),
+    challengeVersion: v.number(),
+    status: v.union(v.literal("pending"), v.literal("verified"), v.literal("revoked")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    expiresAt: v.number(),
+    verifiedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    lastCheckedAt: v.optional(v.number()),
+  })
+    .index("by_hostname", ["hostname"])
+    .index("by_tenant_and_status", ["tenantId", "status"])
+    .index("by_user_and_status", ["userId", "status"]),
 
   /**
    * Colección: Categories (Categorías taxonómicas por tenant / autor / organización)

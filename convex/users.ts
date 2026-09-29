@@ -2,6 +2,7 @@ import { v, type Infer } from "convex/values"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { requireTenantAuth } from "./lib/auth"
 import { findDocById, getCurrentIsoDate } from "./lib/helpers"
+import type { Doc } from "./_generated/dataModel"
 import {
   socialLinksValidator,
   tenantLegalSettingsValidator,
@@ -59,6 +60,7 @@ const userValidator = v.object({
   timezone: v.optional(v.string()),
   subdomainEnabled: v.optional(v.boolean()),
   customDomain: v.optional(v.string()),
+  legacyCustomDomain: v.optional(v.string()),
   legalSettings: v.optional(tenantLegalSettingsValidator),
   seoSettings: v.optional(tenantSeoSettingsValidator),
 })
@@ -81,7 +83,7 @@ export function toPublicAuthor(user: {
   postCount: number
   followerCount: number
   subdomainEnabled?: boolean
-  customDomain?: string
+  verifiedCustomDomain?: string
 }) {
   return {
     username: user.username,
@@ -96,12 +98,13 @@ export function toPublicAuthor(user: {
     postCount: user.postCount,
     followerCount: user.followerCount,
     ...(user.subdomainEnabled !== undefined ? { subdomainEnabled: user.subdomainEnabled } : {}),
-    ...(user.customDomain !== undefined ? { customDomain: user.customDomain } : {}),
+    ...(user.verifiedCustomDomain ? { customDomain: user.verifiedCustomDomain } : {}),
   }
 }
 
 export async function listPublicHandler(ctx: QueryCtx) {
-  return (await ctx.db.query("users").collect()).map(toPublicAuthor)
+  const users = await ctx.db.query("users").collect()
+  return users.map(toPublicAuthor)
 }
 
 export const listPublic = query({
@@ -118,7 +121,7 @@ export async function getPrivateByIdHandler(ctx: QueryCtx, args: { id: string })
   if (user.clerkUserId !== identity.userId) {
     throw new Error("Acceso denegado: solo el propietario puede consultar su perfil privado.")
   }
-  return user
+  return toPrivateUserWithVerifiedDomain(user)
 }
 
 export const getPrivateById = query({
@@ -129,10 +132,20 @@ export const getPrivateById = query({
 
 export async function getCurrentHandler(ctx: QueryCtx) {
   const identity = await requireTenantAuth(ctx)
-  return await ctx.db
+  const user = await ctx.db
     .query("users")
     .withIndex("by_clerk_user_id", (q) => q.eq("clerkUserId", identity.userId))
     .first()
+  return user ? toPrivateUserWithVerifiedDomain(user) : null
+}
+
+function toPrivateUserWithVerifiedDomain(user: Doc<"users">) {
+  const { verifiedCustomDomain, customDomain: legacyCustomDomain, ...privateProfile } = user
+  return {
+    ...privateProfile,
+    customDomain: verifiedCustomDomain,
+    ...(!verifiedCustomDomain && legacyCustomDomain ? { legacyCustomDomain } : {}),
+  }
 }
 
 export const getCurrent = query({
@@ -148,7 +161,8 @@ export async function getPublicByUsernameHandler(ctx: QueryCtx, args: { username
     .collect()
   if (users.length !== 1) return null
   const user = users[0]!
-  return user ? toPublicAuthor(user) : null
+  if (!user) return null
+  return toPublicAuthor(user)
 }
 
 export const getPublicByUsername = query({
@@ -202,31 +216,6 @@ export const getPublicSeoSettingsByUsername = query({
 })
 
 /**
- * Normaliza un dominio personalizado a su forma canónica de almacenamiento.
- *
- * Se aplica en la ESCRITURA además de en la lectura: si el usuario guarda
- * "https://www.blog.com/" y el middleware busca por el host "blog.com", el índice
- * `by_custom_domain` no encuentra nada. Normalizar solo al leer no alcanza porque
- * el índice se construye sobre el valor almacenado.
- */
-function normalizeCustomDomainValue(value: string | undefined | null): string | undefined {
-  if (value === undefined || value === null) return undefined
-
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/+$/, "")
-    .split("/")[0]
-    .split(":")[0]
-    .replace(/^www\./, "")
-
-  if (!normalized || !normalized.includes(".")) return undefined
-
-  return normalized
-}
-
-/**
  * Resuelve el tenant dueño de un dominio personalizado (issue #12).
  *
  * La consume el middleware (`proxy.ts`) para mapear host -> tenant cuando el blog
@@ -238,23 +227,28 @@ function normalizeCustomDomainValue(value: string | undefined | null): string | 
 export const getByCustomDomain = query({
   args: { customDomain: v.string() },
   returns: v.union(v.object({ username: v.string(), customDomain: v.union(v.string(), v.null()) }), v.null()),
-  handler: async (ctx, args) => {
-    const domain = normalizeCustomDomainValue(args.customDomain)
-    if (!domain) return null
-
-    const owner = await ctx.db
-      .query("users")
-      .withIndex("by_custom_domain", (q) => q.eq("customDomain", domain))
-      .first()
-
-    if (!owner) return null
-
-    return {
-      username: owner.username,
-      customDomain: owner.customDomain ?? null,
-    }
-  },
+  handler: getByCustomDomainHandler,
 })
+
+export async function getByCustomDomainHandler(ctx: QueryCtx, args: { customDomain: string }) {
+  const domain = args.customDomain.trim().toLowerCase()
+  const claims = await ctx.db
+    .query("customDomainClaims")
+    .withIndex("by_hostname", (q) => q.eq("hostname", domain))
+    .take(2)
+  if (claims.length !== 1 || claims[0]?.status !== "verified") return null
+
+  const claim = claims[0]
+  const owner = await ctx.db.get(claim.userId)
+  if (!owner || owner.verifiedCustomDomain !== claim.hostname) return null
+  const tenantId = owner.publicTenantId ?? owner.clerkUserId ?? owner.legacyId ?? (owner._id as string)
+  if (claim.tenantId !== tenantId) return null
+
+  return {
+    username: owner.username,
+    customDomain: claim.hostname,
+  }
+}
 
 export const create = mutation({
   args: {
@@ -275,7 +269,6 @@ export const create = mutation({
     followerCount: v.optional(v.number()),
     timezone: v.optional(v.string()),
     subdomainEnabled: v.optional(v.boolean()),
-    customDomain: v.optional(v.string()),
     legalSettings: v.optional(tenantLegalSettingsValidator),
     seoSettings: v.optional(tenantSeoSettingsValidator),
   },
@@ -296,7 +289,7 @@ export const create = mutation({
       if (existing.clerkUserId !== identity.userId) {
         throw new Error("Ese nombre de usuario ya está en uso.")
       }
-      return existing
+      return toPrivateUserWithVerifiedDomain(existing)
     }
 
     const now = getCurrentIsoDate()
@@ -319,12 +312,12 @@ export const create = mutation({
       followerCount: args.followerCount || 0,
       timezone: args.timezone || "UTC",
       subdomainEnabled: args.subdomainEnabled ?? true,
-      customDomain: normalizeCustomDomainValue(args.customDomain),
       legalSettings: args.legalSettings,
       seoSettings: args.seoSettings,
     })
 
-    return await ctx.db.get(docId)
+    const created = await ctx.db.get(docId)
+    return created ? toPrivateUserWithVerifiedDomain(created) : null
   },
 })
 
@@ -341,7 +334,6 @@ const updateArgsValidator = v.object({
   socials: v.optional(socialLinksValidator),
   timezone: v.optional(v.string()),
   subdomainEnabled: v.optional(v.boolean()),
-  customDomain: v.optional(v.string()),
   legalSettings: v.optional(tenantLegalSettingsValidator),
   seoSettings: v.optional(tenantSeoSettingsValidator),
 })
@@ -382,13 +374,12 @@ export async function updateUserHandler(
   if (args.socials !== undefined) updates.socials = args.socials
   if (args.timezone !== undefined) updates.timezone = args.timezone
   if (args.subdomainEnabled !== undefined) updates.subdomainEnabled = args.subdomainEnabled
-  if (args.customDomain !== undefined)
-    updates.customDomain = normalizeCustomDomainValue(args.customDomain)
   if (args.legalSettings !== undefined) updates.legalSettings = args.legalSettings
   if (args.seoSettings !== undefined) updates.seoSettings = args.seoSettings
 
   await ctx.db.patch(user._id, updates)
-  return await ctx.db.get(user._id)
+  const updated = await ctx.db.get(user._id)
+  return updated ? toPrivateUserWithVerifiedDomain(updated) : null
 }
 
 export const update = mutation({
@@ -419,6 +410,37 @@ export const getPublicTenantOrganizationStatus = query({
     }
   },
 })
+
+async function revokeProfileDomainClaims(
+  ctx: MutationCtx,
+  profile: Doc<"users">,
+  previousTenantId: string,
+  now: number
+) {
+  const [pending, verified] = await Promise.all([
+    ctx.db
+      .query("customDomainClaims")
+      .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", previousTenantId).eq("status", "pending"))
+      .take(2),
+    ctx.db
+      .query("customDomainClaims")
+      .withIndex("by_tenant_and_status", (q) => q.eq("tenantId", previousTenantId).eq("status", "verified"))
+      .take(2),
+  ])
+
+  if (pending.length > 1 || verified.length > 1 || pending.length + verified.length > 1) {
+    throw new Error("El perfil tiene reclamaciones de dominio activas ambiguas; requiere revisión operativa.")
+  }
+
+  for (const claim of [...pending, ...verified]) {
+    if (claim.userId === profile._id) {
+      await ctx.db.patch(claim._id, { status: "revoked", revokedAt: now, updatedAt: now })
+    }
+  }
+  if (profile.customDomain || profile.verifiedCustomDomain) {
+    await ctx.db.patch(profile._id, { customDomain: undefined, verifiedCustomDomain: undefined })
+  }
+}
 
 export const setPublicTenantOrganization = mutation({
   args: {},
@@ -452,6 +474,8 @@ export const setPublicTenantOrganization = mutation({
     }
 
     if (profile.publicTenantId !== identity.tenantId) {
+      const previousTenantId = profile.publicTenantId ?? profile.clerkUserId ?? profile.legacyId ?? (profile._id as string)
+      await revokeProfileDomainClaims(ctx, profile, previousTenantId, Date.now())
       await ctx.db.patch(profile._id, { publicTenantId: identity.tenantId })
     }
 

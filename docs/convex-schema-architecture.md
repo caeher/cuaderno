@@ -74,6 +74,14 @@ Ventanas de frecuencia para proteger `comments.create`, incluidas las llamadas d
 - Usuarios autenticados tienen hasta 5 comentarios por tenant en una ventana móvil de 10 minutos; anónimos comparten un límite de 8 por tenant en la misma ventana.
 - Las escrituras de frecuencia, comentario y contador del post comparten la transacción Convex.
 
+### `customDomainClaims`
+Reclamaciones de hostnames personalizados, separadas de los datos históricos de `users.customDomain`.
+- **Campos**: `tenantId`, `userId`, `hostname` normalizado, `verificationHost`, desafío aleatorio versionado, estado `pending | verified | revoked`, caducidad y marcas de tiempo.
+- **Índices**: `by_hostname` para exclusión transaccional; `by_tenant_and_status` y `by_user_and_status` para el estado del tenant.
+- `customDomainClaims.beginClaimInternal` consulta y escribe el hostname dentro de una mutación. Dos tenants concurrentes no pueden activar la misma reclamación; una pendiente expirada se puede reasignar.
+- Solo `verified` resuelve en el proxy. Las filas heredadas nunca se convierten a verificadas automáticamente.
+- `users.verifiedCustomDomain` es una proyección de lectura actualizada en la misma transacción de verificación/revocación; `users.customDomain` se conserva solo como dato heredado.
+
 ### 2.6 `tenantTemplates` y `tenantTemplateRevisions`
 Plantillas visuales modulares para personalización de páginas por tenant.
 - **Estructura AST de Bloques Nativos**: `draftSlots: Record<string, any>`, `publishedSlots: Record<string, any>`, `slotsSnapshot: Record<string, any>`.

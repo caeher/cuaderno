@@ -1,4 +1,4 @@
-import { fetchMutation, fetchQuery } from "convex/nextjs"
+import { fetchAction, fetchMutation, fetchQuery } from "convex/nextjs"
 import type { FunctionReference, FunctionReturnType } from "convex/server"
 
 type AuthTokenResult = {
@@ -137,6 +137,32 @@ export async function convexMutation<Mutation extends FunctionReference<"mutatio
 
   try {
     return (await fetchMutation(mutationRef, (args ?? {}) as any, options)) as FunctionReturnType<Mutation>
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    if (message.includes("NoAuthProvider") || message.includes("No auth provider")) {
+      throw new Error(
+        "JWT de Clerk inválido para Convex. Crea el template JWT \"convex\" con aud: \"convex\" (pnpm setup:clerk-convex) y vuelve a iniciar sesión."
+      )
+    }
+    throw error
+  }
+}
+
+/** Ejecuta una action de Convex desde un Server Action con el JWT de Clerk para Convex. */
+export async function convexAction<Action extends FunctionReference<"action">>(
+  actionRef: Action,
+  args?: any
+): Promise<FunctionReturnType<Action>> {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL || process.env.CONVEX_URL
+  if (!convexUrl) {
+    throw new Error("NEXT_PUBLIC_CONVEX_URL is not set.")
+  }
+
+  const token = await requireAuthTokenForMutation()
+  const options = token ? { token } : undefined
+
+  try {
+    return (await fetchAction(actionRef, (args ?? {}) as any, options)) as FunctionReturnType<Action>
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     if (message.includes("NoAuthProvider") || message.includes("No auth provider")) {

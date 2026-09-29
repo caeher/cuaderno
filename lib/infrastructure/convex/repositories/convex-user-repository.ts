@@ -73,7 +73,6 @@ export class ConvexUserRepository implements UserRepository {
       followerCount: user.followerCount,
       timezone: user.timezone,
       subdomainEnabled: user.subdomainEnabled,
-      customDomain: user.customDomain,
       legalSettings: user.legalSettings,
       seoSettings: user.seoSettings,
     })
@@ -97,7 +96,6 @@ export class ConvexUserRepository implements UserRepository {
       socials: input.socials,
       timezone: input.timezone,
       subdomainEnabled: input.subdomainEnabled,
-      customDomain: input.customDomain,
       legalSettings: input.legalSettings,
       seoSettings: input.seoSettings,
     })

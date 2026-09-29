@@ -7,4 +7,4 @@ export * from "./dashboard"
 export * from "./narrations"
 export * from "./composer"
 export * from "./panel"
-
+export * from "./custom-domains/custom-domain-use-cases"

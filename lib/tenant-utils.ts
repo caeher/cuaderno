@@ -6,6 +6,8 @@
  * and route-based friendly URLs.
  */
 
+import { normalizeCustomDomainHostHeader } from "./custom-domain-policy"
+
 export const RESERVED_SUBDOMAINS = new Set([
   "www",
   "api",
@@ -147,27 +149,11 @@ export function extractTenantFromHost(hostHeader: string | null | undefined): st
 }
 
 /**
- * Normaliza un host o dominio personalizado a su forma canónica de almacenamiento:
- * sin protocolo, sin puerto, sin barra final, en minúsculas y sin el `www.` inicial.
- *
- * `www.blog.com` y `blog.com` son el mismo dominio para efectos de resolución de
- * tenant; guardarlos como dos valores distintos parte el índice `by_custom_domain`.
+ * Normaliza un Host header DNS. Elimina un puerto de request válido, conserva `www`
+ * como hostname distinto y rechaza protocolos, rutas y credenciales.
  */
 export function normalizeCustomDomain(value: string | null | undefined): string | null {
-  if (!value) return null
-
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/\/+$/, "")
-    .split("/")[0]
-    .split(":")[0]
-    .replace(/^www\./, "")
-
-  if (!normalized || !normalized.includes(".")) return null
-
-  return normalized
+  return normalizeCustomDomainHostHeader(value)
 }
 
 /**
@@ -251,7 +237,7 @@ export function buildTenantUrl({
   // 1. Custom Domain (e.g. blog.empresa.com)
   if (customDomain) {
     const formattedDomain = customDomain.replace(/^https?:\/\//, "").replace(/\/$/, "")
-    return `${protocol}://${formattedDomain}${cleanPath}`
+    return `https://${formattedDomain}${cleanPath}`
   }
 
   // 2. Subdomain Mode Enabled (e.g. acme.mydomain.com or acme.localhost:3000)

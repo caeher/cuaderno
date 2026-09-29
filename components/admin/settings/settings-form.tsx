@@ -53,7 +53,6 @@ export function SettingsForm({ user }: SettingsFormProps) {
   const [coverUrl, setCoverUrl] = React.useState(user.coverUrl ?? "")
   const [timezone, setTimezone] = React.useState(user.timezone ?? "UTC")
   const [subdomainEnabled, setSubdomainEnabled] = React.useState(user.subdomainEnabled ?? true)
-  const [customDomain, setCustomDomain] = React.useState(user.customDomain ?? "")
   const [legalSettings, setLegalSettings] = React.useState<TenantLegalSettings>(user.legalSettings ?? {})
   const [seoSettings, setSeoSettings] = React.useState<TenantSeoSettings>(user.seoSettings ?? {})
   const [website, setWebsite] = React.useState(user.socials.website ?? "")
@@ -76,7 +75,6 @@ export function SettingsForm({ user }: SettingsFormProps) {
         coverUrl,
         timezone,
         subdomainEnabled,
-        customDomain: customDomain.trim() || undefined,
         legalSettings,
         seoSettings,
         socials: {
@@ -228,9 +226,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
             <DomainSettingsSection
               username={username}
               subdomainEnabled={subdomainEnabled}
-              customDomain={customDomain}
+              legacyCustomDomain={user.legacyCustomDomain}
               onSubdomainEnabledChange={setSubdomainEnabled}
-              onCustomDomainChange={setCustomDomain}
             />
           </TabsContent>
 

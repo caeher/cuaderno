@@ -14,6 +14,8 @@ import type * as aiNode from "../aiNode.js";
 import type * as categories from "../categories.js";
 import type * as comments from "../comments.js";
 import type * as composer from "../composer.js";
+import type * as customDomainActions from "../customDomainActions.js";
+import type * as customDomains from "../customDomains.js";
 import type * as lib_ai_client from "../lib/ai/client.js";
 import type * as lib_ai_config from "../lib/ai/config.js";
 import type * as lib_ai_errors from "../lib/ai/errors.js";
@@ -49,6 +51,8 @@ declare const fullApi: ApiFromModules<{
   categories: typeof categories;
   comments: typeof comments;
   composer: typeof composer;
+  customDomainActions: typeof customDomainActions;
+  customDomains: typeof customDomains;
   "lib/ai/client": typeof lib_ai_client;
   "lib/ai/config": typeof lib_ai_config;
   "lib/ai/errors": typeof lib_ai_errors;

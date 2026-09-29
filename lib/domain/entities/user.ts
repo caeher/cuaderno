@@ -53,6 +53,7 @@ export interface User {
   timezone?: string
   subdomainEnabled?: boolean
   customDomain?: string
+  legacyCustomDomain?: string
   legalSettings?: TenantLegalSettings
   seoSettings?: TenantSeoSettings
 }
@@ -116,7 +117,6 @@ export interface UpdateUserInput {
   socials?: SocialLinks
   timezone?: string
   subdomainEnabled?: boolean
-  customDomain?: string
   legalSettings?: TenantLegalSettings
   seoSettings?: TenantSeoSettings
 }

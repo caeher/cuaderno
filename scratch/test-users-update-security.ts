@@ -179,7 +179,6 @@ async function run() {
       name: "Intruso",
       email: "intruso@example.com",
       username: "intruso",
-      customDomain: "intruso.example.com",
       legalSettings: legalChange,
     })
   }
@@ -193,7 +192,6 @@ async function run() {
       { name: "Cambio ajeno" },
       { email: "cambio@example.com" },
       { username: "handle-ajeno" },
-      { customDomain: "dominio-ajeno.example.com" },
       { legalSettings: legalChange },
     ]) {
       const database = new FakeDatabase([profile("profile_b", "user_b", "victima")])
@@ -216,7 +214,6 @@ async function run() {
       name: "Nombre que no debe guardarse",
       email: "nuevo@example.com",
       username: "handle-compartido",
-      customDomain: "nuevo.example.com",
       legalSettings: legalChange,
     }, /nombre de usuario ya está en uso/)
   }
@@ -229,13 +226,14 @@ async function run() {
       name: "Nombre actualizado",
       email: "autor-a-nuevo@example.com",
       username: "autor-a-nuevo",
-      customDomain: "https://www.blog.autor-a.example.com/",
       legalSettings: legalChange,
     })
     assert.equal(updated?.name, "Nombre actualizado")
     assert.equal(updated?.email, "autor-a-nuevo@example.com")
     assert.equal(updated?.username, "autor-a-nuevo")
-    assert.equal(updated?.customDomain, "blog.autor-a.example.com")
+    assert.equal(updated?.customDomain, undefined)
+    assert.equal(updated?.legacyCustomDomain, "blog.example.com")
+    assert.equal(database.profiles.get("profile_a")?.customDomain, "blog.example.com")
     assert.deepEqual(updated?.legalSettings, legalChange)
 
     const orgOwnerUpdate = await updateUserHandler(
@@ -245,14 +243,12 @@ async function run() {
         name: "Nombre en contexto org",
         email: "autor-a-org@example.com",
         username: "autor-a-org",
-        customDomain: "org-blog.example.com",
         legalSettings: { ...legalChange, taxId: "TAX-3" },
       }
     )
     assert.equal(orgOwnerUpdate?.name, "Nombre en contexto org")
     assert.equal(orgOwnerUpdate?.email, "autor-a-org@example.com")
     assert.equal(orgOwnerUpdate?.username, "autor-a-org")
-    assert.equal(orgOwnerUpdate?.customDomain, "org-blog.example.com")
     assert.equal(orgOwnerUpdate?.legalSettings?.taxId, "TAX-3")
   }
 

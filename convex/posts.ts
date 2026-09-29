@@ -193,7 +193,7 @@ function toPublicAuthorProjection(author: Doc<"users">): PublicAuthorProjection 
     postCount: author.postCount,
     followerCount: author.followerCount,
     ...(author.subdomainEnabled !== undefined ? { subdomainEnabled: author.subdomainEnabled } : {}),
-    ...(author.customDomain !== undefined ? { customDomain: author.customDomain } : {}),
+    ...(author.verifiedCustomDomain ? { customDomain: author.verifiedCustomDomain } : {}),
   }
 }
 

@@ -47,6 +47,7 @@ export function convexDocToUser(doc: any): User {
     timezone: doc.timezone || "UTC",
     subdomainEnabled: doc.subdomainEnabled ?? true,
     customDomain: doc.customDomain || undefined,
+    legacyCustomDomain: doc.legacyCustomDomain || undefined,
     legalSettings: doc.legalSettings || {},
     seoSettings: doc.seoSettings || {}
   }

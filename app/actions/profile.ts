@@ -17,7 +17,6 @@ export async function updateUserProfileAction(
     socials?: SocialLinks
     timezone?: string
     subdomainEnabled?: boolean
-    customDomain?: string
     legalSettings?: TenantLegalSettings
     seoSettings?: TenantSeoSettings
   }
@@ -33,7 +32,6 @@ export async function updateUserProfileAction(
     socials: data.socials,
     timezone: data.timezone,
     subdomainEnabled: data.subdomainEnabled,
-    customDomain: data.customDomain,
     legalSettings: data.legalSettings,
     seoSettings: data.seoSettings,
   })
